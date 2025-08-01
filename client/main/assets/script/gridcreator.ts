@@ -3,30 +3,7 @@ import { Main } from './main';
 import { LevelMgr } from './levelmgr';
 const { ccclass, property } = _decorator;
 
-class GridPosition {
-    x: number;
-    y: number;
-    distance: number;
-
-    constructor(x: number, y: number, distance: number) {
-        this.x = x;
-        this.y = y;
-        this.distance = distance;
-    }
-}
-
-class CenterPositionInfo {
-    x: number;
-    y: number;
-    distance: number;
-
-    constructor(x: number, y: number, distance: number) {
-        this.x = x;
-        this.y = y;
-        this.distance = distance;
-    }
-}
-
+ 
 @ccclass('gridcreator')
 export class gridcreator extends Component {
     @property
@@ -38,8 +15,10 @@ export class gridcreator extends Component {
     @property(Node)
     container: Node = null!;
 
-    private static map: number[][] = [];
-    private gridsize: number = 100;
+    @property(Prefab)
+    item_line: Prefab = null!;
+    public static map: number[][] = [];
+    public gridsize: number = 100;
     private level_cur: number = 0;
     private pl: Sprite[] = [];
 
@@ -362,25 +341,18 @@ export class gridcreator extends Component {
 
     private UpdateCardPositions() {
         const children = this.node.children;
-        let rectgrid = this.node.getComponent(UITransform);
         for (const child of children) {
-            const tobj = child.getComponent('TObject') as any;
-            if (tobj) {
-                const rect = child.getComponent(UITransform)!; 
-                //let pos =new Vec2((tobj.x - 1) * this.gridsize, (tobj.y - 1) * this.gridsize);
-                let pos =this.tref.add(new Vec2((tobj.x - 1) * this.gridsize, (tobj.y - 1) * this.gridsize)); 
-                child.setPosition(pos.x, pos.y);
-            }
+            const tobj = child.getComponent('TObject') as any;      
+            let pos =this.tref.add(new Vec2((tobj.x ) * this.gridsize, (tobj.y ) * this.gridsize)); 
+            child.setPosition(pos.x, pos.y);
         }
     }
 
     get tref(): Vec2 {
-
         const rect = this.node.getComponent(UITransform);
         const refx = (rect.width - this.wid * this.gridsize) / 2;
         const refy = (rect.height - this.hei * this.gridsize) / 2;
         return new Vec2(refx-rect.width/2, refy-rect.height/2);
-        
     }
 
     private MoveCardNode(cx: Node, mapPos: Vec2) {
