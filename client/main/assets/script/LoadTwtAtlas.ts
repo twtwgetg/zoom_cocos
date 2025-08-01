@@ -4,11 +4,11 @@ import { Main } from './main';
             
             @ccclass('LoadTwtAtlas')
             export class LoadTwtAtlas extends Component {
-            
+   
                 @property(SpriteAtlas)
                 spriteAtlas: SpriteAtlas = null;
                 allsprites:string[] = [];
-                
+                pls:Array<SpriteFrame> = new Array<SpriteFrame>();
                 // Enumerate all sprites
                 enumerateAllSprites() {
                     if (this.spriteAtlas) {
@@ -16,9 +16,10 @@ import { Main } from './main';
                         const spriteFrameNames = Object.keys(this.spriteAtlas.spriteFrames);
                         
                         console.log(`Total sprites in atlas: ${spriteFrameNames.length}`);
-                        
+                        let that =this;
                         spriteFrameNames.forEach((name, index) => {
                             //console.log(`Sprite ${index}: ${name}`);
+                            that.pls.push(that.spriteAtlas.getSpriteFrame(name));// this.spriteAtlas.getSpriteFrame(name);
                         });
                         
                         return spriteFrameNames;
@@ -44,12 +45,17 @@ import { Main } from './main';
                 // }
                 protected onLoad(): void {
                     this.allsprites= this.enumerateAllSprites();
+
                     Main.RegistEvent("event_getallsprites", (x) =>{
                         return this.allsprites;
                     });
-                }
-                start() {
-                   
-                    //this.allsprites= this.getAllSpriteFrames();
-                }
+                    Main.RegistEvent("event_getsprite",(x)=>{
+                        let name = this.allsprites[x];
+                        let spriteFrame = this.spriteAtlas.getSpriteFrame(name)   ;
+                        return spriteFrame;
+                    });
+                    Main.RegistEvent("EVENT_GETPLSPRITES",(x)=>{
+                        return this.pls;
+                    })
+                } 
             }

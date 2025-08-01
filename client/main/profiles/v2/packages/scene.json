@@ -55,5 +55,108 @@
         }
       }
     }
+  },
+  "camera-infos": {
+    "3bef743b-e0dc-4485-9820-625b19800b5c": {
+      "position": {
+        "x": 640,
+        "y": 360.00000000000006,
+        "z": 5000
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "viewCenter": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "contentRect": {
+        "x": 387.58983347940404,
+        "y": 233.7949167397021,
+        "width": 1630,
+        "height": 1402
+      },
+      "scale": 0.89140625
+    },
+    "6a3503f8-1813-4e12-8fbf-9d584964c62c": {
+      "position": {
+        "x": 549.4405,
+        "y": 851,
+        "z": 5000
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "viewCenter": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "contentRect": {
+        "x": -80.4795,
+        "y": 309.1915092024538,
+        "width": 1630,
+        "height": 1402
+      },
+      "scale": 1.293815087630175
+    },
+    "880ed246-7fdd-4a27-b6be-99abc421cfa9": {
+      "position": {
+        "x": 1193.7727064517192,
+        "y": 1391.5436635190013,
+        "z": 5000
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "viewCenter": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "contentRect": {
+        "x": -110.26908053151084,
+        "y": 269.9077215861861,
+        "width": 1630,
+        "height": 1402
+      },
+      "scale": 0.6249799723714535
+    }
+  },
+  "camera-uuids": [
+    "3bef743b-e0dc-4485-9820-625b19800b5c",
+    "6a3503f8-1813-4e12-8fbf-9d584964c62c",
+    "880ed246-7fdd-4a27-b6be-99abc421cfa9"
+  ],
+  "camera": {
+    "color": [
+      48,
+      48,
+      48,
+      255
+    ],
+    "fov": 45,
+    "far": 10000,
+    "near": 0.01,
+    "wheelSpeed": 0.01,
+    "wanderSpeed": 10,
+    "enableAcceleration": true,
+    "size": "__default_design__",
+    "far2D": 10000,
+    "near2D": 1,
+    "wheelSpeed2D": 6,
+    "iso": 0,
+    "aperture": 19,
+    "shutter": 7
   }
 }
