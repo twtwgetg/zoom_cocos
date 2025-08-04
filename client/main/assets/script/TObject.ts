@@ -119,29 +119,18 @@ export class TObject extends Component {
         Main.DispEvent('event_lian');
 
         // 销毁对象
+        self.node.removeFromParent();
         self.node.destroy();
+        gb.node.removeFromParent();
         gb.node.destroy();
 
         for (const line of lines) {
             line.destroy();
         }
-
-        // 等待一帧
-        //await new Promise(resolve => Director.instance.getScheduler().scheduleOnce(resolve, 0));
-        await new Promise(resolve => setTimeout(resolve, 1));
-        // 整理卡片
-        this.creator.zhengli();
-        this.creator.checkLeft();
-
-        if (this.creator.node.children.length === 0) {
-            //frm_pause.isPause = true;
-
-            // 等待0.5秒
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // 触发游戏胜利事件
-            Main.DispEvent('game_win', 1);
-        }
+    
+        // 等待到下一帧确保节点被销毁
+        await new Promise(resolve => setTimeout(resolve, 0));
+        Main.DispEvent('event_zhengli'); 
     }
     /**
      * 检查是否可以连接

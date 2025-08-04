@@ -1,4 +1,4 @@
-import { _decorator, Component, instantiate, Node, Prefab, UITransform } from 'cc';
+import { _decorator, Button, Component, instantiate, Node, Prefab, UITransform } from 'cc';
 import { frmbase } from './frmbase';
 import { Main } from './main';
 import { LevelMgr } from './levelmgr';
@@ -13,7 +13,12 @@ export class frm_guanka extends frmbase {
     public trans_guanka: Node = null!;
     @property(Prefab)
     public prefab_guanka1: Prefab = null!;
+    @property(Button)
+    public btn_back: Button = null!;
     start() {
+        this.btn_back.node.on(Button.EventType.CLICK, ()=>{
+            Main.DispEvent('game_begin');
+        }, this);
         var all=Main.DispEvent('event_getallsprites');
         for(var i=0;i<LevelMgr.realmaxlevel;i++)
         {
@@ -36,6 +41,10 @@ export class frm_guanka extends frmbase {
         super.onLoad();
         Main.RegistEvent("event_begin",(x)=>{
             this.show();
+            return null;
+        });
+        Main.RegistEvent("game_begin",(x)=>{
+            this.hide();
             return null;
         });
         Main.RegistEvent("event_play",(x)=>{

@@ -1,6 +1,7 @@
 import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math } from 'cc';
 import { Main } from './main';
 import { LevelMgr } from './levelmgr';
+import { frm_main } from './frm_main';
 const { ccclass, property } = _decorator;
 
  
@@ -29,8 +30,25 @@ export class gridcreator extends Component {
 
     private registEvents() {
         // 这里假设Main是一个全局的事件管理类，在Cocos中可以使用director或自定义事件管理器
-        director.on('event_tixing', this.tixing, this);
-        director.on('event_brush', this.brushkind, this);
+        
+        Main.RegistEvent('event_tixing', this.tixing);
+        Main.RegistEvent('event_brush', this.brushkind);
+        let that =this;
+        Main.RegistEvent('event_zhengli', async ()=>{
+             // 整理卡片
+            that.zhengli();
+            that.checkLeft();
+
+            if (that.node.children.length === 0) {
+                frm_main.isPause = true;
+
+                // 等待0.5秒
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // 触发游戏胜利事件
+                Main.DispEvent('game_win', 1);
+            }
+        });
     }
 
     checkLeft() {
@@ -159,7 +177,7 @@ export class gridcreator extends Component {
     }
 
     // 整理剩余卡片位置
-    zhengli() {
+    public zhengli():void {
         // 根据关卡类型整理
         switch (this.level_cur % 8) {
             case 1:
