@@ -29,7 +29,7 @@ export class frm_main extends frmbase {
             this.show();
             this.gridcreator.Create(x);
             this.level_playing = x;
-            this.lbl_guanka.string = "第"+(x+1)+"关";
+            this.lbl_guanka.string = "第 "+(x+1)+" 关";
             this.time_all = LevelMgr.getTimeAll(x);
             this.time_now = 0;
             frm_main.isPause = false;

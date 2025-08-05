@@ -46,7 +46,7 @@ export class gridcreator extends Component {
                 await new Promise(resolve => setTimeout(resolve, 500));
 
                 // 触发游戏胜利事件
-                Main.DispEvent('game_win', 1);
+                Main.DispEvent('game_win',LevelMgr.level);
             }
         });
     }

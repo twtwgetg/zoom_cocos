@@ -1,5 +1,6 @@
 // levelmgr.ts
 import { sys } from 'cc';
+import { PlayerPrefb } from './PlayerPrefb';
 export class LevelMgr {
     private static _maxlevel: number = 50;
     private static _maxcount: number = 30;
@@ -8,15 +9,14 @@ export class LevelMgr {
      * 获取当前关卡
      */
     public static get level(): number {
-        const levelStr = sys.localStorage.getItem('level');
-        return levelStr ? parseInt(levelStr) : 1;
+        return PlayerPrefb.getInt("level", 0);
     }
 
     /**
      * 设置当前关卡
      */
     public static set level(value: number) {
-        sys.localStorage.setItem('level', value.toString());
+        PlayerPrefb.setInt("level", value);
     }
 
     /**

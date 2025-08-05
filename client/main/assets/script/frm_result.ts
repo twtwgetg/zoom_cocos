@@ -43,6 +43,10 @@ export class frm_result extends frmbase {
     lbl_source_suc: Label = null!;
     //转成千位进制表示法
     formatNumber(num: number): string {
+
+        //先对num取整，然后转为千进制字符串
+        num = Math.floor(num);
+        num = Math.abs(num);
         return num.toString().replace(/(\d)(?=(\d{3})+$)/g, ",");
     }
     protected onLoad(): void {
@@ -86,15 +90,13 @@ export class frm_result extends frmbase {
             this.level_suc.string ="关卡："+(this.level_played+1);
             let time = Main.DispEvent("time_used");
             let timer_all = LevelMgr.getTimeAll(this.level_played);
-            let per = time / timer_all;
+            let per =1- time / timer_all;
             let source = (per * LevelMgr.getSource(this.level_played));
             let  old = PlayerPrefb.getInt("level_"+this.level_played, 0);
             if (source > old)
             {
                 PlayerPrefb.setInt("level_"+this.level_played, source);
             }
-            //
-           
 
             this.lbl_source_suc.string =this.formatNumber(source);
             this.brushStar(this.level_played);
@@ -110,7 +112,9 @@ export class frm_result extends frmbase {
             this.sucess.active=false;
             let time = Main.DispEvent("time_used");
             let timer_all = LevelMgr.getTimeAll(this.level_played);
-            let per = time / timer_all;
+            console.log("time"+time+": time_all"+ timer_all);
+            let per = 1- Math.min(time,timer_all)/ timer_all;
+            per = Math.max(per,0.1)
             let source = (per * LevelMgr.getSource(this.level_played));
             this.lbl_source_suc.string =this.formatNumber( source);
             // int source = (int)(levelmgr.getSource(level_played)*0.01f);
