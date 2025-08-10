@@ -23,6 +23,7 @@ export class musicmgr extends Component {
             this.source.stop(); //停止
             this.source.clip = this.main;
             this.source.play(); //播放
+            
             return null;
         });
         Main.RegistEvent("event_play", (x) =>
@@ -46,15 +47,26 @@ export class musicmgr extends Component {
             this.source.play(); //播放
             return null;
         });
-        Main.RegistEvent("event_music", (a) =>
+        Main.RegistEvent("event_music_change", (x) =>
         {
-            this.source.enabled   = !this.bMusicEnable;
+            this.source.volume = musicmgr.bMusicEnable?1:0;
+            if(musicmgr.bMusicEnable)
+            {
+                this.source.play();
+            }
             return null;
         });
+        console.log("musicmgr.bMusicEnable", musicmgr.bMusicEnable);
+        this.source.volume = musicmgr.bMusicEnable ? 1:0;
     } 
-    get bMusicEnable() : boolean
+    static get bMusicEnable() : boolean
     {
         return PlayerPrefb.getInt('music', 1) == 1  ;
+    }
+    static set bMusicEnable(value: boolean)
+    {
+        PlayerPrefb.setInt('music', value ? 1 : 0);
+    
     }
     update(deltaTime: number) {
         

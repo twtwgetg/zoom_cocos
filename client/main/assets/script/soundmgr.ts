@@ -16,7 +16,7 @@ export class soundmgr extends Component {
     protected onLoad(): void {
         Main.RegistEvent("event_lian", (parm) =>
         {
-            if (this.bSoundEnable)
+            if (soundmgr.bSoundEnable)
             {
                 this.peng.play();
             }
@@ -25,7 +25,7 @@ export class soundmgr extends Component {
         });
         Main.RegistEvent("event_click", (parm) =>
         {
-            if (this.bSoundEnable)
+            if (soundmgr.bSoundEnable)
             {
                 this.click.play();
             }
@@ -39,16 +39,20 @@ export class soundmgr extends Component {
 
         Main.RegistEvent("event_slider", (parm) =>
         {
-            if (this.bSoundEnable)
+            if (soundmgr.bSoundEnable)
             {
                 this.slider.play();
             }
             return null;
         });
     }
-    get bSoundEnable() : boolean
+    static get bSoundEnable() : boolean
     {
         return PlayerPrefb.getInt('sound', 1)==1;
+    }
+    static set bSoundEnable(value: boolean)
+    {
+        PlayerPrefb.setInt('sound', value ? 1 : 0);
     }
     update(deltaTime: number) {
         

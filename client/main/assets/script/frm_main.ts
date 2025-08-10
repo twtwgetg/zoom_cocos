@@ -15,6 +15,8 @@ export class frm_main extends frmbase {
     btn_remind: Button = null!;
     @property(Button)
     btn_time: Button = null!;
+    @property(Button)
+    btn_pause: Button = null!;
     time_all: number = 0;
     time_now: number = 0;
     @property(ProgressBar)
@@ -36,7 +38,10 @@ export class frm_main extends frmbase {
 
             return null;
         });
- 
+        this.btn_pause.node.on(Button.EventType.CLICK, () =>
+        {
+            Main.DispEvent("event_pause");
+        }, this);
         this.btn_refrush.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_brush");
