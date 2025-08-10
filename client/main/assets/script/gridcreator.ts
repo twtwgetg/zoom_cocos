@@ -31,8 +31,21 @@ export class gridcreator extends Component {
     private registEvents() {
         // 这里假设Main是一个全局的事件管理类，在Cocos中可以使用director或自定义事件管理器
         
-        Main.RegistEvent('event_tixing', this.tixing);
-        Main.RegistEvent('event_brush', this.brushkind);
+        Main.RegistEvent('event_tixing',(x)=>{
+            const children = this.node.children;
+            for (const child of children) {
+                const p = child.getComponent('TObject') as any;
+                if (!p) continue;
+
+                if (p.Tixing()) {
+                    break;
+                }
+            }
+        });
+        Main.RegistEvent('event_brush', (x)=>{
+            this.brushkind();
+            return null;
+        });
         let that =this;
         Main.RegistEvent('event_zhengli', async ()=>{
              // 整理卡片
@@ -48,6 +61,14 @@ export class gridcreator extends Component {
                 // 触发游戏胜利事件
                 Main.DispEvent('game_win',LevelMgr.level);
             }
+        });
+        Main.RegistEvent('event_resettime',(x)=>{
+            frm_main.isPause = true;
+            Main.DispEvent('event_fruszon',true);
+            setTimeout(()=>{
+                frm_main.isPause = false;
+                Main.DispEvent('event_fruszon',false);
+            },5000);
         });
     }
 
@@ -76,20 +97,7 @@ export class gridcreator extends Component {
             }
         }
     }
-
-    private tixing() {
-        const children = this.node.children;
-
-        for (const child of children) {
-            const p = child.getComponent('TObject') as any;
-            if (!p) continue;
-
-            if (p.Tixing()) {
-                break;
-            }
-        }
-    }
-
+ 
     get plSprites(): Sprite[] {
         // 这里需要适配Cocos的资源获取方式
         // 假设Main.DispEvent是一个全局事件分发函数

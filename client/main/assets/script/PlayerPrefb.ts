@@ -4,10 +4,17 @@ export class PlayerPrefb
 {
     static getInt(param: string, defaultvalue: number) { 
         const levelStr = sys.localStorage.getItem(param);
-        if(levelStr == null){
+
+        // Check if levelStr is null, undefined, or empty string
+        if (levelStr === null || levelStr === undefined || levelStr === "") {
             return defaultvalue;
-        }else{
-            return parseInt(levelStr);
+        } else {
+            const parsed = parseInt(levelStr);
+            // Additional check for NaN case
+            if (isNaN(parsed)) {
+                return defaultvalue;
+            }
+            return parsed;
         }
     } 
     static setInt(param: string, arg1: number) { 

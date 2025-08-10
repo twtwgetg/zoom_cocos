@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, Label, Node, ProgressBar } from 'cc';
+import { _decorator, Button, Color, Component, Label, Node, ProgressBar, Sprite } from 'cc';
 import { gridcreator } from './gridcreator';
 import { Main } from './main';
 import { frmbase } from './frmbase';
@@ -25,6 +25,17 @@ export class frm_main extends frmbase {
     @property(Label)
     lbl_guanka: Label = null!;
     level_playing: number = 0;
+
+    @property(Sprite)
+    spr_bar: Sprite = null!;
+    fruzonBar(f:boolean){
+        if(!f){
+            this.spr_bar.color=new Color(255,173,0,255);
+        }
+        else{
+            this.spr_bar.color=new Color(0,214,255,255);
+        }
+    }
     protected onLoad(): void {
         super.onLoad();
         Main.RegistEvent("event_play",(x)=>{ 
@@ -36,6 +47,10 @@ export class frm_main extends frmbase {
             this.time_now = 0;
             frm_main.isPause = false;
 
+            return null;
+        });
+        Main.RegistEvent("event_fruszon",(f)=>{ 
+            this.fruzonBar(f);
             return null;
         });
         this.btn_pause.node.on(Button.EventType.CLICK, () =>
@@ -57,6 +72,7 @@ export class frm_main extends frmbase {
         Main.RegistEvent("time_used",()=>{
             return this.time_now;
         });
+        this.fruzonBar(false);
     }
     start() {
 

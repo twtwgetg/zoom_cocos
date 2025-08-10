@@ -140,7 +140,41 @@ export class TObject extends Component {
 
         return gridcreator.CanConnect(last.x + 1, last.y + 1, _sel.x + 1, _sel.y + 1, poslist);
     }
-
+    Tixing(): boolean {
+        let ret = false;
+        // 遍历 creator 节点的所有子节点
+        for (let i = 0; i < this.creator!.node.children.length; i++) {
+            const tx = this.creator!.node.children[i];
+            const _sel = tx.getComponent(TObject);
+            if (_sel != null) {
+                let pres: Vec2[] = [];
+                // 调用连连看连接检查方法
+                ret = gridcreator.CanConnect(this.x + 1, this.y + 1, _sel.x + 1, _sel.y + 1, pres);
+                if (ret) {
+                    // 获取路径最后一个点并高亮显示
+                    const p = pres[pres.length - 1];
+                    const node1 = this.creator!.node.getChildByName(`${p.x - 1},${p.y - 1}`);
+                    if (node1) {
+                        node1.getComponent(TObject)!.ShowTiXing();
+                    }
+                    
+                    // 获取路径第一个点并高亮显示
+                    const p2 = pres[0];
+                    const node2 = this.creator!.node.getChildByName(`${p2.x - 1},${p2.y - 1}`);
+                    if (node2) {
+                        node2.getComponent(TObject)!.ShowTiXing();
+                    }
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
+    private ShowTiXing()
+    {
+        this.sel.color = Color.RED;
+        this.sel.node.active = true; 
+    }
     start() {
         //响应鼠标点击事件
         this.getComponent(Button)!.node.on('click',this.onButtonClick, this);
