@@ -3,6 +3,7 @@ import { gridcreator } from './gridcreator';
 import { Main } from './main';
 import { frmbase } from './frmbase';
 import { LevelMgr } from './levelmgr';
+import { tools } from './tools';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -26,18 +27,23 @@ export class frm_main extends frmbase {
     lbl_guanka: Label = null!;
     level_playing: number = 0;
 
+    @property(Node)
+    ice_node: Node = null!;
     @property(Sprite)
     spr_bar: Sprite = null!;
     fruzonBar(f:boolean){
         if(!f){
             this.spr_bar.color=new Color(255,173,0,255);
+            this.ice_node.active=false;
         }
         else{
             this.spr_bar.color=new Color(0,214,255,255);
+            this.ice_node.active=true;
         }
     }
     protected onLoad(): void {
         super.onLoad();
+        let that =this;
         Main.RegistEvent("event_play",(x)=>{ 
             this.show();
             this.gridcreator.Create(x);
@@ -49,30 +55,87 @@ export class frm_main extends frmbase {
 
             return null;
         });
+
+        Main.RegistEvent("event_restart",()=>{ 
+            Main.DispEvent("event_play",this.level_playing); 
+            return null;
+        });
         Main.RegistEvent("event_fruszon",(f)=>{ 
             this.fruzonBar(f);
             return null;
         });
+        Main.RegistEvent("update_tools",()=>{ 
+            this.brushTools();
+            return null;
+        });
+        Main.RegistEvent("event_begin",()=>{ 
+            this.hide();
+            return null;
+        });
         this.btn_pause.node.on(Button.EventType.CLICK, () =>
         {
+            
             Main.DispEvent("event_pause");
         }, this);
         this.btn_refrush.node.on(Button.EventType.CLICK, () =>
         {
-            Main.DispEvent("event_brush");
+            if(tools.num_brush>0)
+            {
+                tools.num_brush--;
+                this.brushTools();
+                Main.DispEvent("event_brush");
+            }
+            else{
+                Main.DispEvent("event_tools",{tp:2,cb:()=>{
+                    tools.num_time--;
+                    that.brushTools();
+                    Main.DispEvent("event_resettime");    
+                }});
+            }
         }, this);
         this.btn_remind.node.on(Button.EventType.CLICK, () =>
         {
-            Main.DispEvent("event_tixing");
+            if(tools.num_Remind>0){
+                tools.num_Remind--;
+                this.brushTools();
+                Main.DispEvent("event_tixing");
+            }
+            else{
+                Main.DispEvent("event_tools",{tp:1,cb:()=>{
+                    tools.num_time--;
+                    that.brushTools();
+                    Main.DispEvent("event_resettime");    
+                }});
+            }
         }, this); 
         this.btn_time.node.on(Button.EventType.CLICK,()=>{
-            Main.DispEvent("event_resettime");
+            if(tools.num_time>0){
+                tools.num_time--;
+                this.brushTools();
+                Main.DispEvent("event_resettime");    
+            }
+            else{
+                console.log("no time");
+
+                Main.DispEvent("event_tools",{tp:0,cb:()=>{
+                    tools.num_time--;
+                    that.brushTools();
+                    Main.DispEvent("event_resettime");    
+                }});
+            }
         },this);
 
         Main.RegistEvent("time_used",()=>{
             return this.time_now;
         });
         this.fruzonBar(false);
+
+        this.brushTools();
+    }
+    brushTools(){ 
+        this.btn_time.node.getChildByName("num").getComponent(Label).string = tools.num_time.toString();
+        this.btn_remind.node.getChildByName("num").getComponent(Label).string = tools.num_Remind.toString();
+        this.btn_refrush.node.getChildByName("num").getComponent(Label).string = tools.num_brush.toString();
     }
     start() {
 

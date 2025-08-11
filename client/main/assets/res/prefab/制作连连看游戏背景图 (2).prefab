@@ -781,9 +781,9 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 189,
-      "g": 204,
-      "b": 202,
+      "r": 221,
+      "g": 252,
+      "b": 248,
       "a": 255
     },
     "_spriteFrame": {
@@ -854,6 +854,7 @@
       "__id__": 0
     },
     "fileId": "daRpgCs+VF35b/71tbGxHF",
+    "instance": null,
     "targetOverrides": null
   }
 ]

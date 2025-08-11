@@ -20,5 +20,10 @@ export class PlayerPrefb
     static setInt(param: string, arg1: number) { 
         sys.localStorage.setItem(param, arg1.toString());
     }
+    // 初始化
+    static Init()
+    {
+        sys.localStorage.clear();
+    }
     
 }

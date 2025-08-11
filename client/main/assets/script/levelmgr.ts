@@ -23,7 +23,8 @@ export class LevelMgr {
      * 初始化关卡
      */
     public static init(): void {
-        LevelMgr.level = 1;
+        LevelMgr.level = 0;
+        PlayerPrefb.Init(); // 初始化本地存储
     }
 
     /**

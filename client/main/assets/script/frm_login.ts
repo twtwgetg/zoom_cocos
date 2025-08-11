@@ -38,6 +38,11 @@ export class frm_login extends frmbase {
             this.btn_login.node.on(Button.EventType.CLICK, this.onLoginClick, this);
         }
     } 
+    protected OnShow(): void {
+        setTimeout(() => {
+            Main.DispEvent('event_begin');    
+        }, 1000);
+    }
     private onLoginClick(): void {
         Main.DispEvent('event_begin');
         // 调用登录逻辑 

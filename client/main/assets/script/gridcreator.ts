@@ -68,7 +68,7 @@ export class gridcreator extends Component {
             setTimeout(()=>{
                 frm_main.isPause = false;
                 Main.DispEvent('event_fruszon',false);
-            },5000);
+            },15000);
         });
     }
 
@@ -102,8 +102,7 @@ export class gridcreator extends Component {
         // 这里需要适配Cocos的资源获取方式
         // 假设Main.DispEvent是一个全局事件分发函数
         return Main.DispEvent('EVENT_GETPLSPRITES');// (director.emit('EVENT_GETRES') as unknown) as Sprite[];
-    }
-
+    } 
     Create(level_playing: number) {
         this.level_cur = level_playing;
 
@@ -161,14 +160,14 @@ export class gridcreator extends Component {
         this.Shuffle(positions);
 
         // 获取关卡计数（需要实现levelmgr）
-        // const count = levelmgr.getCount(level_playing);
-        const count = 10; // 临时值
+        const count = LevelMgr.getCount(level_playing);
+        
 
         // 生成卡片对
         for (let p = 0; p < totalPairs; p++) {
             // 随机类型（需要根据实际level_playing调整）
-            // const type = Math.floor(Math.random() * count) + level_playing;
-            const type = Math.floor(Math.random() * 5) + 1; // 临时值
+            const type = Math.floor(Math.random() * count) + (level_playing+1);
+            //const type = Math.floor(Math.random() * 5) + 1; // 临时值
 
             // 获取两个位置
             const pos1 = positions[p * 2];

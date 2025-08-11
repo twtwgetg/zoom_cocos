@@ -4,6 +4,7 @@ import { Main } from './main';
 import { frm_main } from './frm_main';
 import { soundmgr } from './soundmgr';
 import { musicmgr } from './musicmgr';
+import { LevelMgr } from './levelmgr';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_pause')
@@ -18,8 +19,13 @@ export class frm_pause extends frmbase {
     btn_soundenable: Button = null!;
     @property(Button)
     btn_musicenable: Button = null!;
+    @property(Button)
+    btn_init: Button = null!;
     start() {
-         
+         this.btn_init.node.on(Button.EventType.CLICK, () =>
+        {
+            LevelMgr.init();
+        }, this);
         this.btn_resume.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_resume");
@@ -58,6 +64,12 @@ export class frm_pause extends frmbase {
             this.level_playing = x;
             this.brushflag();
             return null;
+        });
+        Main.RegistEvent("event_begin",(x)=>{ 
+            this.hide();
+        });
+        Main.RegistEvent("event_restart",(x)=>{ 
+            this.hide();
         });
         Main.RegistEvent("event_resume",(x)=>{
             this.hide();

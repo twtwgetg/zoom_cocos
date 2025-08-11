@@ -3,11 +3,12 @@
   "builder": {
     "common": {
       "buildPath": "project://build",
-      "outputName": "wechatgame",
+      "outputName": "ttgame",
       "mainBundleCompressionType": "merge_dep",
       "platform": "wechatgame",
       "mainBundleIsRemote": false,
-      "mangleProperties": true
+      "mangleProperties": true,
+      "debug": false
     },
     "options": {
       "wechatgame": {
@@ -22,6 +23,15 @@
     },
     "taskOptionsMap": {
       "1754741536910": {
+        "orientation": "portrait",
+        "appid": "wx9ad242a31d7fb7f2",
+        "buildOpenDataContextTemplate": "",
+        "separateEngine": false,
+        "highPerformanceMode": false,
+        "__version__": "1.0.4",
+        "wasmSubpackage": true
+      },
+      "1754877619948": {
         "orientation": "portrait",
         "appid": "wx9ad242a31d7fb7f2",
         "buildOpenDataContextTemplate": "",

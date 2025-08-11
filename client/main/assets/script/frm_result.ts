@@ -3,6 +3,7 @@ import { Main } from './main';
 import { LevelMgr } from './levelmgr';
 import { frmbase } from './frmbase';
 import { PlayerPrefb } from './PlayerPrefb';
+import { frm_main } from './frm_main';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_result')
@@ -86,7 +87,7 @@ export class frm_result extends frmbase {
             this.level_played = x;
             this.sucess.active=true;// .gameObject.SetActive(true);
             this.faild.active=false;
-
+            frm_main.isPause=true;
             this.level_suc.string ="关卡："+(this.level_played+1);
             let time = Main.DispEvent("time_used");
             let timer_all = LevelMgr.getTimeAll(this.level_played);
@@ -116,10 +117,7 @@ export class frm_result extends frmbase {
             let per = 1- Math.min(time,timer_all)/ timer_all;
             per = Math.max(per,0.1)
             let source = (per * LevelMgr.getSource(this.level_played));
-            this.lbl_source_suc.string =this.formatNumber( source);
-            // int source = (int)(levelmgr.getSource(level_played)*0.01f);
-            // //source_faild.text = getSourceFormat(source);
-            // StartCoroutine(showsource(source_faild, source));
+            this.lbl_soruce_faild.string =this.formatNumber( source);
             this.show(); 
             return null;
         });

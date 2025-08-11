@@ -3,6 +3,8 @@ const { ccclass, property } = _decorator;
 
 @ccclass('rot')
 export class rot extends Component {
+    
+    @property(Number)
     rotationSpeed: number=60;
     start() {
 
