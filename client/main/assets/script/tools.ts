@@ -7,6 +7,9 @@ export class tools {
     }
     static set num_Remind(value)
     {
+        if(value<0){
+            value = 0;
+        }
         PlayerPrefb.setInt("num_Remind", value); //设置剩余次数
     }
     static get num_brush()
@@ -15,6 +18,9 @@ export class tools {
     }
     static set num_brush(value)
     {
+        if(value<0){
+            value = 0;
+        }
         PlayerPrefb.setInt("num_brush", value); 
     }
     static get num_time()
@@ -23,6 +29,8 @@ export class tools {
     }
     static set num_time(value)
     {
+        if (value < 0)
+            value = 0;
         PlayerPrefb.setInt("num_time", value);
     }
 }

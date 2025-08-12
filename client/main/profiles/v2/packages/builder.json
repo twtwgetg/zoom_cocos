@@ -8,9 +8,9 @@
       "asyncFunctions": true
     },
     "buildPath": "project://build",
-    "outputName": "ttgame",
+    "outputName": "bytedance-mini-game",
     "mainBundleCompressionType": "merge_dep",
-    "platform": "wechatgame",
+    "platform": "bytedance-mini-game",
     "mainBundleIsRemote": false,
     "mangleProperties": true,
     "debug": false
@@ -84,29 +84,29 @@
         "time": "2025-8-11 09:19:59",
         "dirty": false
       },
-      "1754877619948": {
+      "1754882654287": {
         "type": "build",
-        "id": "1754877619948",
+        "id": "1754882654287",
         "progress": 1,
         "state": "success",
         "stage": "build",
-        "message": "2025-8-11 10:00:38 build success in 18 s!",
-        "detailMessage": "// ---- build task cocos-service：onAfterBuild ----\r",
+        "message": "2025-8-11 11:26:09 build success in 1 min 55 s!",
+        "detailMessage": "// ---- build task fb-instant-games：onAfterBuild ----\r",
         "options": {
           "name": "main",
           "server": "",
           "engineModulesConfigKey": "defaultConfig",
-          "platform": "wechatgame",
+          "platform": "fb-instant-games",
           "buildPath": "project://build",
           "debug": false,
           "buildMode": "normal",
-          "mangleProperties": true,
+          "mangleProperties": false,
           "md5Cache": false,
           "skipCompressTexture": false,
           "sourceMaps": false,
           "overwriteProjectSettings": {
             "macroConfig": {
-              "cleanupImageCache": "on"
+              "cleanupImageCache": "inherit-project-setting"
             },
             "includeModules": {
               "physics": "inherit-project-setting",
@@ -114,7 +114,7 @@
               "gfx-webgl2": "off"
             }
           },
-          "nativeCodeBundleMode": "wasm",
+          "nativeCodeBundleMode": "asmjs",
           "polyfills": {
             "asyncFunctions": false
           },
@@ -135,8 +135,8 @@
           "bundleCommonChunk": false,
           "packAutoAtlas": true,
           "startScene": "880ed246-7fdd-4a27-b6be-99abc421cfa9",
-          "outputName": "ttgame",
-          "taskName": "wechatgame-001",
+          "outputName": "fb-instant-games",
+          "taskName": "fb-instant-games",
           "scenes": [
             {
               "url": "db://assets/login.scene",
@@ -146,9 +146,76 @@
           "wasmCompressionMode": false,
           "packages": {},
           "__version__": "1.3.9",
-          "logDest": "project://temp/builder/log/wechatgame2025-8-11 10-00.log"
+          "logDest": "project://temp/builder/log/fb-instant-games2025-8-11 11-24.log"
         },
-        "time": "2025-8-11 10:00:19",
+        "time": "2025-8-11 11:24:14",
+        "dirty": false
+      },
+      "1754894211767": {
+        "type": "build",
+        "id": "1754894211767",
+        "progress": 1,
+        "state": "success",
+        "stage": "build",
+        "message": "2025-8-12 12:51:06 build success in 1 min 49 s!",
+        "detailMessage": "// ---- build task 整理部分构建选项内数据到 settings.json ----\r",
+        "options": {
+          "name": "main",
+          "server": "",
+          "engineModulesConfigKey": "defaultConfig",
+          "platform": "bytedance-mini-game",
+          "buildPath": "project://build",
+          "debug": false,
+          "buildMode": "normal",
+          "mangleProperties": false,
+          "md5Cache": false,
+          "skipCompressTexture": false,
+          "sourceMaps": false,
+          "overwriteProjectSettings": {
+            "macroConfig": {
+              "cleanupImageCache": "inherit-project-setting"
+            },
+            "includeModules": {
+              "physics": "inherit-project-setting",
+              "physics-2d": "inherit-project-setting",
+              "gfx-webgl2": "off"
+            }
+          },
+          "nativeCodeBundleMode": "both",
+          "polyfills": {
+            "asyncFunctions": false
+          },
+          "experimentalEraseModules": false,
+          "startSceneAssetBundle": false,
+          "bundleConfigs": [],
+          "inlineEnum": true,
+          "useBuiltinServer": false,
+          "md5CacheOptions": {
+            "excludes": [],
+            "includes": [],
+            "replaceOnly": [],
+            "handleTemplateMd5Link": true
+          },
+          "mainBundleIsRemote": false,
+          "mainBundleCompressionType": "merge_dep",
+          "useSplashScreen": true,
+          "bundleCommonChunk": false,
+          "packAutoAtlas": true,
+          "startScene": "880ed246-7fdd-4a27-b6be-99abc421cfa9",
+          "outputName": "bytedance-mini-game",
+          "taskName": "bytedance-mini-game",
+          "scenes": [
+            {
+              "url": "db://assets/login.scene",
+              "uuid": "880ed246-7fdd-4a27-b6be-99abc421cfa9"
+            }
+          ],
+          "wasmCompressionMode": false,
+          "packages": {},
+          "__version__": "1.3.9",
+          "logDest": "project://temp/builder/log/bytedance-mini-game2025-8-11 14-36.log"
+        },
+        "time": "2025-8-12 12:49:16",
         "dirty": false
       }
     }

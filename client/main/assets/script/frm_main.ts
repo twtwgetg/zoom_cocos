@@ -4,6 +4,7 @@ import { Main } from './main';
 import { frmbase } from './frmbase';
 import { LevelMgr } from './levelmgr';
 import { tools } from './tools';
+import { ItemType } from './item_tools';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -35,10 +36,12 @@ export class frm_main extends frmbase {
         if(!f){
             this.spr_bar.color=new Color(255,173,0,255);
             this.ice_node.active=false;
+            this.jishi=true;
         }
         else{
             this.spr_bar.color=new Color(0,214,255,255);
             this.ice_node.active=true;
+            this.jishi=false;
         }
     }
     protected onLoad(): void {
@@ -51,8 +54,8 @@ export class frm_main extends frmbase {
             this.lbl_guanka.string = "第 "+(x+1)+" 关";
             this.time_all = LevelMgr.getTimeAll(x);
             this.time_now = 0;
+            this.jishi=true;
             frm_main.isPause = false;
-
             return null;
         });
 
@@ -86,10 +89,16 @@ export class frm_main extends frmbase {
                 Main.DispEvent("event_brush");
             }
             else{
-                Main.DispEvent("event_tools",{tp:2,cb:()=>{
-                    tools.num_time--;
-                    that.brushTools();
-                    Main.DispEvent("event_resettime");    
+                Main.DispEvent("event_tools",{tp:ItemType.brush,autouse:()=>{
+                    if(tools.num_brush>0)
+                    {
+                        tools.num_brush--;
+                        that.brushTools();
+                        Main.DispEvent("event_brush");    
+                    }
+                    else{
+
+                    }
                 }});
             }
         }, this);
@@ -101,28 +110,39 @@ export class frm_main extends frmbase {
                 Main.DispEvent("event_tixing");
             }
             else{
-                Main.DispEvent("event_tools",{tp:1,cb:()=>{
-                    tools.num_time--;
-                    that.brushTools();
-                    Main.DispEvent("event_resettime");    
+                Main.DispEvent("event_tools",{tp:ItemType.remind,autouse:()=>{
+                    if(tools.num_Remind>0){
+                        tools.num_Remind--;
+                        that.brushTools();
+                        Main.DispEvent("event_tixing");    
+                    }
                 }});
             }
         }, this); 
         this.btn_time.node.on(Button.EventType.CLICK,()=>{
-            if(tools.num_time>0){
-                tools.num_time--;
-                this.brushTools();
-                Main.DispEvent("event_resettime");    
-            }
-            else{
-                console.log("no time");
-
-                Main.DispEvent("event_tools",{tp:0,cb:()=>{
+            // 
+            // if(frm_main.isPause){
+            //     wx.showToast({title:"时间冷却种，请稍后再试"});
+            // }
+            // else{
+                if(tools.num_time>0){
                     tools.num_time--;
-                    that.brushTools();
+                    this.brushTools();
                     Main.DispEvent("event_resettime");    
-                }});
-            }
+                }
+                else{
+                    console.log("no time");
+    
+                    Main.DispEvent("event_tools",{tp:ItemType.time,autouse:()=>{
+                        if(tools.num_time>0){
+                            tools.num_time--;
+                            that.brushTools();
+                            Main.DispEvent("event_resettime");    
+                        }
+                    }});
+                }
+            //}
+            
         },this);
 
         Main.RegistEvent("time_used",()=>{
@@ -140,16 +160,19 @@ export class frm_main extends frmbase {
     start() {
 
     }
-
+    jishi:boolean=false;
     update(deltaTime: number) {
+
         if(frm_main.isPause) 
             return;
-        this.time_now += deltaTime;
-    
-        this.progress_time.progress =1.0- this.time_now / this.time_all;
-    
+
+        if(!this.jishi) 
+            return;
+
+        this.time_now += deltaTime; 
+        this.progress_time.progress =1.0- this.time_now / this.time_all; 
         if(this.time_now >= this.time_all) {
-            frm_main.isPause = true;
+            this.jishi=false;
             Main.DispEvent("game_lose",this.level_playing);
         }
     }

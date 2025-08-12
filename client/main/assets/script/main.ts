@@ -15,8 +15,24 @@ export class Main extends Component {
     // 事件映射表
     private static eventMap: Map<string, IEventCallback[]> = new Map();
     protected onLoad(): void {
-        
+
+        const tt = window['tt'];
+        if (!tt) { 
+            console.log('当前环境非抖音小程序');
+            return;
+        }
+        console.log('当前环境是抖音小程序');
+        // 监听游戏显示（从后台切换回来）
+        tt.onShow((res) => {
+            console.log("启动参数：", res.query);
+            console.log("来源信息：", res.refererInfo);
+            console.log("场景值：", res.scene);
+            console.log("启动场景字段：", res.launch_from, ", ", res.location);
+          });
+       
     }
+
+    
     protected start(): void {
         Main.DispEvent("game_begin");
     }

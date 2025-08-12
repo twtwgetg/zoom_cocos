@@ -44,8 +44,7 @@ export class frm_pause extends frmbase {
             this.brushflag();
         },this);
         this.btn_musicenable.node.on(Button.EventType.CLICK, ()=>{
-            musicmgr.bMusicEnable = !musicmgr.bMusicEnable;
-            Main.DispEvent("event_music_change");
+            musicmgr.bMusicEnable = !musicmgr.bMusicEnable; 
             this.brushflag();
         },this);
     }

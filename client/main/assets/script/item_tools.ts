@@ -7,7 +7,15 @@ declare global {
         shareAppMessage?(options: WechatMiniprogram.ShareAppMessageToGroupOption): void;
     }
 }
-
+export enum ToolsType{ 
+    video = 0,
+    share = 1,  
+}
+export enum ItemType{
+    brush = 0,
+    time = 1,
+    remind = 2,  
+}
 @ccclass('item_tools')
 export class item_tools extends Component {
     @property(SpriteFrame)
@@ -27,7 +35,10 @@ export class item_tools extends Component {
     sprite_share: SpriteFrame = null!;
     @property(Sprite)
     image_icon_video: Sprite = null!;
-
+    @property(Label)
+    lbl_txt: Label = null!;
+    @property(Label)
+    lbl_num: Label = null!;
     wechatShare(callBack?:any) {
         this.initativeShare(callBack); // 主动分享 
     }
@@ -43,28 +54,20 @@ export class item_tools extends Component {
 
         console.log('开始分享'); // 分享成功后的回调
         wx.shareAppMessage({
-            title: '分享标题', // 分享的标题
+            title: '一起来连连看吧！', // 分享的标题
             path: '/pages/index/index?param=value', // 分享的路径，可携带参数
-            imageUrl: 'https://example.com/image.jpg', // 分享的图片
+            //imageUrl: 'https://example.com/image.jpg', // 分享的图片
             success(res) {
                     console.log('分享成功', res); // 分享成功后的回调
-                    wx.showToast({
-                    title: '分享成功',
-                    icon: 'success'
-                });
-                callBack && callBack(true);
+                    wx.showToast({title: '分享成功!',icon: 'success'});
+                    callBack(true);
             },
             fail(err) {
                     console.log('分享失败', err); // 分享失败后的回调
-                    wx.showToast({
-                    title: '分享失败',
-                    icon: 'none'
-                });
-                callBack && callBack(false);
-            }
-
-        });
-        callBack(true);
+                    wx.showToast({title: '分享失败',icon: 'none'});
+                    callBack(false);
+            } 
+        }); 
     }
 
     start() {
@@ -72,43 +75,48 @@ export class item_tools extends Component {
     }
     onClick() {
         console.log('onClick'+this.funtype);
-        if (this.funtype == 1) {
+        if (this.funtype == ToolsType.share) {
             this.wechatShare((x)=>{
-                if(x==true){
-                    if(this.itemtype==0){
+                if(x){
+                    console.log('分享成功,开始奖励'+this.itemtype);
+                    if(this.itemtype== ItemType.time ){
                         tools.num_time++;
                     }
-                    else if(this.itemtype==1){
+                    else if(this.itemtype==ItemType.remind){
                         tools.num_Remind++;
                     }
-                    else if(this.itemtype==2){
+                    else if(this.itemtype==ItemType.brush){
                         tools.num_brush++;
+                    } 
+                    else{
+                        console.error("itemtype error"+this.itemtype);
                     }
-                    //Main.DispEvent('update_tools');
-                    
                 }
                 else{
-                    console.log('分享失败');
+                    console.error('分享失败');
                 }
             });
         }
+        else if(this.funtype==ToolsType.video) {
+            Main.DispEvent("event_watchvideo");
+        }
         else{
-            //video
+            console.error('道具使用错误'+this.funtype);
         }
     }
-    itemtype: number = 0;
+    itemtype: ItemType = ItemType.remind;
     dt:any
-    setType(dt:any) {
+    setItemType(dt:any) {
         this.dt = dt;
         this.itemtype = dt.tp;
         switch (this.itemtype) {
-            case 0: 
-                this.image_icon.spriteFrame = this.sprite_time;
+            case ItemType.time: 
+                this.image_icon.spriteFrame = this.sprite_time; 
                 break;
-            case 1: 
+            case ItemType.remind: 
                 this.image_icon.spriteFrame = this.sprite_remind;
                 break;
-            case 2: 
+            case ItemType.brush: 
                 this.image_icon.spriteFrame = this.sprite_refrush;
                 break;
             default:
@@ -116,15 +124,19 @@ export class item_tools extends Component {
         }
     }
 
-    funtype: number = 0;
+    funtype: ToolsType =  ToolsType.share;
     setFunType(type: number) {
         this.funtype = type;
         switch (type) {
-            case 0:
+            case ToolsType.video:
                 this.image_icon_video.spriteFrame = this.sprite_video;
+                this.lbl_txt.string="免费"
+                this.lbl_num.string="×2";
                 break;
-            case 1:
+            case ToolsType.share:
                 this.image_icon_video.spriteFrame = this.sprite_share;
+                this.lbl_txt.string="分享"
+                this.lbl_num.string="×1";
                 break;
             default:
                 break;

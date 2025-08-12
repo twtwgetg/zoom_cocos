@@ -1,0 +1,19 @@
+{
+  "__version__": "1.0.0",
+  "builder": {
+    "common": {
+      "buildPath": "project://build",
+      "outputName": "fb-instant-games",
+      "mainBundleCompressionType": "merge_dep",
+      "platform": "fb-instant-games"
+    },
+    "taskOptionsMap": {
+      "1754882654287": {
+        "orientation": "portrait",
+        "embedWebDebugger": false,
+        "__version__": "1.0.0"
+      }
+    },
+    "__version__": "1.3.9"
+  }
+}

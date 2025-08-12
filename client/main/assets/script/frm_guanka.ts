@@ -3,8 +3,9 @@ import { frmbase } from './frmbase';
 import { Main } from './main';
 import { LevelMgr } from './levelmgr';
 import { item_guank } from './item_guank';
+import { EntrySceneChecker } from './EntrySceneChecker';
 const { ccclass, property } = _decorator;
-
+//declare const tt: any;
 @ccclass('frm_guanka')
 export class frm_guanka extends frmbase {
     
@@ -23,6 +24,10 @@ export class frm_guanka extends frmbase {
     public trans_anis: Node = null!;
     @property(Button)
     public btn_tiaozhan: Button = null!;
+    @property(Button)
+    public btn_libao: Button = null!;
+    @property(Button)
+    public btn_lingqu: Button = null!;
     start() {
         this.btn_back.node.on(Button.EventType.CLICK, ()=>{
             Main.DispEvent('game_begin');
@@ -66,8 +71,15 @@ export class frm_guanka extends frmbase {
         }
         this.trans_guanka.setPosition(0, 0); 
     }
+    protected OnShow(): void {
+        super.OnShow();
+        this.btn_libao.node.active = !EntrySceneChecker.isFromSidebar;
+        this.btn_lingqu.node.active = EntrySceneChecker.isFromSidebar;
+    }
     protected onLoad(): void {
         super.onLoad();
+        this.btn_libao.node.active = false;
+        this.btn_lingqu.node.active = false; 
         Main.RegistEvent("event_begin",(x)=>{
             this.show();
             return null;
@@ -80,6 +92,23 @@ export class frm_guanka extends frmbase {
             this.hide();
             return null;
         });
+        Main.RegistEvent("event_lingqu",(x)=>{ 
+            this.btn_lingqu.node.active = false;
+            this.btn_libao.node.active = false;
+            return null;
+        });
+        Main.RegistEvent("event_enterbrush",(x)=>{ 
+            this.btn_libao.node.active = !EntrySceneChecker.isFromSidebar;
+            this.btn_lingqu.node.active = EntrySceneChecker.isFromSidebar;
+        });
+        this.btn_libao.node.on(Button.EventType.CLICK, ()=>{
+            
+            Main.DispEvent('event_cebianlan',false);
+        }, this);
+        this.btn_lingqu.node.on(Button.EventType.CLICK, ()=>{
+            
+            Main.DispEvent('event_cebianlan',true);
+        }, this);
     }
 
     update(deltaTime: number) {

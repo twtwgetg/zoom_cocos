@@ -63,15 +63,22 @@ export class gridcreator extends Component {
             }
         });
         Main.RegistEvent('event_resettime',(x)=>{
-            frm_main.isPause = true;
+            
             Main.DispEvent('event_fruszon',true);
-            setTimeout(()=>{
-                frm_main.isPause = false;
+            // Clear existing timeout if any
+            if (this.resetTimeoutId) {
+                clearTimeout(this.resetTimeoutId);
+            }
+            
+            // Set new timeout
+            this.resetTimeoutId = setTimeout(()=>{
+                
                 Main.DispEvent('event_fruszon',false);
+                this.resetTimeoutId = null;
             },15000);
         });
     }
-
+    resetTimeoutId: any;
     checkLeft() {
         let hasconnect = false;
         let trytimes = 10;
