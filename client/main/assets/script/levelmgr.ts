@@ -1,6 +1,8 @@
 // levelmgr.ts
 import { sys } from 'cc';
 import { PlayerPrefb } from './PlayerPrefb';
+import { Main } from './main';
+import { tools } from './tools';
 export class LevelMgr {
     private static _maxlevel: number = 50;
     private static _maxcount: number = 30;
@@ -24,7 +26,15 @@ export class LevelMgr {
      */
     public static init(): void {
         LevelMgr.level = 0;
+        
+        let oldremind = tools.num_Remind;
+        let oldrefrush = tools.num_brush;
+        let oldtime = tools.num_time;
         PlayerPrefb.Init(); // 初始化本地存储
+        tools.num_Remind = oldremind;
+        tools.num_brush = oldrefrush;
+        tools.num_time = oldtime;
+        Main.DispEvent("event_begin");
     }
 
     /**

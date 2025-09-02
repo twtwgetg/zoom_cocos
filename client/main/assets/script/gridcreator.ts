@@ -62,21 +62,26 @@ export class gridcreator extends Component {
                 Main.DispEvent('game_win',LevelMgr.level);
             }
         });
+
+        Main.RegistEvent('event_play', () => { 
+            //重新开始，那么删除之前的定时器，防止重复触发
+            this.initFruzon();
+        }); 
         Main.RegistEvent('event_resettime',(x)=>{
-            
+                        // Clear existing timeout if any
+            this.initFruzon();
             Main.DispEvent('event_fruszon',true);
-            // Clear existing timeout if any
-            if (this.resetTimeoutId) {
-                clearTimeout(this.resetTimeoutId);
-            }
-            
-            // Set new timeout
             this.resetTimeoutId = setTimeout(()=>{
-                
                 Main.DispEvent('event_fruszon',false);
                 this.resetTimeoutId = null;
             },15000);
         });
+    }
+    initFruzon(){
+        if (this.resetTimeoutId) {
+            clearTimeout(this.resetTimeoutId);
+            Main.DispEvent('event_fruszon',false);
+        }
     }
     resetTimeoutId: any;
     checkLeft() {

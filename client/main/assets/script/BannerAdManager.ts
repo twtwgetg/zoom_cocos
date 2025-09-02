@@ -1,10 +1,10 @@
 import { _decorator, Component, Node, UITransform, view } from 'cc';
 import { tools } from './tools';
-import { Main } from './main';
+import { Main } from './main'; 
 const { ccclass, property } = _decorator;
 
 // 声明tt全局对象（若已配置类型文件可省略）
-declare const tt: any;
+declare const wx: any;
 
 @ccclass('BannerAdManager')
 export class BannerAdManager extends Component {
@@ -35,14 +35,14 @@ export class BannerAdManager extends Component {
      * 初始化Banner广告
      */
     private initBannerAd() {
-        if (typeof tt === 'undefined') {
+        if (typeof _wx === 'undefined') {
             console.log("非抖音环境，不加载Banner广告");
             return;
         }
         
 
         // 创建广告实例时先不指定位置，后续动态计算
-        this.bannerAd = tt.createBannerAd({
+        this.bannerAd = wx.createBannerAd({
             adUnitId: this.adUnitId,
         });
 
@@ -63,7 +63,7 @@ export class BannerAdManager extends Component {
     }
     get targetNode()
     {
-        return this.node;
+        return this.node; 
     }
     /**
      * 适配目标Node的位置和尺寸

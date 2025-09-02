@@ -3,7 +3,7 @@
   "builder": {
     "common": {
       "buildPath": "project://build",
-      "outputName": "bytedance-mini-game",
+      "outputName": "bytedance-mini-game-001",
       "mainBundleCompressionType": "merge_dep",
       "platform": "bytedance-mini-game"
     },

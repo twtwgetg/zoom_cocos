@@ -8,9 +8,9 @@
       "asyncFunctions": true
     },
     "buildPath": "project://build",
-    "outputName": "bytedance-mini-game",
+    "outputName": "web-mobile",
     "mainBundleCompressionType": "merge_dep",
-    "platform": "bytedance-mini-game",
+    "platform": "web-mobile",
     "mainBundleIsRemote": false,
     "mangleProperties": true,
     "debug": false
@@ -23,8 +23,8 @@
         "progress": 1,
         "state": "success",
         "stage": "build",
-        "message": "2025-8-11 09:20:16 build success in 16 s!",
-        "detailMessage": "// ---- build task wechatgame：onAfterBuild ----\r",
+        "message": "2025-9-2 12:08:09 build success in 22 s!",
+        "detailMessage": "// ---- build task 给所有的资源加上 MD5 后缀 ----\r",
         "options": {
           "name": "main",
           "server": "",
@@ -81,74 +81,7 @@
           "__version__": "1.3.9",
           "logDest": "project://temp/builder/log/wechatgame2025-8-9 20-12.log"
         },
-        "time": "2025-8-11 09:19:59",
-        "dirty": false
-      },
-      "1754882654287": {
-        "type": "build",
-        "id": "1754882654287",
-        "progress": 1,
-        "state": "success",
-        "stage": "build",
-        "message": "2025-8-11 11:26:09 build success in 1 min 55 s!",
-        "detailMessage": "// ---- build task fb-instant-games：onAfterBuild ----\r",
-        "options": {
-          "name": "main",
-          "server": "",
-          "engineModulesConfigKey": "defaultConfig",
-          "platform": "fb-instant-games",
-          "buildPath": "project://build",
-          "debug": false,
-          "buildMode": "normal",
-          "mangleProperties": false,
-          "md5Cache": false,
-          "skipCompressTexture": false,
-          "sourceMaps": false,
-          "overwriteProjectSettings": {
-            "macroConfig": {
-              "cleanupImageCache": "inherit-project-setting"
-            },
-            "includeModules": {
-              "physics": "inherit-project-setting",
-              "physics-2d": "inherit-project-setting",
-              "gfx-webgl2": "off"
-            }
-          },
-          "nativeCodeBundleMode": "asmjs",
-          "polyfills": {
-            "asyncFunctions": false
-          },
-          "experimentalEraseModules": false,
-          "startSceneAssetBundle": false,
-          "bundleConfigs": [],
-          "inlineEnum": true,
-          "useBuiltinServer": false,
-          "md5CacheOptions": {
-            "excludes": [],
-            "includes": [],
-            "replaceOnly": [],
-            "handleTemplateMd5Link": true
-          },
-          "mainBundleIsRemote": false,
-          "mainBundleCompressionType": "merge_dep",
-          "useSplashScreen": true,
-          "bundleCommonChunk": false,
-          "packAutoAtlas": true,
-          "startScene": "880ed246-7fdd-4a27-b6be-99abc421cfa9",
-          "outputName": "fb-instant-games",
-          "taskName": "fb-instant-games",
-          "scenes": [
-            {
-              "url": "db://assets/login.scene",
-              "uuid": "880ed246-7fdd-4a27-b6be-99abc421cfa9"
-            }
-          ],
-          "wasmCompressionMode": false,
-          "packages": {},
-          "__version__": "1.3.9",
-          "logDest": "project://temp/builder/log/fb-instant-games2025-8-11 11-24.log"
-        },
-        "time": "2025-8-11 11:24:14",
+        "time": "2025-9-2 12:07:47",
         "dirty": false
       },
       "1754894211767": {
@@ -216,6 +149,207 @@
           "logDest": "project://temp/builder/log/bytedance-mini-game2025-8-11 14-36.log"
         },
         "time": "2025-8-12 12:49:16",
+        "dirty": false
+      },
+      "1754981691481": {
+        "type": "build",
+        "id": "1754981691481",
+        "progress": 1,
+        "state": "success",
+        "stage": "build",
+        "message": "2025-8-12 14:56:58 build success in 2 min 6 s!",
+        "detailMessage": "builder:build-project-total (126455ms)\r",
+        "options": {
+          "name": "main",
+          "server": "",
+          "engineModulesConfigKey": "defaultConfig",
+          "platform": "fb-instant-games",
+          "buildPath": "project://build",
+          "debug": false,
+          "buildMode": "normal",
+          "mangleProperties": false,
+          "md5Cache": false,
+          "skipCompressTexture": false,
+          "sourceMaps": false,
+          "overwriteProjectSettings": {
+            "macroConfig": {
+              "cleanupImageCache": "inherit-project-setting"
+            },
+            "includeModules": {
+              "physics": "inherit-project-setting",
+              "physics-2d": "inherit-project-setting",
+              "gfx-webgl2": "off"
+            }
+          },
+          "nativeCodeBundleMode": "asmjs",
+          "polyfills": {
+            "asyncFunctions": false
+          },
+          "experimentalEraseModules": false,
+          "startSceneAssetBundle": false,
+          "bundleConfigs": [],
+          "inlineEnum": true,
+          "useBuiltinServer": false,
+          "md5CacheOptions": {
+            "excludes": [],
+            "includes": [],
+            "replaceOnly": [],
+            "handleTemplateMd5Link": true
+          },
+          "mainBundleIsRemote": false,
+          "mainBundleCompressionType": "merge_dep",
+          "useSplashScreen": true,
+          "bundleCommonChunk": false,
+          "packAutoAtlas": true,
+          "startScene": "880ed246-7fdd-4a27-b6be-99abc421cfa9",
+          "outputName": "fb-instant-games",
+          "taskName": "fb-instant-games",
+          "scenes": [
+            {
+              "url": "db://assets/login.scene",
+              "uuid": "880ed246-7fdd-4a27-b6be-99abc421cfa9"
+            }
+          ],
+          "wasmCompressionMode": false,
+          "packages": {},
+          "__version__": "1.3.9",
+          "logDest": "project://temp/builder/log/fb-instant-games2025-8-12 14-54.log"
+        },
+        "time": "2025-8-12 14:54:51",
+        "dirty": false
+      },
+      "1755129832146": {
+        "type": "build",
+        "id": "1755129832146",
+        "progress": 1,
+        "state": "success",
+        "stage": "build",
+        "message": "2025-8-14 09:20:24 build success in 1 min 55 s!",
+        "detailMessage": "Asset DB is resume!\r",
+        "options": {
+          "name": "main",
+          "server": "",
+          "engineModulesConfigKey": "defaultConfig",
+          "platform": "web-desktop",
+          "buildPath": "project://build",
+          "debug": false,
+          "buildMode": "normal",
+          "mangleProperties": false,
+          "md5Cache": false,
+          "skipCompressTexture": false,
+          "sourceMaps": false,
+          "overwriteProjectSettings": {
+            "includeModules": {
+              "gfx-webgl2": "on",
+              "physics": "inherit-project-setting",
+              "physics-2d": "inherit-project-setting"
+            },
+            "macroConfig": {
+              "cleanupImageCache": "inherit-project-setting"
+            }
+          },
+          "nativeCodeBundleMode": "both",
+          "polyfills": {
+            "asyncFunctions": true
+          },
+          "experimentalEraseModules": false,
+          "startSceneAssetBundle": false,
+          "bundleConfigs": [],
+          "inlineEnum": true,
+          "useBuiltinServer": false,
+          "md5CacheOptions": {
+            "excludes": [],
+            "includes": [],
+            "replaceOnly": [],
+            "handleTemplateMd5Link": true
+          },
+          "mainBundleIsRemote": false,
+          "mainBundleCompressionType": "merge_dep",
+          "useSplashScreen": true,
+          "bundleCommonChunk": false,
+          "packAutoAtlas": true,
+          "startScene": "880ed246-7fdd-4a27-b6be-99abc421cfa9",
+          "outputName": "web-desktop",
+          "taskName": "web-desktop",
+          "scenes": [
+            {
+              "url": "db://assets/login.scene",
+              "uuid": "880ed246-7fdd-4a27-b6be-99abc421cfa9"
+            }
+          ],
+          "wasmCompressionMode": false,
+          "packages": {},
+          "__version__": "1.3.9",
+          "logDest": "project://temp/builder/log/web-desktop2025-8-14 08-03.log"
+        },
+        "time": "2025-8-14 09:18:28",
+        "dirty": false
+      },
+      "1755130281992": {
+        "type": "build",
+        "id": "1755130281992",
+        "progress": 1,
+        "state": "success",
+        "stage": "build",
+        "message": "2025-8-14 08:13:16 build success in 1 min 54 s!",
+        "detailMessage": "// ---- build task adsense-h5g-plugin：onAfterBuild ----\r",
+        "options": {
+          "name": "main",
+          "server": "",
+          "engineModulesConfigKey": "defaultConfig",
+          "platform": "web-mobile",
+          "buildPath": "project://build",
+          "debug": false,
+          "buildMode": "normal",
+          "mangleProperties": false,
+          "md5Cache": false,
+          "skipCompressTexture": false,
+          "sourceMaps": false,
+          "overwriteProjectSettings": {
+            "includeModules": {
+              "gfx-webgl2": "on",
+              "physics": "inherit-project-setting",
+              "physics-2d": "inherit-project-setting"
+            },
+            "macroConfig": {
+              "cleanupImageCache": "inherit-project-setting"
+            }
+          },
+          "nativeCodeBundleMode": "both",
+          "polyfills": {
+            "asyncFunctions": true
+          },
+          "experimentalEraseModules": false,
+          "startSceneAssetBundle": false,
+          "bundleConfigs": [],
+          "inlineEnum": true,
+          "useBuiltinServer": false,
+          "md5CacheOptions": {
+            "excludes": [],
+            "includes": [],
+            "replaceOnly": [],
+            "handleTemplateMd5Link": true
+          },
+          "mainBundleIsRemote": false,
+          "mainBundleCompressionType": "merge_dep",
+          "useSplashScreen": true,
+          "bundleCommonChunk": false,
+          "packAutoAtlas": true,
+          "startScene": "880ed246-7fdd-4a27-b6be-99abc421cfa9",
+          "outputName": "web-mobile",
+          "taskName": "web-mobile",
+          "scenes": [
+            {
+              "url": "db://assets/login.scene",
+              "uuid": "880ed246-7fdd-4a27-b6be-99abc421cfa9"
+            }
+          ],
+          "wasmCompressionMode": false,
+          "packages": {},
+          "__version__": "1.3.9",
+          "logDest": "project://temp/builder/log/web-mobile2025-8-14 08-11.log"
+        },
+        "time": "2025-8-14 08:11:21",
         "dirty": false
       }
     }

@@ -3,15 +3,19 @@ import { Main } from './main';
 const { ccclass } = _decorator;
 
 // 声明tt类型（若已配置类型文件可省略）
-declare const tt: any;
+//declare const tt: any;
 
 @ccclass('EntrySceneChecker')
 export class EntrySceneChecker extends Component {
     onLoad() {
+        // if (!tt) { 
+        //     console.log('当前环境非抖音小程序');
+        //     return;
+        // }
         // 监听游戏显示事件（包括从侧边栏进入）
-        tt.onShow((res: any) => {
-            this.checkEntryScene(res.scene);
-        });
+        // tt.onShow((res: any) => {
+        //     this.checkEntryScene(res.scene);
+        // });
     }
 
     /**

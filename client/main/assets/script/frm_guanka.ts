@@ -1,6 +1,6 @@
 import { _decorator, Button, Component, instantiate, Label, Node, Prefab, Sprite, UITransform } from 'cc';
 import { frmbase } from './frmbase';
-import { Main } from './main';
+import { Main,platform } from './main';
 import { LevelMgr } from './levelmgr';
 import { item_guank } from './item_guank';
 import { EntrySceneChecker } from './EntrySceneChecker';
@@ -29,6 +29,11 @@ export class frm_guanka extends frmbase {
     @property(Button)
     public btn_lingqu: Button = null!;
     start() {
+        if(Main.plat == platform.WECHAT){
+            this.btn_libao.node.active = false;
+            this.btn_lingqu.node.active = false;
+        }
+
         this.btn_back.node.on(Button.EventType.CLICK, ()=>{
             Main.DispEvent('game_begin');
         }, this);
@@ -73,9 +78,15 @@ export class frm_guanka extends frmbase {
     }
     protected OnShow(): void {
         super.OnShow();
-        this.btn_libao.node.active = !EntrySceneChecker.isFromSidebar;
-        this.btn_lingqu.node.active = EntrySceneChecker.isFromSidebar;
+        this.brushlibao();
     }
+    brushlibao(): void { 
+        if(Main.plat == platform.BYTE) {
+            this.btn_libao.node.active = !EntrySceneChecker.isFromSidebar;
+            this.btn_lingqu.node.active = EntrySceneChecker.isFromSidebar;
+        } 
+    }
+
     protected onLoad(): void {
         super.onLoad();
         this.btn_libao.node.active = false;
@@ -93,13 +104,14 @@ export class frm_guanka extends frmbase {
             return null;
         });
         Main.RegistEvent("event_lingqu",(x)=>{ 
-            this.btn_lingqu.node.active = false;
-            this.btn_libao.node.active = false;
+            if(Main.plat==platform.BYTE){ 
+                this.btn_lingqu.node.active = false;
+                this.btn_libao.node.active = false;
+            }
             return null;
         });
         Main.RegistEvent("event_enterbrush",(x)=>{ 
-            this.btn_libao.node.active = !EntrySceneChecker.isFromSidebar;
-            this.btn_lingqu.node.active = EntrySceneChecker.isFromSidebar;
+            this.brushlibao();
         });
         this.btn_libao.node.on(Button.EventType.CLICK, ()=>{
             

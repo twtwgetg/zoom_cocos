@@ -6,12 +6,23 @@ const { ccclass, property } = _decorator;
 interface IEventCallback {
     (data?: any): any;
 }
-
+export enum platform {
+    WECHAT = 'wechat',
+    QQ = 'qq',
+    TENCENT = 'tencent',
+    BAIDU = 'baidu',
+    ALIPAY = 'alipay',
+    BYTE = 'byte',
+    VIVO = 'vivo',
+    OPPO = 'oppo',
+    HUAWEI = 'huawei',
+    XIAOMI = 'xiaomi',
+}
 @ccclass('Main')
 export class Main extends Component {
     
     // 单例实例
- 
+    static plat: platform = platform.WECHAT; // 当前平台
     // 事件映射表
     private static eventMap: Map<string, IEventCallback[]> = new Map();
     protected onLoad(): void {
@@ -23,12 +34,12 @@ export class Main extends Component {
         }
         console.log('当前环境是抖音小程序');
         // 监听游戏显示（从后台切换回来）
-        tt.onShow((res) => {
-            console.log("启动参数：", res.query);
-            console.log("来源信息：", res.refererInfo);
-            console.log("场景值：", res.scene);
-            console.log("启动场景字段：", res.launch_from, ", ", res.location);
-          });
+        // tt.onShow((res) => {
+        //     console.log("启动参数：", res.query);
+        //     console.log("来源信息：", res.refererInfo);
+        //     console.log("场景值：", res.scene);
+        //     console.log("启动场景字段：", res.launch_from, ", ", res.location);
+        //   });
        
     }
 

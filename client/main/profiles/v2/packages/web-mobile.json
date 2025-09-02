@@ -6,17 +6,15 @@
         "asyncFunctions": true
       },
       "buildPath": "project://build",
-      "outputName": "web-desktop",
+      "outputName": "web-mobile",
       "mainBundleCompressionType": "merge_dep",
-      "platform": "web-desktop"
+      "platform": "web-mobile"
     },
     "taskOptionsMap": {
-      "1755129832146": {
+      "1755130281992": {
         "useWebGPU": false,
-        "resolution": {
-          "designWidth": 1280,
-          "designHeight": 960
-        },
+        "orientation": "auto",
+        "embedWebDebugger": false,
         "__version__": "1.0.1"
       }
     },

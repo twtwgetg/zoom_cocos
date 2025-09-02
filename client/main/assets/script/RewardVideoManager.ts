@@ -4,7 +4,7 @@ const { ccclass, property } = _decorator;
 
 // 声明tt全局对象
 declare const tt: any;
-
+declare const wx: any;
 @ccclass('RewardVideoManager')
 export class RewardVideoManager extends Component {
     @property({ tooltip: "抖音激励视频广告位ID" })
@@ -42,13 +42,13 @@ export class RewardVideoManager extends Component {
      * 初始化激励视频广告
      */
     private initRewardAd() {
-        if (typeof tt === 'undefined') {
-            this.updateStatus("非抖音环境，无法加载广告");
+        if (typeof wx === 'undefined') {
+            this.updateStatus("非正式环境，无法加载广告");
             return;
         }
 
         // 创建激励视频实例
-        this.rewardAd = tt.createRewardedVideoAd({
+        this.rewardAd = wx.createRewardedVideoAd({
             adUnitId: this.adUnitId
         });
 
