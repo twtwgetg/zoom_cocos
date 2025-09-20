@@ -22,7 +22,7 @@ export enum platform {
 export class Main extends Component {
     
     // 单例实例
-    static plat: platform = platform.WECHAT; // 当前平台
+    static plat: platform = platform.BYTE; // 当前平台
     // 事件映射表
     private static eventMap: Map<string, IEventCallback[]> = new Map();
     protected onLoad(): void {

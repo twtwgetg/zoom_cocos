@@ -4,7 +4,7 @@ import { Main, platform } from './main';
 import { EntrySceneChecker } from './EntrySceneChecker';
 import { tools } from './tools';
 const { ccclass, property } = _decorator;
-//declare const tt: any;
+declare const tt: any;
 @ccclass('frm_cebianlan')
 export class frm_cebianlan extends frmbase {
     @property(Button)
@@ -17,11 +17,11 @@ export class frm_cebianlan extends frmbase {
         this.btn_cebianlan.node.on(Button.EventType.CLICK, () => {
             this.hide(); 
             if(Main.plat == platform.BYTE){
-                // tt.navigateToScene({
-                //     scene: 'sidebar',
-                //     fail: console.log,
-                //     success: console.log
-                // })     
+                tt.navigateToScene({
+                    scene: 'sidebar',
+                    fail: console.log,
+                    success: console.log
+                })     
             }
         });
         this.btn_lingqu.node.on(Button.EventType.CLICK, () => {
