@@ -12,7 +12,8 @@ export class frmbase extends Component {
     start() {
         // Start 方法保持不变
     }
-
+   
+    
     // Update is called once per frame
     update(deltaTime: number): void {
         // Update 方法保持不变

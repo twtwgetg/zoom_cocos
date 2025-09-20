@@ -49,13 +49,18 @@ export class frm_main extends frmbase {
         let that =this;
         Main.RegistEvent("event_play",(x)=>{ 
             this.show();
-            this.gridcreator.Create(x);
+            this.scheduleOnce(() => {
+                this.gridcreator.Create(x);
+                this.time_all = LevelMgr.getTimeAll(x);
+                this.time_now = 0;
+                this.jishi=true;
+                frm_main.isPause = false;
+                // 执行你的拦截逻辑
+            }, 0);
+ 
             this.level_playing = x;
             this.lbl_guanka.string = "第 "+(x+1)+" 关";
-            this.time_all = LevelMgr.getTimeAll(x);
-            this.time_now = 0;
-            this.jishi=true;
-            frm_main.isPause = false;
+
             return null;
         });
 

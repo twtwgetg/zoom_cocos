@@ -7,5 +7,5 @@ pathnew = "c:/Users/Administrator/zoon/sprite/"
 for file in os.listdir(path):
     if file.endswith('.png'):
         img = Image.open(path + file)
-        img = img.resize((64, 64))
+        img = img.resize((128, 128))
         img.save(pathnew + file)

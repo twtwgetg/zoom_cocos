@@ -42,6 +42,16 @@ export class gridcreator extends Component {
                 }
             }
         });
+
+        Main.RegistEvent('game_lose', (x)=>{
+            this.clear();
+            return null;
+        })
+        Main.RegistEvent('game_win', (x)=>{
+            this.clear();
+            return null;
+        })
+
         Main.RegistEvent('event_brush', (x)=>{
             this.brushkind();
             return null;
@@ -115,6 +125,10 @@ export class gridcreator extends Component {
         // 假设Main.DispEvent是一个全局事件分发函数
         return Main.DispEvent('EVENT_GETPLSPRITES');// (director.emit('EVENT_GETRES') as unknown) as Sprite[];
     } 
+
+    clear(){
+        this.node.removeAllChildren();
+    }
     Create(level_playing: number) {
         this.level_cur = level_playing;
 
@@ -126,7 +140,7 @@ export class gridcreator extends Component {
         this.hei = LevelMgr.getHei(level_playing);
 
         // 清空节点
-        this.node.removeAllChildren();
+        this.clear();
 
         // 初始化地图
         gridcreator.map = [];
