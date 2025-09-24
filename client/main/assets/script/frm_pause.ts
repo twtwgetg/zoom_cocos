@@ -24,7 +24,18 @@ export class frm_pause extends frmbase {
     start() {
          this.btn_init.node.on(Button.EventType.CLICK, () =>
         {
-            LevelMgr.init();
+            Main.DispEvent("event_msg", {msg:"确定要初始化吗？,之前的游戏等级将被清空",cb:(x)=>{
+                if(x)
+                {
+                    LevelMgr.init(); 
+                    Main.DispEvent("event_inited");
+                    Main.DispEvent("event_msg_top",{msg:"初始化成功"});
+                }
+                else{
+                    Main.DispEvent("event_msg_top",{msg:"取消初始化"});
+                }
+            }});
+            
         }, this);
         this.btn_resume.node.on(Button.EventType.CLICK, () =>
         {

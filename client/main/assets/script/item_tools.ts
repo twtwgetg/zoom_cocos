@@ -90,7 +90,8 @@ export class item_tools extends Component {
                     } 
                     else{
                         console.error("itemtype error"+this.itemtype);
-                    }
+                    } 
+                    Main.DispEvent("update_tools");
                 }
                 else{
                     console.error('分享失败');

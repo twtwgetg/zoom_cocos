@@ -81,6 +81,7 @@ export class frm_tools extends frmbase {
             this.hide();    // 激励视频播放完毕，关闭道具界面
             return null;
         });
+
     }
     dt:any;
     setItemType(dt) {

@@ -35,7 +35,7 @@ export class BannerAdManager extends Component {
      * 初始化Banner广告
      */
     private initBannerAd() {
-        if (typeof _wx === 'undefined') {
+        if (typeof wx === 'undefined') {
             console.log("非抖音环境，不加载Banner广告");
             return;
         }

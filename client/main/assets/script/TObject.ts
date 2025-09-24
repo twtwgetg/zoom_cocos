@@ -130,6 +130,8 @@ export class TObject extends Component {
     
         // 等待到下一帧确保节点被销毁
         await new Promise(resolve => setTimeout(resolve, 0));
+
+        
         Main.DispEvent('event_zhengli'); 
     }
     /**

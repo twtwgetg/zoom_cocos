@@ -23,6 +23,7 @@ export class gridcreator extends Component {
     private level_cur: number = 0;
     private pl: Sprite[] = [];
 
+    private gameOver: boolean = false; // 游戏结束标志
     onLoad() {
         // 注册事件
         this.registEvents();
@@ -45,10 +46,12 @@ export class gridcreator extends Component {
 
         Main.RegistEvent('game_lose', (x)=>{
             this.clear();
+            this.gameOver = true;
             return null;
         })
         Main.RegistEvent('game_win', (x)=>{
             this.clear();
+            this.gameOver = true;
             return null;
         })
 
@@ -58,6 +61,11 @@ export class gridcreator extends Component {
         });
         let that =this;
         Main.RegistEvent('event_zhengli', async ()=>{
+
+            //如果游戏结束了，那么就不执行
+            if(this.gameOver) 
+                return null;
+
              // 整理卡片
             that.zhengli();
             that.checkLeft();
@@ -86,6 +94,9 @@ export class gridcreator extends Component {
                 this.resetTimeoutId = null;
             },15000);
         });
+        Main.RegistEvent('event_isfruszon', () => { 
+            return this.resetTimeoutId !== null;
+        });
     }
     initFruzon(){
         if (this.resetTimeoutId) {
@@ -93,7 +104,7 @@ export class gridcreator extends Component {
             Main.DispEvent('event_fruszon',false);
         }
     }
-    resetTimeoutId: any;
+    resetTimeoutId: any=null;
     checkLeft() {
         let hasconnect = false;
         let trytimes = 10;
@@ -130,6 +141,7 @@ export class gridcreator extends Component {
         this.node.removeAllChildren();
     }
     Create(level_playing: number) {
+        this.gameOver = false;
         this.level_cur = level_playing;
 
         // 清空TObject（需要根据实际实现调整）

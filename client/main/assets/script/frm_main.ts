@@ -13,6 +13,7 @@ export class frm_main extends frmbase {
     public gridcreator: gridcreator = null!;
     @property(Button)
     btn_refrush: Button = null!;
+
     @property(Button)
     btn_remind: Button = null!;
     @property(Button)
@@ -80,6 +81,7 @@ export class frm_main extends frmbase {
             this.hide();
             return null;
         });
+
         this.btn_pause.node.on(Button.EventType.CLICK, () =>
         {
             
@@ -91,19 +93,20 @@ export class frm_main extends frmbase {
             {
                 tools.num_brush--;
                 this.brushTools();
+                Main.DispEvent("event_msg_top",{msg:"使用刷新道具"});
                 Main.DispEvent("event_brush");
             }
             else{
                 Main.DispEvent("event_tools",{tp:ItemType.brush,autouse:()=>{
-                    if(tools.num_brush>0)
-                    {
-                        tools.num_brush--;
+                    // if(tools.num_brush>0)
+                    // {
+                    //     tools.num_brush--;
                         that.brushTools();
-                        Main.DispEvent("event_brush");    
-                    }
-                    else{
+                    //     Main.DispEvent("event_brush");    
+                    // }
+                    // else{
 
-                    }
+                    // }
                 }});
             }
         }, this);
@@ -112,41 +115,43 @@ export class frm_main extends frmbase {
             if(tools.num_Remind>0){
                 tools.num_Remind--;
                 this.brushTools();
+                Main.DispEvent("event_msg_top",{msg:"使用提醒道具..."});
                 Main.DispEvent("event_tixing");
             }
             else{
                 Main.DispEvent("event_tools",{tp:ItemType.remind,autouse:()=>{
-                    if(tools.num_Remind>0){
-                        tools.num_Remind--;
+                    // if(tools.num_Remind>0){
+                    //     tools.num_Remind--;
                         that.brushTools();
-                        Main.DispEvent("event_tixing");    
-                    }
+                    //     Main.DispEvent("event_tixing");    
+                    // }
                 }});
             }
         }, this); 
         this.btn_time.node.on(Button.EventType.CLICK,()=>{
             // 
-            // if(frm_main.isPause){
-            //     wx.showToast({title:"时间冷却种，请稍后再试"});
-            // }
-            // else{
+            if(Main.DispEvent("event_isfruszon")){
+                Main.DispEvent("event_msg_top",{msg:"时间冷却中..."});
+            }
+            else{
                 if(tools.num_time>0){
                     tools.num_time--;
                     this.brushTools();
-                    Main.DispEvent("event_resettime");    
+                    Main.DispEvent("event_resettime");     
+                    Main.DispEvent("event_msg_top",{msg:"使用时间道具..."});
                 }
                 else{
                     console.log("no time");
     
                     Main.DispEvent("event_tools",{tp:ItemType.time,autouse:()=>{
-                        if(tools.num_time>0){
-                            tools.num_time--;
-                            that.brushTools();
-                            Main.DispEvent("event_resettime");    
-                        }
+                        // if(tools.num_time>0){
+                        //     tools.num_time--;
+                          that.brushTools();
+                        //     Main.DispEvent("event_resettime");    
+                        // }
                     }});
                 }
-            //}
+            }
             
         },this);
 

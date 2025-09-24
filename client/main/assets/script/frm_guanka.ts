@@ -14,6 +14,8 @@ export class frm_guanka extends frmbase {
     public trans_guanka: Node = null!;
     @property(Prefab)
     public prefab_guanka1: Prefab = null!;
+    @property(Button)
+    btn_addtodesktop: Button = null!;
     @property(Prefab)
     public prefab_sprite: Prefab = null!;
     @property(Button)
@@ -33,7 +35,10 @@ export class frm_guanka extends frmbase {
             this.btn_libao.node.active = false;
             this.btn_lingqu.node.active = false;
         }
-
+        this.btn_addtodesktop.node.on(Button.EventType.CLICK, () =>
+        {
+            Main.DispEvent("event_addtodesktop");
+        }, this);
         this.btn_back.node.on(Button.EventType.CLICK, ()=>{
             Main.DispEvent('game_begin');
         }, this);
@@ -93,6 +98,10 @@ export class frm_guanka extends frmbase {
         this.btn_lingqu.node.active = false; 
         Main.RegistEvent("event_begin",(x)=>{
             this.show();
+            return null;
+        });
+        Main.RegistEvent("event_inited",(x)=>{ 
+            this.brushGuanKa();
             return null;
         });
         Main.RegistEvent("game_begin",(x)=>{
