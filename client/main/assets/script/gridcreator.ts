@@ -47,11 +47,13 @@ export class gridcreator extends Component {
         Main.RegistEvent('game_lose', (x)=>{
             this.clear();
             this.gameOver = true;
+            this.resetTimeoutId=null; // 清除定时器
             return null;
         })
         Main.RegistEvent('game_win', (x)=>{
             this.clear();
             this.gameOver = true;
+            this.resetTimeoutId=null; // 清除定时器
             return null;
         })
 
@@ -101,6 +103,7 @@ export class gridcreator extends Component {
     initFruzon(){
         if (this.resetTimeoutId) {
             clearTimeout(this.resetTimeoutId);
+            this.resetTimeoutId = null;
             Main.DispEvent('event_fruszon',false);
         }
     }

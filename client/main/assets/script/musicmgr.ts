@@ -46,8 +46,9 @@ export class musicmgr extends Component {
         Main.RegistEvent("game_lose", (x) =>
         {
             this.source.stop(); //停止
-            // this.source.clip = this.faild;
-            // this.source.play(); //播放
+            this.source.clip = this.faild;
+            this.source.loop=false;
+            this.source.play(); //播放
             return null;
         });
         Main.RegistEvent("event_music_change", (x) =>
