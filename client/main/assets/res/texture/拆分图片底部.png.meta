@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "944851da-976d-4422-9431-f76618eea206",
+  "uuid": "2ff9f2e1-7345-488f-b8c2-ed750665ee90",
   "files": [
     ".json",
     ".png"
@@ -10,14 +10,14 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "944851da-976d-4422-9431-f76618eea206@6c48a",
-      "displayName": "生成游戏登录背景图 (1)",
+      "uuid": "2ff9f2e1-7345-488f-b8c2-ed750665ee90@6c48a",
+      "displayName": "拆分图片底部",
       "id": "6c48a",
       "name": "texture",
       "userData": {
         "wrapModeS": "clamp-to-edge",
         "wrapModeT": "clamp-to-edge",
-        "imageUuidOrDatabaseUri": "944851da-976d-4422-9431-f76618eea206",
+        "imageUuidOrDatabaseUri": "2ff9f2e1-7345-488f-b8c2-ed750665ee90",
         "isUuid": true,
         "visible": false,
         "minfilter": "linear",
@@ -34,8 +34,8 @@
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "944851da-976d-4422-9431-f76618eea206@f9941",
-      "displayName": "生成游戏登录背景图 (1)",
+      "uuid": "2ff9f2e1-7345-488f-b8c2-ed750665ee90@f9941",
+      "displayName": "拆分图片底部",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
@@ -45,10 +45,10 @@
         "offsetY": 0,
         "trimX": 0,
         "trimY": 0,
-        "width": 1536,
-        "height": 2730,
-        "rawWidth": 1536,
-        "rawHeight": 2730,
+        "width": 1080,
+        "height": 590,
+        "rawWidth": 1080,
+        "rawHeight": 590,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +60,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -768,
-            -1365,
+            -540,
+            -295,
             0,
-            768,
-            -1365,
+            540,
+            -295,
             0,
-            -768,
-            1365,
+            -540,
+            295,
             0,
-            768,
-            1365,
+            540,
+            295,
             0
           ],
           "indexes": [
@@ -83,12 +83,12 @@
           ],
           "uv": [
             0,
-            2730,
-            1536,
-            2730,
+            590,
+            1080,
+            590,
             0,
             0,
-            1536,
+            1080,
             0
           ],
           "nuv": [
@@ -102,18 +102,18 @@
             1
           ],
           "minPos": [
-            -768,
-            -1365,
+            -540,
+            -295,
             0
           ],
           "maxPos": [
-            768,
-            1365,
+            540,
+            295,
             0
           ]
         },
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "944851da-976d-4422-9431-f76618eea206@6c48a",
+        "imageUuidOrDatabaseUri": "2ff9f2e1-7345-488f-b8c2-ed750665ee90@6c48a",
         "atlasUuid": "",
         "trimType": "auto"
       },
@@ -127,8 +127,8 @@
   },
   "userData": {
     "type": "sprite-frame",
-    "hasAlpha": false,
+    "hasAlpha": true,
     "fixAlphaTransparencyArtifacts": false,
-    "redirect": "944851da-976d-4422-9431-f76618eea206@6c48a"
+    "redirect": "2ff9f2e1-7345-488f-b8c2-ed750665ee90@6c48a"
   }
 }

@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "02e37b3f-2ce3-4311-9fe6-d3ff77df71fa",
+  "uuid": "36d4dfbb-3298-4b4c-a731-f3e5f060b9b9",
   "files": [
     ".json",
     ".png"
@@ -10,14 +10,14 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "02e37b3f-2ce3-4311-9fe6-d3ff77df71fa@6c48a",
-      "displayName": "之",
+      "uuid": "36d4dfbb-3298-4b4c-a731-f3e5f060b9b9@6c48a",
+      "displayName": "生成游戏云朵图片 (1)",
       "id": "6c48a",
       "name": "texture",
       "userData": {
         "wrapModeS": "clamp-to-edge",
         "wrapModeT": "clamp-to-edge",
-        "imageUuidOrDatabaseUri": "02e37b3f-2ce3-4311-9fe6-d3ff77df71fa",
+        "imageUuidOrDatabaseUri": "36d4dfbb-3298-4b4c-a731-f3e5f060b9b9",
         "isUuid": true,
         "visible": false,
         "minfilter": "linear",
@@ -34,8 +34,8 @@
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "02e37b3f-2ce3-4311-9fe6-d3ff77df71fa@f9941",
-      "displayName": "之",
+      "uuid": "36d4dfbb-3298-4b4c-a731-f3e5f060b9b9@f9941",
+      "displayName": "生成游戏云朵图片 (1)",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
@@ -45,10 +45,10 @@
         "offsetY": 0,
         "trimX": 0,
         "trimY": 0,
-        "width": 86,
-        "height": 71,
-        "rawWidth": 86,
-        "rawHeight": 71,
+        "width": 200,
+        "height": 130,
+        "rawWidth": 200,
+        "rawHeight": 130,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +60,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -43,
-            -35.5,
+            -100,
+            -65,
             0,
-            43,
-            -35.5,
+            100,
+            -65,
             0,
-            -43,
-            35.5,
+            -100,
+            65,
             0,
-            43,
-            35.5,
+            100,
+            65,
             0
           ],
           "indexes": [
@@ -83,12 +83,12 @@
           ],
           "uv": [
             0,
-            71,
-            86,
-            71,
+            130,
+            200,
+            130,
             0,
             0,
-            86,
+            200,
             0
           ],
           "nuv": [
@@ -102,18 +102,18 @@
             1
           ],
           "minPos": [
-            -43,
-            -35.5,
+            -100,
+            -65,
             0
           ],
           "maxPos": [
-            43,
-            35.5,
+            100,
+            65,
             0
           ]
         },
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "02e37b3f-2ce3-4311-9fe6-d3ff77df71fa@6c48a",
+        "imageUuidOrDatabaseUri": "36d4dfbb-3298-4b4c-a731-f3e5f060b9b9@6c48a",
         "atlasUuid": "",
         "trimType": "auto"
       },
@@ -129,6 +129,6 @@
     "type": "sprite-frame",
     "hasAlpha": true,
     "fixAlphaTransparencyArtifacts": false,
-    "redirect": "02e37b3f-2ce3-4311-9fe6-d3ff77df71fa@6c48a"
+    "redirect": "36d4dfbb-3298-4b4c-a731-f3e5f060b9b9@6c48a"
   }
 }

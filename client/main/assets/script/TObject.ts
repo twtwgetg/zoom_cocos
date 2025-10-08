@@ -98,17 +98,32 @@ export class TObject extends Component {
             const l = instantiate(this.creator.item_line);
             this.creator.container.addChild(l); 
 
-            let sc =new Vec2(p.x,p.y);// = p;
+            // 计算起始点和结束点的世界坐标
+            // 由于网格坐标是从1开始的，需要减1得到0基坐标
+            // 然后根据tref计算实际位置，注意要加上gridsize/2来对齐到网格中心
+            let startPos = this.creator.tref.add(new Vec2((p.x - 1) * this.creator.gridsize + this.creator.gridsize/2, 
+                                                         (p.y - 1) * this.creator.gridsize + this.creator.gridsize/2));
+            let endPos = this.creator.tref.add(new Vec2((p2.x - 1) * this.creator.gridsize + this.creator.gridsize/2, 
+                                                       (p2.y - 1) * this.creator.gridsize + this.creator.gridsize/2));
 
-            let pos = this.creator.tref.add(sc.multiplyScalar(this.creator.gridsize)).subtract(new Vec2(this.creator.gridsize / 2, this.creator.gridsize / 2));
-            l.setPosition(pos.x,pos.y); // 设置位置= pos; // 设置位置
+            // 计算线段的中点作为节点位置
+            let midPos = new Vec2((startPos.x + endPos.x) / 2, (startPos.y + endPos.y) / 2);
+            l.setPosition(midPos.x, midPos.y);
 
-            //rect.contentSize = new Vec2(this.creator.gridsize, this.creator.gridsize);
+            // 计算线段的长度
+            const deltaX = endPos.x - startPos.x;
+            const deltaY = endPos.y - startPos.y;
+            const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // 设置缩放，x轴为长度，y轴保持不变
+            // 由于预制体的原始宽度是150，我们需要根据实际长度进行缩放
+            const scaleX = length / 150;
+            l.setScale(new Vec3(scaleX, 1, 1));
+            
+            // 计算旋转角度
+            const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+            l.angle = -angle;
 
-            const xdiff = p2.x - p.x;
-            const ydiff = p2.y - p.y;
-
-            l.setScale(new Vec3(xdiff !== 0 ? xdiff : 0.1, ydiff !== 0 ? ydiff : 0.1, 1));
             lines.push(l);
         }
 

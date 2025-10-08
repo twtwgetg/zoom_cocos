@@ -13,10 +13,7 @@ export class musicmgr extends Component {
     play: AudioClip = null!;
     @property(AudioClip)
     click: AudioClip = null!;
-    @property(AudioClip)
-    win: AudioClip = null!;
-    @property(AudioClip)
-    faild: AudioClip = null!;
+    // 移除了win和faild音效，因为它们已经被移到soundmgr中
     protected onLoad(): void {
         Main.RegistEvent("game_begin", (x) =>
         {
@@ -35,22 +32,24 @@ export class musicmgr extends Component {
             this.source.play(); //播放
             return null;
         });
+        // 移除了game_win事件处理，因为已经移到soundmgr中
+        // 移除了game_lose事件处理，因为已经移到soundmgr中
+        
+        // 添加游戏结束时停止背景音乐的处理
         Main.RegistEvent("game_win", (x) =>
         {
-            this.source.stop(); //停止
-            this.source.loop=false;
-            this.source.clip = this.win;
-            this.source.play(); //播放
+            // 游戏胜利时停止背景音乐
+            this.source.stop();
             return null;
         });
+        
         Main.RegistEvent("game_lose", (x) =>
         {
-            this.source.stop(); //停止
-            this.source.clip = this.faild;
-            this.source.loop=false;
-            this.source.play(); //播放
+            // 游戏失败时停止背景音乐
+            this.source.stop();
             return null;
         });
+        
         Main.RegistEvent("event_music_change", (x) =>
         {
             this.source.volume = musicmgr.bMusicEnable?1:0;
@@ -76,5 +75,3 @@ export class musicmgr extends Component {
         
     }
 }
-
-

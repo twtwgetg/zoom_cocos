@@ -12,6 +12,14 @@ export class soundmgr extends Component {
     click: AudioSource = null!;
     @property(AudioSource)
     slider: AudioSource = null!;
+    // 添加心跳音效
+    @property(AudioSource)
+    heartbeat: AudioSource = null!;
+    // 添加胜利和失败音效
+    @property(AudioSource)
+    win: AudioSource = null!;
+    @property(AudioSource)
+    fail: AudioSource = null!;
 
     protected onLoad(): void {
         Main.RegistEvent("event_lian", (parm) =>
@@ -45,6 +53,67 @@ export class soundmgr extends Component {
             }
             return null;
         });
+        
+        // 注册心跳音效事件
+        Main.RegistEvent("event_heartbeat_start", (parm) =>
+        {
+            if (soundmgr.bSoundEnable)
+            {
+                // 设置心跳音效循环播放
+                this.heartbeat.loop = true;
+                this.heartbeat.play();
+            }
+            return null;
+        });
+        
+        // 注册心跳节拍事件
+        Main.RegistEvent("event_heartbeat_beat", (parm) =>
+        {
+            if (soundmgr.bSoundEnable && this.heartbeat.playing) {
+                // 重新播放心跳音效，实现节拍效果
+                this.heartbeat.currentTime = 0;
+            }
+            return null;
+        });
+        
+        // 注册停止心跳音效事件
+        Main.RegistEvent("event_heartbeat_stop", (parm) =>
+        {
+            if (this.heartbeat.playing) {
+                this.heartbeat.stop();
+            }
+            return null;
+        });
+        
+        // 注册胜利音效事件
+        Main.RegistEvent("game_win", (parm) =>
+        {
+            // 游戏胜利时停止心跳音效
+            if (this.heartbeat.playing) {
+                this.heartbeat.stop();
+            }
+            
+            if (soundmgr.bSoundEnable)
+            {
+                this.win.play();
+            }
+            return null;
+        });
+        
+        // 注册失败音效事件
+        Main.RegistEvent("game_lose", (parm) =>
+        {
+            // 游戏失败时停止心跳音效
+            if (this.heartbeat.playing) {
+                this.heartbeat.stop();
+            }
+            
+            if (soundmgr.bSoundEnable)
+            {
+                this.fail.play();
+            }
+            return null;
+        });
     }
     static get bSoundEnable() : boolean
     {
@@ -58,5 +127,3 @@ export class soundmgr extends Component {
         
     }
 }
-
-

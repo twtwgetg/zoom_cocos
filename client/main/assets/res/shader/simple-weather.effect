@@ -1,0 +1,66 @@
+// Effect Syntax Guide: https://docs.cocos.com/creator/manual/zh/shader/index.html
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: general-vs:vert # builtin header
+      frag: weather-fs:frag
+      properties: &props
+        mainTexture: { value: white }
+        tintColor: { value: [1, 1, 1, 1], editor: { type: color } }
+        weatherIntensity: { value: 0.0, editor: { range: [0, 1] } }
+  - name: transparent
+    passes:
+    - vert: general-vs:vert # builtin header
+      frag: weather-fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram weather-fs %{
+  precision highp float;
+  #include <legacy/output>
+  #include <legacy/fog-fs>
+
+  in vec2 v_uv;
+  in vec3 v_position;
+
+  uniform sampler2D mainTexture;
+
+  uniform Constant {
+    vec4 tintColor;
+    float weatherIntensity;
+  };
+
+  vec4 frag () {
+    vec4 col = texture(mainTexture, v_uv);
+    
+    // Simple weather effect
+    if (weatherIntensity > 0.0) {
+      // Desaturate
+      float gray = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+      col.rgb = mix(col.rgb, vec3(gray), weatherIntensity * 0.6);
+      
+      // Add blue tint
+      col.rgb = mix(col.rgb, col.rgb * vec3(0.8, 0.85, 0.95), weatherIntensity * 0.4);
+      
+      // Darken slightly
+      col.rgb *= mix(1.0, 0.8, weatherIntensity * 0.5);
+    }
+    
+    col *= tintColor;
+    
+    // Ensure proper alpha handling for UI
+    col.a *= tintColor.a;
+    
+    CC_APPLY_FOG(col, v_position);
+    return CCFragOutput(col);
+  }
+}%

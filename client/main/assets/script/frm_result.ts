@@ -90,9 +90,8 @@ export class frm_result extends frmbase {
             frm_main.isPause=true;
             this.level_suc.string ="关卡："+(this.level_played+1);
             let time = Main.DispEvent("time_used");
-            let timer_all = LevelMgr.getTimeAll(this.level_played);
-            let per =1- time / timer_all;
-            let source = (per * LevelMgr.getSource(this.level_played));
+            // 使用新的得分计算方法
+            let source = LevelMgr.calculateScore(this.level_played, time);
             let  old = PlayerPrefb.getInt("level_"+this.level_played, 0);
             if (source > old)
             {
@@ -112,11 +111,8 @@ export class frm_result extends frmbase {
             this.faild.active=true;
             this.sucess.active=false;
             let time = Main.DispEvent("time_used");
-            let timer_all = LevelMgr.getTimeAll(this.level_played);
-            console.log("time"+time+": time_all"+ timer_all);
-            let per = 1- Math.min(time,timer_all)/ timer_all;
-            per = Math.max(per,0.1)
-            let source = (per * LevelMgr.getSource(this.level_played));
+            // 使用新的得分计算方法
+            let source = LevelMgr.calculateScore(this.level_played, time);
             this.lbl_soruce_faild.string =this.formatNumber( source);
             this.show(); 
             return null;
@@ -140,12 +136,13 @@ export class frm_result extends frmbase {
         });
     }
     brushStar(level_played: number) {
-        let source = PlayerPrefb.getInt("level_"+level_played,0);
-        var normal = LevelMgr.getSource(level_played);
-        var bl = source / normal;
-        this.star_1.active = bl > 0.1;
-        this.star_2.active = bl > 0.5;
-        this.star_3.active = bl > 0.9;
+            let time = Main.DispEvent("time_used");
+            let timer_all = LevelMgr.getTimeAll(this.level_played);
+            let per =1- time / timer_all;
+        // 降低星级门槛，让玩家更容易获得星星
+        this.star_1.active = per > 0.05;  // 原来0.1，现在0.05 (5%)
+        this.star_2.active = per > 0.3;   // 原来0.5，现在0.3 (30%)
+        this.star_3.active =per > 0.65;  // 原来0.9，现在0.65 (65%)
     }
     start() {
 
@@ -155,5 +152,3 @@ export class frm_result extends frmbase {
         
     }
 }
-
-

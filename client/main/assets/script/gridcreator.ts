@@ -47,13 +47,13 @@ export class gridcreator extends Component {
         Main.RegistEvent('game_lose', (x)=>{
             this.clear();
             this.gameOver = true;
-            this.resetTimeoutId=null; // 清除定时器
+            this.initFruzon(); // 正确清除冷却状态和定时器
             return null;
         })
         Main.RegistEvent('game_win', (x)=>{
             this.clear();
             this.gameOver = true;
-            this.resetTimeoutId=null; // 清除定时器
+            this.initFruzon(); // 正确清除冷却状态和定时器
             return null;
         })
 
@@ -85,27 +85,40 @@ export class gridcreator extends Component {
 
         Main.RegistEvent('event_play', () => { 
             //重新开始，那么删除之前的定时器，防止重复触发
+            this.gameOver = false; // 重置游戏结束标志
             this.initFruzon();
         }); 
         Main.RegistEvent('event_resettime',(x)=>{
                         // Clear existing timeout if any
+            console.log('开始时间冷却，持续时间根据关卡难度调整');
             this.initFruzon();
             Main.DispEvent('event_fruszon',true);
+            
+            // 根据关卡难度调整冷却时间
+            const cooldownTime = LevelMgr.getToolCooldown(LevelMgr.level);
+            console.log(`当前关卡: ${LevelMgr.level + 1}, 冷却时间: ${cooldownTime / 1000}秒`);
+            
             this.resetTimeoutId = setTimeout(()=>{
+                console.log('时间冷却结束');
                 Main.DispEvent('event_fruszon',false);
                 this.resetTimeoutId = null;
-            },15000);
+            }, cooldownTime);
+            console.log('冷却定时器ID:', this.resetTimeoutId);
         });
         Main.RegistEvent('event_isfruszon', () => { 
-            return this.resetTimeoutId !== null;
+            const isCooling = this.resetTimeoutId !== null;
+            console.log('检查冷却状态:', isCooling, '定时器ID:', this.resetTimeoutId);
+            return isCooling;
         });
     }
     initFruzon(){
         if (this.resetTimeoutId) {
+            console.log('清除之前的冷却定时器:', this.resetTimeoutId);
             clearTimeout(this.resetTimeoutId);
             this.resetTimeoutId = null;
             Main.DispEvent('event_fruszon',false);
         }
+        console.log('冷却状态已重置');
     }
     resetTimeoutId: any=null;
     checkLeft() {
@@ -564,19 +577,48 @@ export class gridcreator extends Component {
 
     // 检查一个转弯连接
     private static IsConnectedWithOneTurn(x1: number, y1: number, x2: number, y2: number, poslist: Vec2[]): boolean {
+        // 用于存储找到的路径
+        const paths: Vec2[][] = [];
+        
         // 转弯点1: (x1, y2)
         if (gridcreator.map[x1][y2] === 0 && gridcreator.IsDirectlyConnected(x1, y1, x1, y2) && gridcreator.IsDirectlyConnected(x1, y2, x2, y2)) {
-            poslist.push(new Vec2(x1, y1));
-            poslist.push(new Vec2(x1, y2));
-            poslist.push(new Vec2(x2, y2));
-            return true;
+            const path: Vec2[] = [];
+            path.push(new Vec2(x1, y1));
+            path.push(new Vec2(x1, y2));
+            path.push(new Vec2(x2, y2));
+            paths.push(path);
         }
 
         // 转弯点2: (x2, y1)
         if (gridcreator.map[x2][y1] === 0 && gridcreator.IsDirectlyConnected(x1, y1, x2, y1) && gridcreator.IsDirectlyConnected(x2, y1, x2, y2)) {
-            poslist.push(new Vec2(x1, y1));
-            poslist.push(new Vec2(x2, y1));
-            poslist.push(new Vec2(x2, y2));
+            const path: Vec2[] = [];
+            path.push(new Vec2(x1, y1));
+            path.push(new Vec2(x2, y1));
+            path.push(new Vec2(x2, y2));
+            paths.push(path);
+        }
+        
+        // 如果找到了路径，选择最短的路径
+        if (paths.length > 0) {
+            // 计算每条路径的长度并选择最短的
+            let shortestPath = paths[0];
+            let shortestLength = Infinity;
+            
+            for (const path of paths) {
+                // 计算路径长度（曼哈顿距离）
+                let pathLength = 0;
+                for (let k = 0; k < path.length - 1; k++) {
+                    pathLength += Math.abs(path[k].x - path[k+1].x) + Math.abs(path[k].y - path[k+1].y);
+                }
+                
+                if (pathLength < shortestLength) {
+                    shortestLength = pathLength;
+                    shortestPath = path;
+                }
+            }
+            
+            // 将最短路径复制到poslist中
+            poslist.splice(0, poslist.length, ...shortestPath);
             return true;
         }
 
@@ -588,19 +630,44 @@ export class gridcreator extends Component {
         const rows = gridcreator.map.length;
         const cols = gridcreator.map[0].length;
 
+        // 用于存储最短路径
+        let shortestPath: Vec2[] | null = null;
+        let shortestLength = Infinity;
+
         for (let i = 0; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
                 if (gridcreator.map[i][j] === 0) {
                     // 检查(x1,y1)到(i,j)再到(x2,y2)是否连通
                     const tempList: Vec2[] = [];
                     if (gridcreator.IsDirectlyConnected(x1, y1, i, j) && gridcreator.IsConnectedWithOneTurn(i, j, x2, y2, tempList)) {
-                        poslist.push(new Vec2(x1, y1));
-                        poslist.push(...tempList);
-                        return true;
+                        // 构造完整路径
+                        const fullPath: Vec2[] = [];
+                        fullPath.push(new Vec2(x1, y1));
+                        fullPath.push(new Vec2(i, j));
+                        fullPath.push(...tempList.slice(1)); // 去掉重复的第一个点
+                        
+                        // 计算路径长度（曼哈顿距离）
+                        let pathLength = 0;
+                        for (let k = 0; k < fullPath.length - 1; k++) {
+                            pathLength += Math.abs(fullPath[k].x - fullPath[k+1].x) + Math.abs(fullPath[k].y - fullPath[k+1].y);
+                        }
+                        
+                        // 更新最短路径
+                        if (pathLength < shortestLength) {
+                            shortestLength = pathLength;
+                            shortestPath = fullPath;
+                        }
                     }
                 }
             }
         }
+        
+        // 如果找到了路径，将其复制到poslist中
+        if (shortestPath !== null) {
+            poslist.splice(0, poslist.length, ...shortestPath);
+            return true;
+        }
+        
         return false;
     }
 }

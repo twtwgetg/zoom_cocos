@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, instantiate, Label, Node, Prefab, tween, Vec3 } from 'cc';
+import { _decorator, Button, Color, Component, instantiate, Label, Node, Prefab, tween, Vec3 } from 'cc';
 import { frmbase } from './frmbase';
 import { Main } from './main';
 import { frm_main } from './frm_main';
@@ -61,17 +61,29 @@ export class frm_msg extends frmbase {
                 label.string = x.msg;
             }
  
+            // 先停留1秒，保持完全不透明
             tween(xt)
-            .to(1, { position: endPos })  // 默认自动处理Vec3插值
-            .call(() => {
-                xt.destroy();
-            })
-            .start();
-            
-            tween(label.color)
-            .to(1, { a: 0 })  // 默认自动处理Color插值
-            .start();
-            
+                .delay(1) // 停留1秒
+                .then(
+                    tween().parallel(
+                        // 位置动画：从下往上移动
+                        tween().to(1, { position: endPos }),
+                        // 透明度动画：淡出效果
+                        tween().to(1, {}, {
+                            onUpdate: (target, ratio) => {
+                                if (label) {
+                                    // 根据ratio计算透明度，从255到0
+                                    const alpha = 255 * (1 - ratio);
+                                    label.color = new Color(label.color.r, label.color.g, label.color.b, Math.floor(alpha));
+                                }
+                            }
+                        })
+                    )
+                )
+                .call(() => {
+                    xt.destroy();
+                })
+                .start();
         });
     }
 }

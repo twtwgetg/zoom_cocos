@@ -1,0 +1,22 @@
+{
+  "__type__": "cc.Material",
+  "_name": "WeatherMaterial",
+  "_objFlags": 0,
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "038244b0-5732-4ebc-aefa-885e1260e2b4"
+  },
+  "_techIdx": 0,
+  "_defines": [
+    {}
+  ],
+  "_states": [],
+  "_props": [
+    {
+      "mainTexture": {
+        "__uuid__": "053e50f3-aa2e-4c15-8d14-d967587c20b7@6c48a"
+      },
+      "weatherIntensity": 0.0
+    }
+  ]
+}
