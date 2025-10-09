@@ -1,9 +1,10 @@
-import { _decorator, Button, Component, Label, Node } from 'cc';
+import { _decorator, Button, Component, EditBox, Input, Label, Node } from 'cc';
 import { Main } from './main';
 import { LevelMgr } from './levelmgr';
 import { frmbase } from './frmbase';
 import { PlayerPrefb } from './PlayerPrefb';
 import { frm_main } from './frm_main';
+import { ToutiaoEventMgr } from './ToutiaoEventMgr';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_result')
@@ -42,6 +43,7 @@ export class frm_result extends frmbase {
     lbl_soruce_faild: Label = null!;
     @property(Label)
     lbl_source_suc: Label = null!;
+
     //转成千位进制表示法
     formatNumber(num: number): string {
 
@@ -51,6 +53,8 @@ export class frm_result extends frmbase {
         return num.toString().replace(/(\d)(?=(\d{3})+$)/g, ",");
     }
     protected onLoad(): void {
+
+        
         this.btn_again_faild.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_play",this.level_played);
@@ -102,6 +106,8 @@ export class frm_result extends frmbase {
             this.brushStar(this.level_played);
             // StartCoroutine(showsource(source_suc, source));
             this.show();
+            // 上报游戏胜利事件
+            ToutiaoEventMgr.reportGameWin(x);
             return null;
         });
         Main.RegistEvent("game_lose", (x) =>
@@ -115,6 +121,8 @@ export class frm_result extends frmbase {
             let source = LevelMgr.calculateScore(this.level_played, time);
             this.lbl_soruce_faild.string =this.formatNumber( source);
             this.show(); 
+            // 上报游戏失败事件
+            ToutiaoEventMgr.reportGameLose(x);
             return null;
         });
         Main.RegistEvent("gamebegin", (x) =>

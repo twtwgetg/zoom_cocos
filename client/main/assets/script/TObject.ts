@@ -16,6 +16,7 @@ export class TObject extends Component {
     type: number = 0;
     
     private static obj: TObject | null = null;
+    private static firstClickReported: boolean = false;
     
     private creator: gridcreator | null = null;
     private ondestroy: boolean = false;
@@ -47,6 +48,12 @@ export class TObject extends Component {
         this.sel.node.active = false;
     }
     onButtonClick():void { 
+        // 上报第一次碰撞事件（玩家开始玩了）
+        if (!TObject.firstClickReported) {
+            TObject.firstClickReported = true;
+            // 使用Main.DispEvent触发埋点事件
+            Main.DispEvent("event_peng");
+        }
         
         if (TObject.lastobj !== null) {
             const poslist: Vec2[] = [];

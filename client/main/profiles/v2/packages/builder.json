@@ -87,11 +87,11 @@
       "1754894211767": {
         "type": "build",
         "id": "1754894211767",
-        "progress": 0.19090909090909092,
-        "state": "processing",
+        "progress": 1,
+        "state": "success",
         "stage": "build",
-        "message": "Generate systemJs...",
-        "detailMessage": "Run build task(build-script) in child, see: chrome://inspect/#devices\r",
+        "message": "2025-10-9 09:30:36 build success in 2 min 5 s!",
+        "detailMessage": "Asset DB is resume!\r",
         "options": {
           "name": "main",
           "server": "",
@@ -148,7 +148,7 @@
           "__version__": "1.3.9",
           "logDest": "project://temp/builder/log/bytedance-mini-game2025-8-11 14-36.log"
         },
-        "time": "2025-10-8 22:19:59",
+        "time": "2025-10-9 09:28:31",
         "dirty": false
       },
       "1754981691481": {

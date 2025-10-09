@@ -1,4 +1,5 @@
 import { _decorator, Component, Node } from 'cc';
+import { ToutiaoEventMgr } from './ToutiaoEventMgr';
 
 const { ccclass, property } = _decorator;
 
@@ -40,6 +41,11 @@ export class Main extends Component {
         //     console.log("场景值：", res.scene);
         //     console.log("启动场景字段：", res.launch_from, ", ", res.location);
         //   });
+        
+        // 添加抖音事件管理器组件
+        if (!this.getComponent(ToutiaoEventMgr)) {
+            this.addComponent(ToutiaoEventMgr);
+        }
        
     }
 

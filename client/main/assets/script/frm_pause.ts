@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, Node } from 'cc';
+import { _decorator, Button, Component, EditBox, Node } from 'cc';
 import { frmbase } from './frmbase';
 import { Main } from './main';
 import { frm_main } from './frm_main';
@@ -21,6 +21,15 @@ export class frm_pause extends frmbase {
     btn_musicenable: Button = null!;
     @property(Button)
     btn_init: Button = null!;
+    
+    @property(Button)
+    btn_tucao: Button = null!;
+    @property(Node)
+    panel_tucao:Node = null!;
+    @property(Button)
+    btn_submit: Button = null!;
+    @property(EditBox)
+    input_tucao: EditBox = null!;
     start() {
          this.btn_init.node.on(Button.EventType.CLICK, () =>
         {
@@ -37,6 +46,22 @@ export class frm_pause extends frmbase {
             }});
             
         }, this);
+        this.btn_tucao.node.on(Button.EventType.CLICK, () =>
+        {
+            this.panel_tucao.active=true;
+        }, this);
+
+        this.btn_submit.node.on(Button.EventType.CLICK, () =>
+        {
+            let content = this.input_tucao.string;
+            if (content.length > 0)
+            {
+                // 发送反馈 
+                this.sendFeedback(content);
+                this.panel_tucao.active=false;
+            }
+        }, this);
+
         this.btn_resume.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_resume");
@@ -59,6 +84,46 @@ export class frm_pause extends frmbase {
             this.brushflag();
         },this);
     }
+    
+    /**
+     * 发送用户反馈到服务器
+     * @param content 反馈内容
+     */
+    private sendFeedback(content: string): void {
+        const feedbackData = {
+            content: content,
+            timestamp: Date.now(),
+            level: LevelMgr.level,
+            platform: Main.plat
+        };
+
+        // 使用XMLHttpRequest发送反馈数据
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "https://www.haoyouqu.net/api/feedback", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    console.log("反馈发送成功");
+                    Main.DispEvent("event_msg_top", {msg: "感谢您的反馈！"});
+                } else {
+                    console.error("反馈发送失败:", xhr.status, xhr.statusText);
+                    Main.DispEvent("event_msg_top", {msg: "反馈发送失败，请稍后再试"});
+                }
+            }
+        };
+        
+        try {
+            xhr.send(JSON.stringify(feedbackData));
+            // 清空输入框
+            this.input_tucao.string = "";
+        } catch (error) {
+            console.error("发送反馈时出错:", error);
+            Main.DispEvent("event_msg_top", {msg: "反馈发送出错，请稍后再试"});
+        }
+    }
+    
     brushflag()
     {
         console.log('musicenable='+musicmgr.bMusicEnable)
@@ -92,4 +157,3 @@ export class frm_pause extends frmbase {
         
     }
 }
-

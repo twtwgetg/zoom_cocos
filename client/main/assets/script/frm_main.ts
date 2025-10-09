@@ -6,6 +6,7 @@ import { LevelMgr } from './levelmgr';
 import { tools } from './tools';
 import { ItemType } from './item_tools'; 
 import { WeatherShaderManager } from './WeatherShaderManager';
+import { ToutiaoEventMgr } from './ToutiaoEventMgr';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -72,6 +73,11 @@ export class frm_main extends frmbase {
         let that =this;
         Main.RegistEvent("event_play",(x)=>{ 
             this.show();
+            // 上报进入关卡事件
+            ToutiaoEventMgr.reportLevel(x);
+            // 上报挑战事件（主动进入游戏）
+            ToutiaoEventMgr.reportCharge();
+            
             this.scheduleOnce(() => {
                 this.gridcreator.Create(x);
                 this.time_all = LevelMgr.getTimeAll(x);
@@ -119,6 +125,8 @@ export class frm_main extends frmbase {
                 this.brushTools();
                 Main.DispEvent("event_msg_top",{msg:"使用刷新道具"});
                 Main.DispEvent("event_brush");
+                // 上报使用道具事件
+                ToutiaoEventMgr.reportUseItem(1); // 1表示刷新道具
             }
             else{
                 Main.DispEvent("event_tools",{tp:ItemType.brush,autouse:()=>{
@@ -126,6 +134,8 @@ export class frm_main extends frmbase {
                     // {
                     //     tools.num_brush--;
                         that.brushTools();
+                        // 上报使用道具事件
+                        ToutiaoEventMgr.reportUseItem(1); // 1表示刷新道具
                     //     Main.DispEvent("event_brush");    
                     // }
                     // else{
@@ -141,12 +151,16 @@ export class frm_main extends frmbase {
                 this.brushTools();
                 Main.DispEvent("event_msg_top",{msg:"使用提醒道具..."});
                 Main.DispEvent("event_tixing");
+                // 上报使用道具事件
+                ToutiaoEventMgr.reportUseItem(2); // 2表示提醒道具
             }
             else{
                 Main.DispEvent("event_tools",{tp:ItemType.remind,autouse:()=>{
                     // if(tools.num_Remind>0){
                     //     tools.num_Remind--;
                         that.brushTools();
+                        // 上报使用道具事件
+                        ToutiaoEventMgr.reportUseItem(2); // 2表示提醒道具
                     //     Main.DispEvent("event_tixing");    
                     // }
                 }});
@@ -163,6 +177,8 @@ export class frm_main extends frmbase {
                     this.brushTools();
                     Main.DispEvent("event_resettime");     
                     Main.DispEvent("event_msg_top",{msg:"使用时间道具..."});
+                    // 上报使用道具事件
+                    ToutiaoEventMgr.reportUseItem(3); // 3表示时间道具
                 }
                 else{
                     console.log("no time");
@@ -171,6 +187,8 @@ export class frm_main extends frmbase {
                         // if(tools.num_time>0){
                         //     tools.num_time--;
                           that.brushTools();
+                          // 上报使用道具事件
+                          ToutiaoEventMgr.reportUseItem(3); // 3表示时间道具
                         //     Main.DispEvent("event_resettime");    
                         // }
                     }});
