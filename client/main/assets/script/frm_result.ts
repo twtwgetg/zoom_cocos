@@ -132,7 +132,7 @@ export class frm_result extends frmbase {
         Main.RegistEvent("game_lose", (x) =>
         {
             this.level_played =x;
-            this.level_faild.string = "关卡："+(this.level_played+1);
+            this.level_faild.string = "关卡："+(x+1);
             this.faild.active=true;
             this.sucess.active=false;
             let time = Main.DispEvent("time_used");
@@ -147,6 +147,22 @@ export class frm_result extends frmbase {
             this.updateModeLabel(false);
             return null;
         });
+        
+        // 添加无限模式失败事件处理
+        Main.RegistEvent("game_lose_infinite", () =>
+        {
+            this.level_played = -1; // 无限模式使用特殊关卡编号
+            this.level_faild.string = "无限模式";
+            this.faild.active=true;
+            this.sucess.active=false;
+            // 无限模式没有时间概念，显示特殊信息
+            this.lbl_soruce_faild.string = "网格已填满";
+            this.show(); 
+            // 上报游戏失败事件
+            ToutiaoEventMgr.reportGameLose(-1); // 使用-1表示无限模式
+            return null;
+        });
+        
         Main.RegistEvent("gamebegin", (x) =>
         {
             this.hide();

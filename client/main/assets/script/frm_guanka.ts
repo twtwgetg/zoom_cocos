@@ -29,6 +29,8 @@ export class frm_guanka extends frmbase {
     @property(Button)
     public btn_easy: Button = null!;
     @property(Button)
+    public btn_wuxian: Button = null!; 
+    @property(Button)
     public btn_libao: Button = null!;
     @property(Button)
     public btn_lingqu: Button = null!;
@@ -53,6 +55,11 @@ export class frm_guanka extends frmbase {
             LevelMgr.gameMode = GameMode.EASY;
             this.updateModeButtons();
             Main.DispEvent('event_play',LevelMgr.level);
+        }, this);
+        // 添加无限模式按钮点击事件
+        this.btn_wuxian.node.on(Button.EventType.CLICK, ()=>{
+            // 进入无限模式
+            Main.DispEvent('event_play_infinite');
         }, this);
         //this.fillGuanKa();
         this.brushGuanKa();

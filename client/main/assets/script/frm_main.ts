@@ -56,11 +56,55 @@ export class frm_main extends frmbase {
     private lastHeartbeatTime: number = 0;
     private heartbeatInterval: number = 1.0; // 心跳间隔时间（秒）
 
+    // 添加无限模式相关变量
+    private isInfinityMode: boolean = false; // 是否为无限模式
+    private infiniteModeGeneratorId: any = null; // 无限模式生成器ID
+    private stopInfiniteModeGenerator: boolean = false; // 是否停止无限模式生成器
+    
+    /**
+     * 添加无限模式生成器
+     */
+    private startInfiniteModeGenerator() {
+        // 停止之前的生成器
+        if (this.infiniteModeGeneratorId) {
+            clearInterval(this.infiniteModeGeneratorId);
+        }
+        
+        // 重置停止标志
+        this.stopInfiniteModeGenerator = false;
+        
+        // 设置无限模式标志
+        this.isInfinityMode = true;
+        
+        // 每5秒生成一对新卡牌（降低频率以降低难度）
+        this.infiniteModeGeneratorId = setInterval(() => {
+            // 检查游戏是否暂停、已结束或需要停止生成
+            if (frm_main.isPause || !this.isInfinityMode || this.stopInfiniteModeGenerator) {
+                return;
+            }
+            
+            // 调用gridcreator生成新卡牌对
+            if (this.gridcreator) {
+                const isFull = this.gridcreator.generateNewPair();
+                // 如果网格已满，游戏结束
+                if (isFull) {
+                    this.endInfiniteMode();
+                }
+            }
+        }, 5000); // 从1000ms改为5000ms，降低生成频率以降低难度
+    }
+    
     fruzonBar(f:boolean){
         if(!f){
             this.spr_bar.color=new Color(255,173,0,255);
             this.ice_node.active=false;
-            this.jishi=true;
+            // 只有在非无限模式下才恢复计时
+            if (!this.isInfinityMode) {
+                this.jishi=true;
+            } else {
+                // 在无限模式下，冰封结束后重置停止生成器标志
+                this.stopInfiniteModeGenerator = false;
+            }
             // 冰封结束，渐变回正常颜色 #585858
             this.animateGridColor(new Color(88, 88, 88, 255), 0.5);
             // 取消天气效果
@@ -111,6 +155,40 @@ export class frm_main extends frmbase {
 
             return null;
         });
+        // 添加无限模式事件处理
+        Main.RegistEvent("event_play_infinite",()=>{ 
+            this.show();
+            // 上报挑战事件（主动进入游戏）
+            ToutiaoEventMgr.reportCharge();
+            
+            this.scheduleOnce(() => {
+                // 创建无限模式关卡（8x10网格）
+                this.gridcreator.CreateInfiniteMode(8, 10);
+                // 无限模式不计时
+                this.time_all = 0;
+                this.time_now = 0;
+                this.jishi=false; // 无限模式不使用计时器
+                frm_main.isPause = false;
+                // 播放道具按钮入场动画
+                this.playToolButtonsEntranceAnimation();
+                // 启动无限模式生成器
+                this.startInfiniteModeGenerator();
+            }, 0);
+ 
+            this.level_playing = -1; // 无限模式使用特殊关卡编号
+            this.lbl_guanka.string = "无限模式";
+            
+            // 显示当前游戏模式
+            this.updateModeLabel();
+            
+            // 记录初始时间道具数量
+            this.initialTimeCount = tools.num_time;
+            
+            // 重置时间警告状态
+            this.timeWarningShown = false;
+
+            return null;
+        });
         Main.RegistEvent("game_begin",()=>{
             this.hide();
         })
@@ -130,7 +208,14 @@ export class frm_main extends frmbase {
             this.hide();
             return null;
         });
-
+        // 修复：不应该在event_play事件监听器中再次触发event_play事件
+        // 这里应该是处理其他需要在游戏开始时重置的状态
+        Main.RegistEvent("event_play_reset",()=>{ 
+            // 重置无限模式生成器停止标志
+            this.stopInfiniteModeGenerator = false;
+            
+            return null;
+        });
         this.btn_pause.node.on(Button.EventType.CLICK, () =>
         {
             
@@ -196,6 +281,13 @@ export class frm_main extends frmbase {
                     this.brushTools();
                     Main.DispEvent("event_resettime");     
                     Main.DispEvent("event_msg_top",{msg:"使用时间道具..."});
+                    
+                    // 在无限模式下，使用时间道具可以停止生成新卡牌
+                    if (this.isInfinityMode) {
+                        this.stopInfiniteModeGenerator = true;
+                        Main.DispEvent("event_msg_top",{msg:"时间道具已使用，停止生成新卡牌"});
+                    }
+                    
                     // 上报使用道具事件
                     ToutiaoEventMgr.reportUseItem(3); // 3表示时间道具
                 }
@@ -206,6 +298,8 @@ export class frm_main extends frmbase {
                         // if(tools.num_time>0){
                         //     tools.num_time--;
                           that.brushTools();
+                          
+ 
                           // 上报使用道具事件
                           ToutiaoEventMgr.reportUseItem(3); // 3表示时间道具
                         //     Main.DispEvent("event_resettime");    
@@ -332,11 +426,15 @@ export class frm_main extends frmbase {
         }
         
         if(this.time_now >= this.time_all) {
-            this.jishi=false;
-            // 停止心跳音效
-            Main.DispEvent("event_heartbeat_stop");
-            this.heartbeatPlaying = false;
-            Main.DispEvent("game_lose",this.level_playing);
+            // 只有在计时模式下才触发游戏失败，无限模式不计时
+            // 无限模式通过isInfinityMode标志判断，普通模式通过jishi标志和time_all>0判断
+            if (this.jishi && this.time_all > 0 && !this.isInfinityMode) {
+                this.jishi=false;
+                // 停止心跳音效
+                Main.DispEvent("event_heartbeat_stop");
+                this.heartbeatPlaying = false;
+                Main.DispEvent("game_lose",this.level_playing);
+            }
         }
     }
     
@@ -560,5 +658,33 @@ export class frm_main extends frmbase {
                 .start();
         }
     }
-
+    
+    /**
+     * 结束无限模式
+     */
+    private endInfiniteMode() {
+        // 停止生成器
+        if (this.infiniteModeGeneratorId) {
+            clearInterval(this.infiniteModeGeneratorId);
+            this.infiniteModeGeneratorId = null;
+        }
+        
+        // 设置标志
+        this.isInfinityMode = false;
+        
+        // 游戏结束处理
+        Main.DispEvent("game_lose_infinite");
+    }
+    
+    // 重写hide方法，确保清理无限模式
+    hide() {
+        super.hide();
+        
+        // 清理无限模式
+        if (this.infiniteModeGeneratorId) {
+            clearInterval(this.infiniteModeGeneratorId);
+            this.infiniteModeGeneratorId = null;
+        }
+        this.isInfinityMode = false;
+    }
 }

@@ -24,6 +24,7 @@ export class gridcreator extends Component {
     private pl: Sprite[] = [];
 
     private gameOver: boolean = false; // 游戏结束标志
+
     onLoad() {
         // 注册事件
         this.registEvents();
@@ -139,7 +140,9 @@ export class gridcreator extends Component {
 
             if (!hasconnect) {
                 const xs = this.node.getComponentsInChildren('TObject') as any[];
-                if (xs.length > 2) {
+                // 降低触发自动刷新的阈值，从原来的2个卡牌减少到1个卡牌
+                // 这样即使只剩下很少的卡牌也会触发刷新，让玩家更快接触到新动物
+                if (xs.length > 1) {
                     console.log('没有连接，刷新');
                     this.brushkind();
                 }
@@ -156,6 +159,7 @@ export class gridcreator extends Component {
     clear(){
         this.node.removeAllChildren();
     }
+
     Create(level_playing: number) {
         this.gameOver = false;
         this.level_cur = level_playing;
@@ -216,13 +220,45 @@ export class gridcreator extends Component {
         // 获取关卡计数（需要实现levelmgr）
         const count = LevelMgr.getCount(level_playing);
         
-
+        // 生成卡片对
+        // 确保新关卡中几乎全部是新卡牌，避免全是上一关的卡牌
+        const cardTypes: number[] = [];
+        
+        // 确保至少95%的卡牌是新的（基于当前关卡）
+        const newCardPairs = Math.ceil(totalPairs * 0.95);
+        const oldCardPairs = totalPairs - newCardPairs;
+        
+        // 生成新的卡牌类型（基于当前关卡）
+        for (let i = 0; i < newCardPairs; i++) {
+            const type = Math.floor(Math.random() * count) + (level_playing + 1);
+            cardTypes.push(type);
+            cardTypes.push(type); // 成对添加
+        }
+        
+        // 几乎不会添加旧的卡牌类型
+        for (let i = 0; i < oldCardPairs; i++) {
+            let type: number;
+            // 只有在极其特殊的情况下（1%概率）并且关卡数足够大时才使用之前关卡的卡牌
+            if (level_playing > 5 && Math.random() < 0.01) {
+                // 从之前的关卡中选择卡牌类型，选择较近的关卡
+                const previousLevel = level_playing - Math.floor(Math.random() * Math.min(2, level_playing - 5)) - 1;
+                const previousCount = LevelMgr.getCount(previousLevel);
+                type = Math.floor(Math.random() * previousCount) + (previousLevel + 1);
+            } else {
+                // 几乎总是使用当前关卡的卡牌类型
+                type = Math.floor(Math.random() * count) + (level_playing + 1);
+            }
+            cardTypes.push(type);
+            cardTypes.push(type); // 成对添加
+        }
+        
+        // 打乱卡牌类型数组
+        this.Shuffle(cardTypes);
+        
         // 生成卡片对
         for (let p = 0; p < totalPairs; p++) {
-            // 随机类型（需要根据实际level_playing调整）
-            const type = Math.floor(Math.random() * count) + (level_playing+1);
-            //const type = Math.floor(Math.random() * 5) + 1; // 临时值
-
+            const type = cardTypes[p * 2]; // 获取卡牌类型
+            
             // 获取两个位置
             const pos1 = positions[p * 2];
             const pos2 = positions[p * 2 + 1];
@@ -239,6 +275,11 @@ export class gridcreator extends Component {
 
     // 整理剩余卡片位置
     public zhengli():void {
+        // 在无限模式下不需要整理功能
+        if (this.isInfiniteMode) {
+            return;
+        }
+        
         // 根据关卡类型整理
         switch (this.level_cur % 8) {
             case 1:
@@ -429,8 +470,10 @@ export class gridcreator extends Component {
 
     get tref(): Vec2 {
         const rect = this.node.getComponent(UITransform);
-        const refx = (rect.width - this.wid * this.gridsize) / 2;
-        const refy = (rect.height - this.hei * this.gridsize) / 2;
+        const width = this.isInfiniteMode ? this.infiniteWid : this.wid;
+        const height = this.isInfiniteMode ? this.infiniteHei : this.hei;
+        const refx = (rect.width - width * this.gridsize) / 2;
+        const refy = (rect.height - height * this.gridsize) / 2;
         return new Vec2(refx-rect.width/2, refy-rect.height/2);
     }
 
@@ -669,5 +712,142 @@ export class gridcreator extends Component {
         }
         
         return false;
+    }
+
+    // 添加无限模式相关变量
+    private isInfiniteMode: boolean = false;
+    private infiniteWid: number = 10;
+    private infiniteHei: number = 10;
+    
+    // 创建无限模式关卡
+    CreateInfiniteMode(width: number, height: number) {
+        this.gameOver = false;
+        this.isInfiniteMode = true;
+        this.infiniteWid = width;
+        this.infiniteHei = height;
+
+        // 清空TObject
+        // TObject.clear();
+
+        // 清空节点
+        this.clear();
+
+        // 初始化地图
+        gridcreator.map = [];
+        for (let i = 0; i < this.infiniteWid + 2; i++) {
+            gridcreator.map[i] = [];
+            for (let j = 0; j < this.infiniteHei + 2; j++) {
+                gridcreator.map[i][j] = 0;
+            }
+        }
+
+        // 计算网格大小
+        const parentRect = this.node.getComponent(UITransform)!;
+        const availableWidth = parentRect.width;
+        const availableHeight = parentRect.height;
+
+        const cellWidth = availableWidth / this.infiniteWid;
+        const cellHeight = availableHeight / this.infiniteHei;
+
+        this.gridsize = Math.min(cellWidth, cellHeight);
+        this.gridsize = Math.min(150, this.gridsize);
+
+        // 计算总格子数和对数
+        const totalCells = this.infiniteWid * this.infiniteHei;
+        const totalPairs = Math.floor(totalCells / 2); // 一半填充
+
+        // 获取可用类型数量
+        this.pl = this.plSprites;
+        const availableTypes = this.pl.length - 1;
+        if (availableTypes < 2) {
+            console.error('图片类型不足，至少需要2个');
+            return;
+        }
+
+        // 生成所有位置
+        const positions: Vec2[] = [];
+        for (let i = 0; i < this.infiniteWid; i++) {
+            for (let j = 0; j < this.infiniteHei; j++) {
+                positions.push(new Vec2(i + 1, j + 1));
+            }
+        }
+
+        // 打乱位置
+        this.Shuffle(positions);
+
+        // 只填充一半的位置
+        const fillCount = Math.floor(totalPairs / 2);
+        
+        // 生成卡片对
+        for (let p = 0; p < fillCount; p++) {
+            // 随机类型
+            const type = Math.floor(Math.random() * availableTypes) + 1;
+
+            // 获取两个位置
+            const pos1 = positions[p * 2];
+            const pos2 = positions[p * 2 + 1];
+
+            // 更新地图
+            gridcreator.map[pos1.x][pos1.y] = type;
+            gridcreator.map[pos2.x][pos2.y] = type;
+
+            // 生成卡片
+            this.SpawnCard(pos1, type);
+            this.SpawnCard(pos2, type);
+        }
+        
+        console.log(`无限模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，已填充 ${fillCount * 2} 张卡片`);
+    }
+    
+    // 生成新卡牌对（用于无限模式）
+    // 返回true表示网格已满无法生成更多卡牌
+    generateNewPair(): boolean {
+        // 检查是否为无限模式
+        if (!this.isInfiniteMode) {
+            return false;
+        }
+        
+        // 查找所有空位置
+        const emptyPositions: Vec2[] = [];
+        for (let x = 1; x <= this.infiniteWid; x++) {
+            for (let y = 1; y <= this.infiniteHei; y++) {
+                if (gridcreator.map[x][y] === 0) {
+                    emptyPositions.push(new Vec2(x, y));
+                }
+            }
+        }
+        
+        // 如果空位置少于2个，说明网格已满
+        if (emptyPositions.length < 2) {
+            console.log('网格已满，无法生成新卡牌对');
+            return true;
+        }
+        
+        // 随机选择两个空位置
+        this.Shuffle(emptyPositions);
+        const pos1 = emptyPositions[0];
+        const pos2 = emptyPositions[1];
+        
+        // 随机选择卡牌类型
+        const availableTypes = this.pl.length - 1;
+        if (availableTypes < 1) {
+            console.error('没有可用的卡牌类型');
+            return false;
+        }
+        
+        const type = Math.floor(Math.random() * availableTypes) + 1;
+        
+        // 更新地图
+        gridcreator.map[pos1.x][pos1.y] = type;
+        gridcreator.map[pos2.x][pos2.y] = type;
+        
+        // 生成卡片
+        this.SpawnCard(pos1, type);
+        this.SpawnCard(pos2, type);
+        
+        console.log(`生成新卡牌对，类型: ${type}，位置: (${pos1.x},${pos1.y}) 和 (${pos2.x},${pos2.y})`);
+        
+        // 检查是否已满
+        return emptyPositions.length === 2; // 如果之前只有2个空位置，现在已满
     }
 }

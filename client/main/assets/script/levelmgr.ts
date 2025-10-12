@@ -18,6 +18,7 @@ export class LevelMgr {
      */
     public static get gameMode(): GameMode {
         const mode = PlayerPrefb.getInt("gameMode", 0);
+        // 修改默认模式为简单模式（0表示简单模式）
         return mode === 0 ? GameMode.EASY : GameMode.HARD;
     }
 
@@ -25,6 +26,7 @@ export class LevelMgr {
      * 设置当前游戏模式
      */
     public static set gameMode(value: GameMode) {
+        // 修改模式值，0表示简单模式，1表示困难模式
         const modeValue = value === GameMode.EASY ? 0 : 1;
         PlayerPrefb.setInt("gameMode", modeValue);
     }
@@ -80,8 +82,8 @@ export class LevelMgr {
         
         // 根据游戏模式调整时间
         if (this.gameMode === GameMode.EASY) {
-            // 简单模式时间增加100%（变为原来的2倍）
-            return baseTime * 2.0;
+            // 简单模式时间增加150%（变为原来的2.5倍），比之前更长
+            return baseTime * 2.5;
         } else {
             // 困难模式使用基础时间
             return baseTime;
