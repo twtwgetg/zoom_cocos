@@ -1,11 +1,33 @@
-// levelmgr.ts
 import { sys } from 'cc';
 import { PlayerPrefb } from './PlayerPrefb';
 import { Main } from './main';
 import { tools } from './tools';
+
+// 添加游戏模式枚举
+export enum GameMode {
+    EASY = "easy",
+    HARD = "hard"
+}
+
 export class LevelMgr {
     private static _maxlevel: number = 50;
     private static _maxcount: number = 30;
+
+    /**
+     * 获取当前游戏模式
+     */
+    public static get gameMode(): GameMode {
+        const mode = PlayerPrefb.getInt("gameMode", 0);
+        return mode === 0 ? GameMode.EASY : GameMode.HARD;
+    }
+
+    /**
+     * 设置当前游戏模式
+     */
+    public static set gameMode(value: GameMode) {
+        const modeValue = value === GameMode.EASY ? 0 : 1;
+        PlayerPrefb.setInt("gameMode", modeValue);
+    }
 
     /**
      * 获取当前关卡
@@ -44,14 +66,26 @@ export class LevelMgr {
      * 第一关给予更充裕的时间，后续关卡逐渐增加难度
      */
     public static getTimeAll(level: number): number {
+        // 基础时间
+        let baseTime: number;
+        
         // 第一关给予更多时间
         if (level === 0) {
-            return 60; // 第一关60秒，足够新手熟悉
+            baseTime = 60; // 第一关60秒，足够新手熟悉
+        } else {
+            const t = level / LevelMgr.realmaxlevel;
+            // 从第二关开始：30-80秒
+            baseTime = this.lerp(30, 80, t);
         }
         
-        const t = level / LevelMgr.realmaxlevel;
-        // 从第二关开始：30-80秒
-        return this.lerp(30, 80, t);
+        // 根据游戏模式调整时间
+        if (this.gameMode === GameMode.EASY) {
+            // 简单模式时间增加100%（变为原来的2倍）
+            return baseTime * 2.0;
+        } else {
+            // 困难模式使用基础时间
+            return baseTime;
+        }
     }
 
     /**

@@ -5,6 +5,9 @@ const { ccclass, property } = _decorator;
 
 @ccclass('musicmgr')
 export class musicmgr extends Component {
+    // 添加静态实例引用
+    static instance: musicmgr = null!;
+    
     @property(AudioSource)
     source: AudioSource = null!;
     @property(AudioClip)
@@ -15,6 +18,9 @@ export class musicmgr extends Component {
     click: AudioClip = null!;
     // 移除了win和faild音效，因为它们已经被移到soundmgr中
     protected onLoad(): void {
+        // 设置静态实例引用
+        musicmgr.instance = this;
+        
         Main.RegistEvent("game_begin", (x) =>
         {
             this.source.stop(); //停止

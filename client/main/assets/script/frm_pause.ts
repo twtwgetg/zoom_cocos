@@ -16,6 +16,8 @@ export class frm_pause extends frmbase {
     @property(Button)
     btn_menu:Button = null!;
     @property(Button)
+    btn_quit: Button = null!;
+    @property(Button)
     btn_soundenable: Button = null!;
     @property(Button)
     btn_musicenable: Button = null!;
@@ -30,6 +32,10 @@ export class frm_pause extends frmbase {
     btn_submit: Button = null!;
     @property(EditBox)
     input_tucao: EditBox = null!;
+    
+    // 添加音乐状态变量，用于记录暂停前的音乐状态
+    private wasMusicPlaying: boolean = false;
+    
     start() {
          this.btn_init.node.on(Button.EventType.CLICK, () =>
         {
@@ -50,7 +56,11 @@ export class frm_pause extends frmbase {
         {
             this.panel_tucao.active=true;
         }, this);
-
+        this.btn_quit.node.on(Button.EventType.CLICK, () =>
+        {
+            Main.DispEvent("game_begin");
+            this.hide();
+        }, this);
         this.btn_submit.node.on(Button.EventType.CLICK, () =>
         {
             let content = this.input_tucao.string;
@@ -130,6 +140,7 @@ export class frm_pause extends frmbase {
         this.btn_musicenable.node.getChildByName('mask').active = !musicmgr.bMusicEnable;
         this.btn_soundenable.node.getChildByName('mask').active = !soundmgr.bSoundEnable;
     }
+    
     level_playing: number = 0;
     protected onLoad(): void {
         super.onLoad();
@@ -151,6 +162,39 @@ export class frm_pause extends frmbase {
             frm_main.isPause = false;
             return null;
         });
+    }
+    
+    /**
+     * 显示暂停界面时暂停背景音乐
+     */
+    show() {
+        super.show();
+        
+        // 记录当前音乐是否正在播放
+        const musicManager = musicmgr.instance;
+        if (musicManager && musicManager.source) {
+            this.wasMusicPlaying = musicManager.source.playing;
+            // 暂停背景音乐
+            if (this.wasMusicPlaying) {
+                musicManager.source.pause();
+            }
+        }
+    }
+    
+    /**
+     * 隐藏暂停界面时恢复背景音乐
+     */
+    hide() {
+        super.hide();
+        
+        // 恢复背景音乐
+        const musicManager = musicmgr.instance;
+        if (musicManager && musicManager.source) {
+            // 只有在暂停前音乐是播放状态时才恢复播放
+            if (this.wasMusicPlaying && musicmgr.bMusicEnable) {
+                musicManager.source.play();
+            }
+        }
     }
 
     update(deltaTime: number) {

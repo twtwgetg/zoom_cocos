@@ -2,7 +2,7 @@ import { _decorator, Button, Color, Component, Label, Node, ProgressBar, Sprite,
 import { gridcreator } from './gridcreator';
 import { Main } from './main';
 import { frmbase } from './frmbase';
-import { LevelMgr } from './levelmgr';
+import { LevelMgr, GameMode } from './levelmgr';
 import { tools } from './tools';
 import { ItemType } from './item_tools'; 
 import { WeatherShaderManager } from './WeatherShaderManager';
@@ -24,11 +24,18 @@ export class frm_main extends frmbase {
     btn_pause: Button = null!;
     time_all: number = 0;
     time_now: number = 0;
+    // 添加初始时间道具数量变量
+    private initialTimeCount: number = 0;
     @property(ProgressBar)
     progress_time: ProgressBar = null!;
     public static isPause: boolean = true;
     @property(Label)
     lbl_guanka: Label = null!;
+
+    // 添加模式标签
+    @property(Label)
+    lbl_mode: Label = null!;
+
     level_playing: number = 0;
 
     @property(Node)
@@ -38,7 +45,8 @@ export class frm_main extends frmbase {
      
     @property(Sprite)   
     spr_bg: Sprite = null!;
-    
+    @property(Sprite)
+    spr_bg2: Sprite = null!;
     // 添加天气管理器引用
     @property(WeatherShaderManager)
     weatherManager: WeatherShaderManager = null!;
@@ -91,10 +99,21 @@ export class frm_main extends frmbase {
  
             this.level_playing = x;
             this.lbl_guanka.string = "第 "+(x+1)+" 关";
+            
+            // 显示当前游戏模式
+            this.updateModeLabel();
+            
+            // 记录初始时间道具数量
+            this.initialTimeCount = tools.num_time;
+            
+            // 重置时间警告状态
+            this.timeWarningShown = false;
 
             return null;
         });
-
+        Main.RegistEvent("game_begin",()=>{
+            this.hide();
+        })
         Main.RegistEvent("event_restart",()=>{ 
             Main.DispEvent("event_play",this.level_playing); 
             return null;
@@ -209,10 +228,30 @@ export class frm_main extends frmbase {
         this.btn_remind.node.getChildByName("num").getComponent(Label).string = tools.num_Remind.toString();
         this.btn_refrush.node.getChildByName("num").getComponent(Label).string = tools.num_brush.toString();
     }
+    
+    /**
+     * 更新模式标签显示
+     */
+    updateModeLabel() {
+        if (this.lbl_mode) {
+            if (LevelMgr.gameMode === GameMode.EASY) {
+                this.lbl_mode.string = "简单模式";
+                this.lbl_mode.color = new Color(0, 255, 0); // 绿色
+            } else {
+                this.lbl_mode.string = "困难模式";
+                this.lbl_mode.color = new Color(255, 0, 0); // 红色
+            }
+        }
+    }
+    
     start() {
 
     }
     jishi:boolean=false;
+    // 添加时间道具提醒相关变量
+    private timeWarningShown: boolean = false; // 是否已显示时间警告
+    private lastTimeWarningTime: number = 0; // 上次显示时间警告的时间
+    
     update(deltaTime: number) {
 
         if(frm_main.isPause) 
@@ -226,6 +265,44 @@ export class frm_main extends frmbase {
         
         // 检查是否需要开始倒计时心跳音效（剩余时间小于10秒）
         const remainingTime = this.time_all - this.time_now;
+        
+        // 检查是否需要提醒玩家（剩余时间小于15秒）
+        if (remainingTime <= 15 && !this.timeWarningShown) {
+            // 无论是否有时间道具都显示提醒
+            if (tools.num_time > 0) {
+                // 有时间道具的情况
+                Main.DispEvent("event_msg_top", {msg: "时间即将耗尽！点击时间道具增加时间"});
+            } else {
+                // 没有时间道具的情况
+                Main.DispEvent("event_msg_top", {msg: "时间即将耗尽！"});
+            }
+            // 播放时间道具按钮动画以吸引注意
+            this.playTimeButtonAnimation();
+            this.timeWarningShown = true;
+            this.lastTimeWarningTime = this.time_now;
+        }
+        
+        // 每隔5秒重复提醒一次
+        if (this.timeWarningShown && (this.time_now - this.lastTimeWarningTime) >= 5) {
+            const currentRemainingTime = this.time_all - this.time_now;
+            if (currentRemainingTime > 0 && currentRemainingTime <= 15) {
+                if (tools.num_time > 0) {
+                    // 有时间道具的情况
+                    Main.DispEvent("event_msg_top", {msg: "时间即将耗尽！点击时间道具增加时间"});
+                } else {
+                    // 没有时间道具的情况
+                    Main.DispEvent("event_msg_top", {msg: "时间即将耗尽！"});
+                }
+                this.playTimeButtonAnimation();
+                this.lastTimeWarningTime = this.time_now;
+            }
+        }
+        
+        // 如果时间已经充足，重置提醒状态
+        if (remainingTime > 20) {
+            this.timeWarningShown = false;
+        }
+        
         if (remainingTime <= 10 && !this.heartbeatPlaying) {
             // 开始播放心跳音效
             Main.DispEvent("event_heartbeat_start");
@@ -261,6 +338,42 @@ export class frm_main extends frmbase {
             this.heartbeatPlaying = false;
             Main.DispEvent("game_lose",this.level_playing);
         }
+    }
+    
+    /**
+     * 获取初始时间道具数量（用于判断是否使用了时间道具）
+     */
+    private getInitialTimeCount(): number {
+        return this.initialTimeCount;
+    }
+    
+    /**
+     * 播放时间道具按钮动画以吸引玩家注意
+     */
+    private playTimeButtonAnimation() {
+        if (!this.btn_time || !this.btn_time.node) {
+            console.warn('时间道具按钮未找到');
+            return;
+        }
+        
+        // 停止之前的动画
+        tween(this.btn_time.node).stop();
+        
+        // 保存原始状态
+        const originalScale = this.btn_time.node.scale.clone();
+        const originalPosition = this.btn_time.node.position.clone();
+        
+        // 创建吸引注意的动画序列
+        tween(this.btn_time.node)
+            .repeat(3, // 重复3次
+                tween()
+                    .to(0.2, { scale: new Vec3(originalScale.x * 1.2, originalScale.y * 1.2, originalScale.z) })
+                    .to(0.2, { scale: originalScale })
+                    .to(0.1, { position: new Vec3(originalPosition.x + 5, originalPosition.y, originalPosition.z) })
+                    .to(0.1, { position: new Vec3(originalPosition.x - 5, originalPosition.y, originalPosition.z) })
+                    .to(0.1, { position: originalPosition })
+            )
+            .start();
     }
     
     /**
@@ -425,9 +538,27 @@ export class frm_main extends frmbase {
                 easing: 'smooth'
             })
             .call(() => {
-                console.log('天气颜色渐变完成');
+                console.log('主背景天气颜色渐变完成');
             })
             .start();
+            
+        // 如果spr_bg2存在，也为它设置颜色
+        if (this.spr_bg2) {
+            // 停止之前的动画
+            tween(this.spr_bg2).stop();
+            
+            // 创建颜色渐变动画
+            tween(this.spr_bg2)
+                .to(duration, { 
+                    color: targetColor
+                }, {
+                    easing: 'smooth'
+                })
+                .call(() => {
+                    console.log('第二个背景天气颜色渐变完成');
+                })
+                .start();
+        }
     }
 
 }

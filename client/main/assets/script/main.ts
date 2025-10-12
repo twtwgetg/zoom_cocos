@@ -1,5 +1,6 @@
 import { _decorator, Component, Node } from 'cc';
 import { ToutiaoEventMgr } from './ToutiaoEventMgr';
+import { LevelMgr, GameMode } from './levelmgr';
 
 const { ccclass, property } = _decorator;
 

@@ -1,7 +1,7 @@
-import { _decorator, Button, Component, instantiate, Label, Node, Prefab, Sprite, UITransform } from 'cc';
+import { _decorator, Button, Component, instantiate, Label, Node, Prefab, Sprite, UITransform, Color } from 'cc';
 import { frmbase } from './frmbase';
 import { Main,platform } from './main';
-import { LevelMgr } from './levelmgr';
+import { LevelMgr, GameMode } from './levelmgr';
 import { item_guank } from './item_guank';
 import { EntrySceneChecker } from './EntrySceneChecker';
 const { ccclass, property } = _decorator;
@@ -25,7 +25,9 @@ export class frm_guanka extends frmbase {
     @property(Node)
     public trans_anis: Node = null!;
     @property(Button)
-    public btn_tiaozhan: Button = null!;
+    public btn_hard: Button = null!;
+    @property(Button)
+    public btn_easy: Button = null!;
     @property(Button)
     public btn_libao: Button = null!;
     @property(Button)
@@ -42,12 +44,36 @@ export class frm_guanka extends frmbase {
         this.btn_back.node.on(Button.EventType.CLICK, ()=>{
             Main.DispEvent('game_begin');
         }, this);
-        this.btn_tiaozhan.node.on(Button.EventType.CLICK, ()=>{
+        this.btn_hard.node.on(Button.EventType.CLICK, ()=>{
+            LevelMgr.gameMode = GameMode.HARD;
+            this.updateModeButtons();
+            Main.DispEvent('event_play',LevelMgr.level);
+        }, this);
+        this.btn_easy.node.on(Button.EventType.CLICK, ()=>{
+            LevelMgr.gameMode = GameMode.EASY;
+            this.updateModeButtons();
             Main.DispEvent('event_play',LevelMgr.level);
         }, this);
         //this.fillGuanKa();
         this.brushGuanKa();
+        this.updateModeButtons();
     }
+    /**
+     * 更新模式按钮状态
+     */
+    updateModeButtons() {
+        // 根据当前模式设置按钮状态
+        if (LevelMgr.gameMode === GameMode.EASY) {
+            // 简单模式，高亮简单按钮
+            this.btn_easy.node.getComponent(Sprite)!.color = new Color(0, 255, 0, 255); // 绿色
+            this.btn_hard.node.getComponent(Sprite)!.color = new Color(255, 255, 255, 255); // 白色
+        } else {
+            // 困难模式，高亮困难按钮
+            this.btn_hard.node.getComponent(Sprite)!.color = new Color(255, 0, 0, 255); // 红色
+            this.btn_easy.node.getComponent(Sprite)!.color = new Color(255, 255, 255, 255); // 白色
+        }
+    }
+
     /**
      *  设置当前关卡
      */
@@ -84,6 +110,7 @@ export class frm_guanka extends frmbase {
     protected OnShow(): void {
         super.OnShow();
         this.brushlibao();
+        this.updateModeButtons();
     }
     brushlibao(): void { 
         if(Main.plat == platform.BYTE) {
@@ -136,4 +163,3 @@ export class frm_guanka extends frmbase {
         
     }
 }
-

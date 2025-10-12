@@ -1,6 +1,9 @@
 import { PlayerPrefb } from "./PlayerPrefb";
 
 export class tools { 
+    /**
+     * 提醒道具数量
+     */
     static get num_Remind()
     {
         return PlayerPrefb.getInt("num_Remind", 3); //获取剩余次数
@@ -12,6 +15,10 @@ export class tools {
         }
         PlayerPrefb.setInt("num_Remind", value); //设置剩余次数
     }
+    
+    /**
+     * 刷新道具数量
+     */
     static get num_brush()
     {
         return PlayerPrefb.getInt("num_brush", 3);
@@ -23,6 +30,10 @@ export class tools {
         }
         PlayerPrefb.setInt("num_brush", value); 
     }
+    
+    /**
+     * 时间道具数量
+     */
     static get num_time()
     {
         return PlayerPrefb.getInt("num_time", 3);

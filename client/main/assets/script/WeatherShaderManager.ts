@@ -8,10 +8,15 @@ export class WeatherShaderManager extends Component {
     @property(Sprite)
     backgroundSprite: Sprite = null!;
 
+    // 添加第二个背景精灵的支持
+    @property(Sprite)
+    backgroundSprite2: Sprite = null!;
+
     @property(Material)
     weatherMaterial: Material = null!;
 
     private originalMaterial: Material | null = null;
+    private originalMaterial2: Material | null = null;
     private isWeatherActive: boolean = false;
     private snowEffectNode: Node | null = null;
     private snowParticleSystem: ParticleSystem2D | null = null;
@@ -20,7 +25,7 @@ export class WeatherShaderManager extends Component {
     private weatherParams = {
         hueShift: -30,      // 负值偏向蓝色，营造阴天效果 (已在简化版中移除)
         saturation: 0.6,    // 降低饱和度 (已在简化版中移除)
-        brightness: 0.8,    // 稍微变暗 (已在简化版中移除)
+        brightness: 0.8,    // 稢微变暗 (已在简化版中移除)
         weatherIntensity: 0.0 // 天气强度，0-1
     };
 
@@ -43,6 +48,12 @@ export class WeatherShaderManager extends Component {
             // 保存原始材质
             this.originalMaterial = this.backgroundSprite.getMaterial(0);
             console.log('已保存原始背景材质');
+        }
+
+        // 保存第二个背景精灵的原始材质
+        if (this.backgroundSprite2) {
+            this.originalMaterial2 = this.backgroundSprite2.getMaterial(0);
+            console.log('已保存第二个背景精灵的原始材质');
         }
 
         if (!this.weatherMaterial) {
@@ -108,7 +119,7 @@ export class WeatherShaderManager extends Component {
      * 激活天气效果
      */
     activateWeatherEffect() {
-        if (!this.backgroundSprite || !this.weatherMaterial) {
+        if ((!this.backgroundSprite && !this.backgroundSprite2) || !this.weatherMaterial) {
             console.warn('背景Sprite或天气材质未设置，无法应用天气效果');
             return;
         }
@@ -120,8 +131,15 @@ export class WeatherShaderManager extends Component {
 
         console.log('开始激活天气效果 - 阴天模式');
 
-        // 应用天气材质
-        this.backgroundSprite.setMaterial(this.weatherMaterial, 0);
+        // 应用天气材质到第一个背景精灵
+        if (this.backgroundSprite) {
+            this.backgroundSprite.setMaterial(this.weatherMaterial, 0);
+        }
+
+        // 应用天气材质到第二个背景精灵
+        if (this.backgroundSprite2) {
+            this.backgroundSprite2.setMaterial(this.weatherMaterial, 0);
+        }
 
         // 初始化参数
         this.setShaderParams(0, this.weatherParams.saturation, this.weatherParams.brightness, 0);
@@ -157,8 +175,14 @@ export class WeatherShaderManager extends Component {
      * 重置天气效果
      */
     resetWeatherEffect() {
+        // 恢复第一个背景精灵的原始材质
         if (this.backgroundSprite && this.originalMaterial) {
             this.backgroundSprite.setMaterial(this.originalMaterial, 0);
+        }
+
+        // 恢复第二个背景精灵的原始材质
+        if (this.backgroundSprite2 && this.originalMaterial2) {
+            this.backgroundSprite2.setMaterial(this.originalMaterial2, 0);
         }
 
         // 停止雪花特效
@@ -243,6 +267,11 @@ export class WeatherShaderManager extends Component {
                 // 完全恢复后，换回原始材质
                 if (this.backgroundSprite && this.originalMaterial) {
                     this.backgroundSprite.setMaterial(this.originalMaterial, 0);
+                }
+
+                // 恢复第二个背景精灵的原始材质
+                if (this.backgroundSprite2 && this.originalMaterial2) {
+                    this.backgroundSprite2.setMaterial(this.originalMaterial2, 0);
                 }
 
                 this.isWeatherActive = false;
