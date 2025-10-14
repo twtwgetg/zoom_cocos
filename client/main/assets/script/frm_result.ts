@@ -73,17 +73,35 @@ export class frm_result extends frmbase {
         
         this.btn_again_faild.node.on(Button.EventType.CLICK, () =>
         {
-            Main.DispEvent("event_play",this.level_played);
+            // 检查是否为无限模式
+            if (this.level_played === -1) {
+                // 无限模式失败后重新开始无限模式
+                Main.DispEvent("event_play_infinite");
+                this.hide();
+            } else {
+                // 普通模式失败后重新开始当前关卡
+                Main.DispEvent("event_play", this.level_played);
+            }
         }, this);
  
         this.btn_menu_faild.node.on(Button.EventType.CLICK, () =>
         {
+
             Main.DispEvent("event_begin");
+            
         }, this);
 
         this.btn_again_win.node.on(Button.EventType.CLICK, () =>
         {
-            Main.DispEvent("event_play",this.level_played);
+            // 检查是否为无限模式
+            if (this.level_played === -1) {
+                // 无限模式胜利后重新开始无限模式
+                Main.DispEvent("event_play_infinite");
+                this.hide();
+            } else {
+                // 普通模式胜利后重新开始当前关卡
+                Main.DispEvent("event_play", this.level_played);
+            }
         }, this);
         
          this.btn_menu_win.node.on(Button.EventType.CLICK, () =>
@@ -120,6 +138,8 @@ export class frm_result extends frmbase {
 
             this.lbl_source_suc.string =this.formatNumber(source);
             this.brushStar(this.level_played);
+            // 确保下一关按钮可见
+            this.btn_nextlevel.node.active = true;
             // StartCoroutine(showsource(source_suc, source));
             this.show();
             // 上报游戏胜利事件
@@ -127,6 +147,26 @@ export class frm_result extends frmbase {
             
             // 显示当前游戏模式
             this.updateModeLabel(true);
+            // 积分会在frm_main.ts中保存
+            return null;
+        });
+        
+        // 添加无限模式胜利事件处理
+        Main.RegistEvent("game_win_infinite", () =>
+        {
+            this.level_played = -1; // 无限模式使用特殊关卡编号
+            this.sucess.active=true;
+            this.faild.active=false;
+            frm_main.isPause=true;
+            this.level_suc.string = "无限模式";
+            // 无限模式没有时间概念，显示特殊信息
+            this.lbl_source_suc.string = "成功清空网格";
+            // 隐藏下一关按钮，只显示再玩一次按钮
+            this.btn_nextlevel.node.active = false;
+            this.show();
+            // 上报游戏胜利事件
+            ToutiaoEventMgr.reportGameWin(-1); // 使用-1表示无限模式
+            // 积分会在frm_main.ts中保存
             return null;
         });
         Main.RegistEvent("game_lose", (x) =>
@@ -145,6 +185,7 @@ export class frm_result extends frmbase {
             
             // 显示当前游戏模式
             this.updateModeLabel(false);
+            // 积分会在frm_main.ts中保存
             return null;
         });
         
@@ -157,12 +198,14 @@ export class frm_result extends frmbase {
             this.sucess.active=false;
             // 无限模式没有时间概念，显示特殊信息
             this.lbl_soruce_faild.string = "网格已填满";
+            // 隐藏下一关按钮
+            this.btn_nextlevel.node.active = false;
             this.show(); 
             // 上报游戏失败事件
             ToutiaoEventMgr.reportGameLose(-1); // 使用-1表示无限模式
+            // 积分会在frm_main.ts中保存
             return null;
         });
-        
         Main.RegistEvent("gamebegin", (x) =>
         {
             this.hide();
@@ -171,6 +214,8 @@ export class frm_result extends frmbase {
 
         Main.RegistEvent("event_begin", (x) =>
         {
+            // 停止心跳音效
+            Main.DispEvent("event_heartbeat_stop");
             this.hide();
             return null;
         });

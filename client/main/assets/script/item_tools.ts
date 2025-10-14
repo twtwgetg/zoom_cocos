@@ -7,6 +7,10 @@ declare global {
         shareAppMessage?(options: WechatMiniprogram.ShareAppMessageToGroupOption): void;
     }
 }
+
+// 声明tt类型（抖音小程序）
+declare const tt: any;
+
 export enum ToolsType{ 
     video = 0,
     share = 1,  
@@ -45,6 +49,32 @@ export class item_tools extends Component {
 // 主动分享
     // 在cocosCreator中增加一个UI按钮，设置点击事件即可，不再赘述
     public initativeShare(callBack?: any) {
+        // 检查是否为抖音环境
+        const tt = window['tt'];
+        if (tt) {
+            console.log('开始抖音分享');
+            
+            // 调用抖音分享API，通过设置withShareTicket为false来隐藏"捎句话"界面
+            tt.shareAppMessage({
+                title: '一起来连连看吧！', // 分享的标题
+                path: '/pages/index/index?param=value', // 分享的路径，可携带参数
+                withShareTicket: false, // 设置为false以隐藏"捎句话"界面
+                //imageUrl: 'https://example.com/image.jpg', // 分享的图片
+                success(res) {
+                    console.log('抖音分享成功', res);
+                    tt.showToast({title: '分享成功!',icon: 'success'});
+                    callBack && callBack(true);
+                },
+                fail(err) {
+                    console.log('抖音分享失败', err);
+                    tt.showToast({title: '分享失败',icon: 'none'});
+                    callBack && callBack(false);
+                }
+            });
+            return;
+        }
+
+        // 微信环境的分享逻辑
         const wx = window['wx'];
         if (!wx) {
             callBack(true);
@@ -52,7 +82,7 @@ export class item_tools extends Component {
             return;
         }
 
-        console.log('开始分享'); // 分享成功后的回调
+        console.log('开始微信分享'); // 分享成功后的回调
         wx.shareAppMessage({
             title: '一起来连连看吧！', // 分享的标题
             path: '/pages/index/index?param=value', // 分享的路径，可携带参数

@@ -25,6 +25,8 @@ export class frm_login extends frmbase {
         });
         Main.RegistEvent("event_begin", (x) =>
         {
+            // 停止心跳音效
+            Main.DispEvent("event_heartbeat_stop");
             this.hide();
             return null;
         });

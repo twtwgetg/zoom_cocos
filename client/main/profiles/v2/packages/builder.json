@@ -87,11 +87,11 @@
       "1754894211767": {
         "type": "build",
         "id": "1754894211767",
-        "progress": 0.19090909090909092,
-        "state": "processing",
+        "progress": 1,
+        "state": "success",
         "stage": "build",
-        "message": "构建引擎脚本 start...",
-        "detailMessage": "[build-engine]Module source \"cc\":\rexport * from 'C:\\\\ProgramData\\\\cocos\\\\editors\\\\Creator\\\\3.8.6\\\\resources\\\\resources\\\\3d\\\\engine\\\\exports\\\\2d.ts';\rexport * from 'C:\\\\ProgramData\\\\cocos\\\\editors\\\\Cre...",
+        "message": "2025-10-14 09:48:44 build success in 2 min 10 s!",
+        "detailMessage": "Asset DB is resume!\r",
         "options": {
           "name": "main",
           "server": "",
@@ -148,7 +148,7 @@
           "__version__": "1.3.9",
           "logDest": "project://temp/builder/log/bytedance-mini-game2025-8-11 14-36.log"
         },
-        "time": "2025-10-12 21:24:37",
+        "time": "2025-10-14 09:46:34",
         "dirty": false
       },
       "1754981691481": {

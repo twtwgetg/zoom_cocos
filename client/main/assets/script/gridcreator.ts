@@ -79,8 +79,14 @@ export class gridcreator extends Component {
                 // 等待0.5秒
                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                // 触发游戏胜利事件
-                Main.DispEvent('game_win',LevelMgr.level);
+                // 检查是否为无限模式
+                if (this.isInfiniteMode) {
+                    // 无限模式下触发无限模式胜利事件
+                    Main.DispEvent('game_win_infinite');
+                } else {
+                    // 普通模式下触发普通胜利事件
+                    Main.DispEvent('game_win',LevelMgr.level);
+                }
             }
         });
 
@@ -162,6 +168,8 @@ export class gridcreator extends Component {
 
     Create(level_playing: number) {
         this.gameOver = false;
+        // 确保重置无限模式标志，这是修复卡牌布局偏左问题的关键
+        this.isInfiniteMode = false;
         this.level_cur = level_playing;
 
         // 清空TObject（需要根据实际实现调整）
@@ -551,6 +559,11 @@ export class gridcreator extends Component {
             }
         }
 
+        // 清空所有卡牌上的提醒标志
+        for (const card of remainingCards) {
+            card.unSel(); // 清除选中状态和提醒标志
+        }
+
         console.log(`已刷新 ${count} 张卡片的类型`);
     }
 
@@ -722,6 +735,7 @@ export class gridcreator extends Component {
     // 创建无限模式关卡
     CreateInfiniteMode(width: number, height: number) {
         this.gameOver = false;
+        // 确保设置无限模式标志
         this.isInfiniteMode = true;
         this.infiniteWid = width;
         this.infiniteHei = height;
@@ -795,7 +809,7 @@ export class gridcreator extends Component {
             this.SpawnCard(pos1, type);
             this.SpawnCard(pos2, type);
         }
-        
+    
         console.log(`无限模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，已填充 ${fillCount * 2} 张卡片`);
     }
     

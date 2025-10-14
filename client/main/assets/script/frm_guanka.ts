@@ -4,6 +4,7 @@ import { Main,platform } from './main';
 import { LevelMgr, GameMode } from './levelmgr';
 import { item_guank } from './item_guank';
 import { EntrySceneChecker } from './EntrySceneChecker';
+import { PlayerPrefb } from './PlayerPrefb';
 const { ccclass, property } = _decorator;
 //declare const tt: any;
 @ccclass('frm_guanka')
@@ -34,6 +35,12 @@ export class frm_guanka extends frmbase {
     public btn_libao: Button = null!;
     @property(Button)
     public btn_lingqu: Button = null!;
+    @property(Button)
+    public btn_sanxiao: Button = null!;
+    // 添加积分显示标签
+    @property(Label)
+    public lbl_jifen: Label = null!;
+    
     start() {
         if(Main.plat == platform.WECHAT){
             this.btn_libao.node.active = false;
@@ -64,6 +71,8 @@ export class frm_guanka extends frmbase {
         //this.fillGuanKa();
         this.brushGuanKa();
         this.updateModeButtons();
+        // 更新积分显示
+        this.updateJifenLabel();
     }
     /**
      * 更新模式按钮状态
@@ -114,10 +123,24 @@ export class frm_guanka extends frmbase {
         }
         this.trans_guanka.setPosition(0, 0); 
     }
+    
+    /**
+     * 更新积分标签显示
+     */
+    private updateJifenLabel() {
+        if (this.lbl_jifen) {
+            // 从本地存储加载积分
+            const jifen = PlayerPrefb.getInt("jifen", 0);
+            this.lbl_jifen.string = "积分: " + jifen;
+        }
+    }
+    
     protected OnShow(): void {
         super.OnShow();
         this.brushlibao();
         this.updateModeButtons();
+        // 更新积分显示
+        this.updateJifenLabel();
     }
     brushlibao(): void { 
         if(Main.plat == platform.BYTE) {
@@ -132,6 +155,8 @@ export class frm_guanka extends frmbase {
         this.btn_lingqu.node.active = false; 
         Main.RegistEvent("event_begin",(x)=>{
             this.show();
+            // 更新积分显示
+            this.updateJifenLabel();
             return null;
         });
         Main.RegistEvent("event_inited",(x)=>{ 

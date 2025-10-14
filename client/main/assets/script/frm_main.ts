@@ -7,6 +7,7 @@ import { tools } from './tools';
 import { ItemType } from './item_tools'; 
 import { WeatherShaderManager } from './WeatherShaderManager';
 import { ToutiaoEventMgr } from './ToutiaoEventMgr';
+import { PlayerPrefb } from './PlayerPrefb';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -16,6 +17,8 @@ export class frm_main extends frmbase {
     @property(Button)
     btn_refrush: Button = null!;
 
+    @property(Label)
+    lbl_jifen: Label = null!;
     @property(Button)
     btn_remind: Button = null!;
     @property(Button)
@@ -24,6 +27,8 @@ export class frm_main extends frmbase {
     btn_pause: Button = null!;
     time_all: number = 0;
     time_now: number = 0;
+    // 添加积分变量
+    private jifen: number = 0;
     // 添加初始时间道具数量变量
     private initialTimeCount: number = 0;
     @property(ProgressBar)
@@ -55,6 +60,8 @@ export class frm_main extends frmbase {
     private heartbeatPlaying: boolean = false;
     private lastHeartbeatTime: number = 0;
     private heartbeatInterval: number = 1.0; // 心跳间隔时间（秒）
+    // 添加心跳暂停标志
+    private heartbeatPaused: boolean = false;
 
     // 添加无限模式相关变量
     private isInfinityMode: boolean = false; // 是否为无限模式
@@ -109,6 +116,11 @@ export class frm_main extends frmbase {
             this.animateGridColor(new Color(88, 88, 88, 255), 0.5);
             // 取消天气效果
             this.deactivateWeatherEffect();
+            
+            // 冰封结束时恢复心跳逻辑
+            this.heartbeatPaused = false;
+            // 重置心跳播放状态，让游戏循环重新评估是否需要播放心跳音效
+            this.heartbeatPlaying = false;
         }
         else{
             this.spr_bar.color=new Color(0,214,255,255);
@@ -118,6 +130,11 @@ export class frm_main extends frmbase {
             this.animateGridColor(new Color(0, 104, 156, 255), 0.5);
             // 激活天气效果
             this.activateWeatherEffect();
+            
+            // 冰封开始时暂停心跳逻辑
+            this.heartbeatPaused = true;
+            // 停止心跳音效
+            Main.DispEvent("event_heartbeat_stop");
         }
     }
     protected onLoad(): void {
@@ -140,18 +157,27 @@ export class frm_main extends frmbase {
                 this.playToolButtonsEntranceAnimation();
                 // 执行你的拦截逻辑
             }, 0);
- 
+
             this.level_playing = x;
             this.lbl_guanka.string = "第 "+(x+1)+" 关";
             
             // 显示当前游戏模式
             this.updateModeLabel();
             
+            // 初始化积分并从本地存储加载
+            this.loadJifen();
+            this.updateJifenLabel();
+            
             // 记录初始时间道具数量
             this.initialTimeCount = tools.num_time;
             
             // 重置时间警告状态
             this.timeWarningShown = false;
+            
+            // 重置卡牌消失检测
+            this.lastCardRemovedTime = 0;
+            this._lastCardCount = undefined;
+            this.stopRemindButtonFlashing();
 
             return null;
         });
@@ -174,18 +200,27 @@ export class frm_main extends frmbase {
                 // 启动无限模式生成器
                 this.startInfiniteModeGenerator();
             }, 0);
- 
+
             this.level_playing = -1; // 无限模式使用特殊关卡编号
             this.lbl_guanka.string = "无限模式";
             
             // 显示当前游戏模式
             this.updateModeLabel();
             
+            // 初始化积分并从本地存储加载
+            this.loadJifen();
+            this.updateJifenLabel();
+            
             // 记录初始时间道具数量
             this.initialTimeCount = tools.num_time;
             
             // 重置时间警告状态
             this.timeWarningShown = false;
+            
+            // 重置卡牌消失检测
+            this.lastCardRemovedTime = 0;
+            this._lastCardCount = undefined;
+            this.stopRemindButtonFlashing();
 
             return null;
         });
@@ -205,7 +240,27 @@ export class frm_main extends frmbase {
             return null;
         });
         Main.RegistEvent("event_begin",()=>{ 
+            // 停止心跳音效
+            Main.DispEvent("event_heartbeat_stop");
+            // 重置心跳播放状态
+            this.heartbeatPlaying = false;
+            // 停止提醒道具按钮闪烁
+            this.stopRemindButtonFlashing();
+ 
             this.hide();
+            return null;
+        });
+        // 添加恢复游戏事件处理
+        Main.RegistEvent("event_resume_game",()=>{ 
+            // 重置心跳播放状态，让游戏循环重新评估是否需要播放心跳音效
+            this.heartbeatPlaying = false;
+            // 重置卡牌消失检测时间，避免暂停后立即触发闪烁
+            this.lastCardRemovedTime = this.time_now;
+            return null;
+        });
+        // 注册积分增加事件处理
+        Main.RegistEvent("event_add_jifen",()=>{ 
+            this.addJifen();
             return null;
         });
         // 修复：不应该在event_play事件监听器中再次触发event_play事件
@@ -257,6 +312,8 @@ export class frm_main extends frmbase {
                 Main.DispEvent("event_tixing");
                 // 上报使用道具事件
                 ToutiaoEventMgr.reportUseItem(2); // 2表示提醒道具
+                // 停止提醒道具按钮闪烁
+                this.stopRemindButtonFlashing();
             }
             else{
                 Main.DispEvent("event_tools",{tp:ItemType.remind,autouse:()=>{
@@ -265,6 +322,8 @@ export class frm_main extends frmbase {
                         that.brushTools();
                         // 上报使用道具事件
                         ToutiaoEventMgr.reportUseItem(2); // 2表示提醒道具
+                        // 停止提醒道具按钮闪烁
+                        this.stopRemindButtonFlashing();
                     //     Main.DispEvent("event_tixing");    
                     // }
                 }});
@@ -346,6 +405,12 @@ export class frm_main extends frmbase {
     private timeWarningShown: boolean = false; // 是否已显示时间警告
     private lastTimeWarningTime: number = 0; // 上次显示时间警告的时间
     
+    // 添加卡牌消失检测相关变量
+    private lastCardRemovedTime: number = 0; // 上次卡牌消失的时间
+    private isRemindButtonFlashing: boolean = false; // 提醒道具按钮是否正在闪烁
+    private remindButtonFlashTween: any = null; // 提醒道具按钮闪烁动画的引用
+    private _lastCardCount: number | undefined = undefined; // 上一次的卡牌数量
+    
     update(deltaTime: number) {
 
         if(frm_main.isPause) 
@@ -356,10 +421,13 @@ export class frm_main extends frmbase {
 
         this.time_now += deltaTime; 
         this.progress_time.progress =1.0- this.time_now / this.time_all; 
-        
+    
+        // 检测卡牌消失时间
+        this.checkCardRemovalTime();
+    
         // 检查是否需要开始倒计时心跳音效（剩余时间小于10秒）
         const remainingTime = this.time_all - this.time_now;
-        
+    
         // 检查是否需要提醒玩家（剩余时间小于15秒）
         if (remainingTime <= 15 && !this.timeWarningShown) {
             // 无论是否有时间道具都显示提醒
@@ -375,7 +443,7 @@ export class frm_main extends frmbase {
             this.timeWarningShown = true;
             this.lastTimeWarningTime = this.time_now;
         }
-        
+    
         // 每隔5秒重复提醒一次
         if (this.timeWarningShown && (this.time_now - this.lastTimeWarningTime) >= 5) {
             const currentRemainingTime = this.time_all - this.time_now;
@@ -391,21 +459,22 @@ export class frm_main extends frmbase {
                 this.lastTimeWarningTime = this.time_now;
             }
         }
-        
+    
         // 如果时间已经充足，重置提醒状态
         if (remainingTime > 20) {
             this.timeWarningShown = false;
         }
-        
-        if (remainingTime <= 10 && !this.heartbeatPlaying) {
+    
+        // 只有在心跳未暂停时才处理心跳逻辑
+        if (!this.heartbeatPaused && remainingTime <= 10 && !this.heartbeatPlaying) {
             // 开始播放心跳音效
             Main.DispEvent("event_heartbeat_start");
             this.heartbeatPlaying = true;
             this.lastHeartbeatTime = 0; // 重置心跳计时器
         }
-        
-        // 如果心跳音效正在播放，控制心跳节奏
-        if (this.heartbeatPlaying) {
+    
+        // 如果心跳音效正在播放且未暂停，控制心跳节奏
+        if (!this.heartbeatPaused && this.heartbeatPlaying) {
             // 更新心跳计时器
             this.lastHeartbeatTime += deltaTime;
             
@@ -424,7 +493,7 @@ export class frm_main extends frmbase {
                 this.lastHeartbeatTime = 0; // 重置心跳计时器
             }
         }
-        
+    
         if(this.time_now >= this.time_all) {
             // 只有在计时模式下才触发游戏失败，无限模式不计时
             // 无限模式通过isInfinityMode标志判断，普通模式通过jishi标志和time_all>0判断
@@ -438,6 +507,100 @@ export class frm_main extends frmbase {
         }
     }
     
+    /**
+     * 检测卡牌消失时间，如果超过5秒没有卡牌消失，就让提醒道具闪烁
+     */
+    private checkCardRemovalTime() {
+        // 只在游戏进行中检测
+        if (frm_main.isPause || !this.jishi) {
+            return;
+        }
+        
+        // 获取当前卡牌数量
+        const currentCardCount = this.gridcreator.node.children.length;
+        
+        // 如果卡牌数量发生变化（减少），更新上次卡牌消失时间
+        if (!this.hasOwnProperty('_lastCardCount') || this._lastCardCount !== currentCardCount) {
+            this.lastCardRemovedTime = this.time_now;
+            this._lastCardCount = currentCardCount;
+            
+            // 停止提醒道具按钮的闪烁动画（如果正在播放）
+            if (this.isRemindButtonFlashing) {
+                this.stopRemindButtonFlashing();
+            }
+        }
+        
+        // 检查是否超过5秒没有卡牌消失
+        const timeSinceLastRemoval = this.time_now - this.lastCardRemovedTime;
+        if (timeSinceLastRemoval >= 5 && currentCardCount > 0) {
+            // 检查玩家是否还有提醒道具
+        
+            // 开始播放提醒道具按钮的闪烁动画
+            this.playRemindButtonFlashingAnimation(); 
+        }
+    }
+
+    /**
+     * 播放提醒道具按钮闪烁动画
+     */
+    private playRemindButtonFlashingAnimation() {
+        // 如果已经在闪烁，则不重复播放
+        if (this.isRemindButtonFlashing) {
+            return;
+        }
+        
+        // 检查提醒道具按钮是否存在
+        if (!this.btn_remind || !this.btn_remind.node) {
+            console.warn('提醒道具按钮未找到');
+            return;
+        }
+        
+        // 设置闪烁状态
+        this.isRemindButtonFlashing = true;
+        
+        // 保存原始缩放
+        const originalScale = this.btn_remind.node.scale.clone();
+        
+        // 停止之前的动画
+        if (this.remindButtonFlashTween) {
+            this.remindButtonFlashTween.stop();
+        }
+        
+        // 创建闪烁动画（通过改变缩放实现）
+        this.remindButtonFlashTween = tween(this.btn_remind.node)
+            .repeatForever(
+                tween()
+                    .to(0.3, { scale: new Vec3(originalScale.x * 1.2, originalScale.y * 1.2, originalScale.z) })
+                    .to(0.3, { scale: originalScale })
+                    .to(0.3, { scale: new Vec3(originalScale.x * 1.1, originalScale.y * 1.1, originalScale.z) })
+                    .to(0.3, { scale: originalScale })
+            )
+            .start();
+}
+
+/**
+ * 停止提醒道具按钮闪烁动画
+ */
+private stopRemindButtonFlashing() {
+    // 重置闪烁状态
+    this.isRemindButtonFlashing = false;
+    
+    // 停止动画
+    if (this.remindButtonFlashTween) {
+        this.remindButtonFlashTween.stop();
+        this.remindButtonFlashTween = null;
+    }
+    
+    // 恢复按钮原始状态
+    if (this.btn_remind && this.btn_remind.node) {
+        // 停止所有动画
+        tween(this.btn_remind.node).stop();
+        
+        // 恢复原始缩放
+        this.btn_remind.node.scale = new Vec3(1, 1, 1);
+    }
+}
+
     /**
      * 获取初始时间道具数量（用于判断是否使用了时间道具）
      */
@@ -687,4 +850,48 @@ export class frm_main extends frmbase {
         }
         this.isInfinityMode = false;
     }
+    
+    // 添加积分相关方法
+    /**
+     * 增加积分
+     */
+    private addJifen() {
+        this.jifen++;
+        this.updateJifenLabel();
+        // 保存积分到本地存储
+        this.saveJifen();
+    }
+    
+    /**
+     * 更新积分标签显示
+     */
+    private updateJifenLabel() {
+        if (this.lbl_jifen) {
+            this.lbl_jifen.string = "积分: " + this.jifen;
+        }
+    }
+    
+    /**
+     * 从本地存储加载积分
+     */
+    private loadJifen() {
+        this.jifen = PlayerPrefb.getInt("jifen", 0);
+    }
+    
+    /**
+     * 保存积分到本地存储
+     */
+    private saveJifen() {
+        PlayerPrefb.setInt("jifen", this.jifen);
+    }
+    
+    /**
+     * 重置积分
+     */
+    private resetJifen() {
+        this.jifen = 0;
+        this.updateJifenLabel();
+        this.saveJifen();
+    }
+    
 }

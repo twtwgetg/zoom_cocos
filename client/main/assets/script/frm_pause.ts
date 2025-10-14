@@ -160,6 +160,8 @@ export class frm_pause extends frmbase {
         Main.RegistEvent("event_resume",(x)=>{
             this.hide();
             frm_main.isPause = false;
+            // 发送事件通知主游戏界面恢复游戏，以便重新评估是否需要播放心跳音效
+            Main.DispEvent("event_resume_game");
             return null;
         });
     }
@@ -169,6 +171,9 @@ export class frm_pause extends frmbase {
      */
     show() {
         super.show();
+        
+        // 停止心跳音效
+        Main.DispEvent("event_heartbeat_stop");
         
         // 记录当前音乐是否正在播放
         const musicManager = musicmgr.instance;

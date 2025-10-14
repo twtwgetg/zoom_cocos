@@ -64,12 +64,6 @@ export class InterstitialAdManager extends Component {
             }, 30000); // 30秒后重试
         });
 
-        // 监听广告显示
-        this.interstitialAd.onShow(() => {
-            this.isAdShowing = true;
-            console.log("插屏广告显示成功");
-        });
-
         // 监听广告关闭
         this.interstitialAd.onClose(() => {
             this.isAdShowing = false;
