@@ -5,6 +5,7 @@ import { frm_main } from './frm_main';
 import { soundmgr } from './soundmgr';
 import { musicmgr } from './musicmgr';
 import { LevelMgr } from './levelmgr';
+import { gridcreator } from './gridcreator';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_pause')
@@ -162,9 +163,27 @@ export class frm_pause extends frmbase {
         });
         Main.RegistEvent("event_begin",(x)=>{ 
             this.hide();
+            // 重置连连看模式动画类型，确保新游戏使用同一种动画效果
+            const mainNode = this.node.parent?.getChildByName('frm_main');
+            if (mainNode) {
+                const frmMain = mainNode.getComponent('frm_main') as any;
+                if (frmMain && frmMain.gridcreator) {
+                    // 通过gridcreator实例调用静态方法
+                    frmMain.gridcreator.constructor.resetLianlianAnimationType();
+                }
+            }
         });
         Main.RegistEvent("event_restart",(x)=>{ 
             this.hide();
+            // 重置连连看模式动画类型，确保重新开始游戏使用同一种动画效果
+            const mainNode = this.node.parent?.getChildByName('frm_main');
+            if (mainNode) {
+                const frmMain = mainNode.getComponent('frm_main') as any;
+                if (frmMain && frmMain.gridcreator) {
+                    // 通过gridcreator实例调用静态方法
+                    frmMain.gridcreator.constructor.resetLianlianAnimationType();
+                }
+            }
         });
         Main.RegistEvent("event_resume",(x)=>{
             this.hide();

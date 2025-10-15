@@ -544,13 +544,267 @@ export class gridcreator extends Component {
         const cx = instantiate(this.item);
         this.node.addChild(cx);
 
-        this.MoveCardNode(cx, mapPos);
-
         // 设置精灵
         const xx = this.pl[type];
         const tobj = cx.getComponent('TObject') as any;
         // 注意：mapPos是基于1的索引，而卡牌的x,y属性是基于0的索引
         tobj?.SetSprite(mapPos.x - 1, mapPos.y - 1, type, xx, this);
+
+        // 为所有模式添加出场动画，传递卡牌类型确保随机性
+        this.addCardEntranceAnimation(cx, mapPos, type);
+    }
+
+    /**
+     * 添加卡牌出场动画效果
+     */
+    private addCardEntranceAnimation(cardNode: Node, mapPos: Vec2, cardType: number) {
+        // 计算目标位置
+        const targetPos2D = this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize, (mapPos.y - 1) * this.gridsize));
+        const targetPos = new Vec3(targetPos2D.x, targetPos2D.y, 0);
+        
+        // 设置初始状态
+        cardNode.setScale(new Vec3(0.1, 0.1, 1));
+        cardNode.setPosition(targetPos);
+        
+        // 根据游戏模式选择不同的动画效果
+        if (this.isSanxiaoMode) {
+            // 三消模式：快速简洁的动画
+            this.addSanxiaoEntranceAnimation(cardNode, targetPos, cardType);
+        } else {
+            // 连连看模式：丰富多样的动画
+            this.addLianlianEntranceAnimation(cardNode, targetPos, cardType);
+        }
+        
+        // 设置最终位置和大小
+        const rect = cardNode.getComponent(UITransform)!;
+        rect.setContentSize(this.gridsize, this.gridsize);
+        rect.anchorPoint = new Vec2(0, 0);
+        cardNode.name = `${mapPos.x - 1},${mapPos.y - 1}`;
+    }
+
+    // 静态计数器，确保每次调用都有不同的随机种子
+    private static animationCounter: number = 0;
+    
+    // 连连看模式动画类型（-1表示未初始化，0-5表示具体动画类型）
+    private static lianlianAnimationType: number = -1;
+
+    /**
+     * 生成更好的随机动画类型
+     */
+    private getRandomAnimationType(position: Vec3, cardType: number, maxTypes: number): number {
+        // 使用计数器确保每次调用都有不同的随机结果
+        gridcreator.animationCounter++; 
+
+        // 使用最简单直接的方法：直接使用Math.random()
+        // 这样可以确保真正的随机性
+        return Math.floor(Math.random() * maxTypes);
+    }
+
+    /**
+     * 重置连连看模式动画类型（每次开始新游戏时调用）
+     */
+    public static resetLianlianAnimationType(): void {
+        gridcreator.lianlianAnimationType = -1;
+    }
+
+    /**
+     * 三消模式出场动画（快速简洁）
+     */
+    private addSanxiaoEntranceAnimation(cardNode: Node, targetPos: Vec3, cardType: number) {
+        // 使用更好的随机数生成器，确保每次效果不同
+        const animationType = this.getRandomAnimationType(targetPos, cardType, 3);
+        
+        switch (animationType) {
+            case 0: // 快速缩放效果
+                cardNode.setScale(new Vec3(0.8, 0.8, 1)); // 设置初始缩放值
+                tween(cardNode)
+                    .to(0.2, { scale: new Vec3(1.1, 1.1, 1) }, { easing: 'backOut' })
+                    .to(0.1, { scale: new Vec3(1, 1, 1) })
+                    .call(() => {
+                        // 确保最终缩放到正常大小
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+                
+            case 1: // 快速淡入效果
+                const sprite = cardNode.getComponent(Sprite);
+                if (sprite) {
+                    sprite.color = new Color(255, 255, 255, 128);
+                    tween(sprite)
+                        .to(0.2, { color: new Color(255, 255, 255, 255) })
+                        .start();
+                }
+                tween(cardNode)
+                    .to(0.2, { scale: new Vec3(1, 1, 1) }, { easing: 'sineOut' })
+                    .call(() => {
+                        // 确保最终缩放到正常大小
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+                
+            case 2: // 轻微弹跳效果
+                cardNode.setScale(new Vec3(0.8, 0.8, 1));
+                tween(cardNode)
+                    .to(0.15, { scale: new Vec3(1.05, 1.05, 1) })
+                    .to(0.1, { scale: new Vec3(1, 1, 1) })
+                    .call(() => {
+                        // 确保最终缩放到正常大小
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+                
+            default:
+                tween(cardNode)
+                    .to(0.2, { scale: new Vec3(1, 1, 1) }, { easing: 'sineOut' })
+                    .call(() => {
+                        // 确保最终缩放到正常大小
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+        }
+    }
+
+    /**
+     * 连连看模式出场动画（统一效果）
+     */
+    private addLianlianEntranceAnimation(cardNode: Node, targetPos: Vec3, cardType: number) {
+        // 使用静态变量确保所有卡牌使用同一种动画效果
+        if (gridcreator.lianlianAnimationType === -1) {
+            gridcreator.lianlianAnimationType = Math.floor(Math.random() * 6);
+        }
+        const animationType = gridcreator.lianlianAnimationType;
+        
+        switch (animationType) {
+            case 0: // 缩放弹跳效果
+                cardNode.setScale(new Vec3(0.5, 0.5, 1)); // 设置初始缩放值
+                tween(cardNode)
+                    .to(0.3, { scale: new Vec3(1.2, 1.2, 1) }, { easing: 'backOut' })
+                    .to(0.2, { scale: new Vec3(1, 1, 1) }, { easing: 'sineOut' })
+                    .call(() => {
+                        // 确保最终缩放到正常大小
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+                
+            case 1: // 旋转缩放效果
+                cardNode.setRotationFromEuler(new Vec3(0, 0, 180));
+                tween(cardNode)
+                    .parallel(
+                        tween().to(0.4, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' }),
+                        tween().to(0.4, { eulerAngles: new Vec3(0, 0, 0) }, { easing: 'backOut' })
+                    )
+                    .call(() => {
+                        // 确保最终缩放到正常大小
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+                
+            case 2: // 从上方掉落效果
+                cardNode.setScale(new Vec3(1, 1, 1));
+                cardNode.setPosition(targetPos.x, targetPos.y + 300, 0);
+                tween(cardNode)
+                    .to(0.5, { position: targetPos }, { 
+                        easing: 'bounceOut',
+                        onUpdate: (target, ratio) => {
+                            // 掉落过程中轻微旋转
+                            const rotation = Math.sin(ratio * Math.PI * 3) * 10;
+                            target.setRotationFromEuler(new Vec3(0, 0, rotation));
+                        }
+                    })
+                    .call(() => {
+                        // 掉落完成后轻微弹跳
+                        tween(cardNode)
+                            .to(0.1, { position: new Vec3(targetPos.x, targetPos.y - 10, 0) })
+                            .to(0.1, { position: targetPos })
+                            .call(() => {
+                                // 确保最终缩放到正常大小
+                                cardNode.setScale(new Vec3(1, 1, 1));
+                            })
+                            .start();
+                    })
+                    .start();
+                break;
+                
+            case 3: // 淡入缩放效果
+                cardNode.setScale(new Vec3(0.5, 0.5, 1));
+                const sprite = cardNode.getComponent(Sprite);
+                if (sprite) {
+                    sprite.color = new Color(255, 255, 255, 0);
+                    tween(sprite)
+                        .to(0.4, { color: new Color(255, 255, 255, 255) })
+                        .call(() => {
+                            // 确保最终缩放到正常大小
+                            cardNode.setScale(new Vec3(1, 1, 1));
+                        })
+                        .start();
+                }
+                tween(cardNode)
+                    .to(0.4, { scale: new Vec3(1, 1, 1) }, { easing: 'elasticOut' })
+                    .call(() => {
+                        // 确保最终缩放到正常大小
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+                
+            case 4: // 左右摇摆效果
+                cardNode.setScale(new Vec3(0.1, 0.1, 1));
+                tween(cardNode)
+                    .to(0.3, { scale: new Vec3(1.2, 1.2, 1) }, { easing: 'backOut' })
+                    .call(() => {
+                        // 左右摇摆
+                        tween(cardNode)
+                            .to(0.1, { position: new Vec3(targetPos.x - 15, targetPos.y, 0) })
+                            .to(0.1, { position: new Vec3(targetPos.x + 15, targetPos.y, 0) })
+                            .to(0.1, { position: targetPos })
+                            .to(0.2, { scale: new Vec3(1, 1, 1) })
+                            .call(() => {
+                                // 确保最终缩放到正常大小
+                                cardNode.setScale(new Vec3(1, 1, 1));
+                            })
+                            .start();
+                    })
+                    .start();
+                break;
+                
+            case 5: // 弹跳组合效果
+                cardNode.setScale(new Vec3(0.3, 0.3, 1));
+                cardNode.setPosition(targetPos.x, targetPos.y - 200, 0);
+                tween(cardNode)
+                    .parallel(
+                        tween().to(0.4, { position: targetPos }, { easing: 'bounceOut' }),
+                        tween().to(0.4, { scale: new Vec3(1.1, 1.1, 1) }, { easing: 'backOut' })
+                    )
+                    .call(() => {
+                        // 弹跳后轻微缩放，确保最终缩放到正常大小
+                        tween(cardNode)
+                            .to(0.1, { scale: new Vec3(0.95, 0.95, 1) })
+                            .to(0.1, { scale: new Vec3(1, 1, 1) })
+                            .call(() => {
+                                // 确保最终缩放到正常大小
+                                cardNode.setScale(new Vec3(1, 1, 1));
+                            })
+                            .start();
+                    })
+                    .start();
+                break;
+                
+            default:
+                tween(cardNode)
+                    .to(0.4, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' })
+                    .call(() => {
+                        // 确保最终缩放到正常大小
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+        }
     }
 
     private Shuffle<T>(list: T[]): void {
@@ -1338,8 +1592,7 @@ export class gridcreator extends Component {
             const x = direction === 'horizontal' ? startX + i : startX;
             const y = direction === 'vertical' ? startY + i : startY;
             
-            if (x >= (direction === 'horizontal' ? this.infiniteWid : this.infiniteWid) || 
-                y >= (direction === 'vertical' ? this.infiniteHei : this.infiniteHei)) break;
+            if (x >= this.infiniteWid || y >= this.infiniteHei) break;
             
             const c = this.findCardAt(x, y);
             if (c && !c.released && c.type === type) {
