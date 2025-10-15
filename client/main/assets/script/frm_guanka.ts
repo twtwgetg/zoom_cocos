@@ -68,6 +68,11 @@ export class frm_guanka extends frmbase {
             // 进入无限模式
             Main.DispEvent('event_play_infinite');
         }, this);
+        // 添加三消模式按钮点击事件
+        this.btn_sanxiao.node.on(Button.EventType.CLICK, ()=>{
+            // 进入三消模式
+            Main.DispEvent('event_play_sanxiao');
+        }, this);
         //this.fillGuanKa();
         this.brushGuanKa();
         this.updateModeButtons();

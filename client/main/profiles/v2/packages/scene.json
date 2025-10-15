@@ -20,7 +20,7 @@
       166,
       255
     ],
-    "transformToolName": "rect",
+    "transformToolName": "position",
     "pivot": "pivot",
     "coordinate": "local",
     "toolsVisibility3d": true
@@ -1303,12 +1303,12 @@
         "z": -341.2293188201779
       },
       "contentRect": {
-        "x": -358.3780056276812,
-        "y": 223.55260492084153,
+        "x": 0,
+        "y": 0,
         "width": 1558,
         "height": 1500
       },
-      "scale": 0.7067921959195942
+      "scale": 1
     }
   },
   "camera-uuids": [

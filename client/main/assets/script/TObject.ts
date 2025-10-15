@@ -1,5 +1,6 @@
 
-import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director } from 'cc';
+// 首先修改导入部分，添加tween
+import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween } from 'cc';
 import { gridcreator } from './gridcreator';
 import { Main } from './main';
 const { ccclass, property } = _decorator;
@@ -18,6 +19,18 @@ export class TObject extends Component {
     private static obj: TObject | null = null;
     private static firstClickReported: boolean = false;
     
+    // 添加三消模式相关变量
+    private static firstCard: TObject | null = null; // 第一个选中的卡牌
+    private static secondCard: TObject | null = null; // 第二个选中的卡牌
+
+    // 添加重置静态变量的方法
+    public static resetStaticVariables(): void {
+        TObject.firstClickReported = false;
+        TObject.firstCard = null;
+        TObject.secondCard = null;
+        TObject.obj = null;
+    }
+
     private creator: gridcreator | null = null;
     private ondestroy: boolean = false;
     private released: boolean = false;
@@ -55,28 +68,35 @@ export class TObject extends Component {
             Main.DispEvent("event_peng");
         }
         
-        if (TObject.lastobj !== null) {
-            const poslist: Vec2[] = [];
-            if (this.Check(TObject.lastobj, this, poslist)) {
-                this.released = true;
-                const gb = TObject.lastobj;
-                gb.released = true;
+        // 检查是否为三消模式
+        if (this.creator && (this.creator as any).isSanxiaoMode) {
+            // 三消模式逻辑
+            this.handleSanxiaoMode();
+        } else {
+            // 连连看模式逻辑
+            if (TObject.lastobj !== null) {
+                const poslist: Vec2[] = [];
+                if (this.Check(TObject.lastobj, this, poslist)) {
+                    this.released = true;
+                    const gb = TObject.lastobj;
+                    gb.released = true;
 
-                // 更新地图数据
-                gridcreator.map[gb.x + 1][gb.y + 1] = 0;
-                gridcreator.map[this.x + 1][this.y + 1] = 0;
+                    // 更新地图数据
+                    gridcreator.map[gb.x + 1][gb.y + 1] = 0;
+                    gridcreator.map[this.x + 1][this.y + 1] = 0;
 
-                TObject.obj = null;
+                    TObject.obj = null;
 
-                // 开始显示连线动画
-                Director.instance.getScheduler().schedule(() => {
-                    this.showline(gb, this, poslist);
-                }, this, 0, 0, 0, false);
+                    // 开始显示连线动画
+                    Director.instance.getScheduler().schedule(() => {
+                        this.showline(gb, this, poslist);
+                    }, this, 0, 0, 0, false);
+                } else {
+                    TObject.lastobj = this;
+                }
             } else {
                 TObject.lastobj = this;
             }
-        } else {
-            TObject.lastobj = this;
         }
     }
     public HasConnect(): boolean {
@@ -216,6 +236,161 @@ export class TObject extends Component {
     update(deltaTime: number) {
         
     }
+    
+    // 添加三消模式相关方法
+    
+    /**
+     * 处理三消模式点击事件
+     */
+    private handleSanxiaoMode(): void {
+        // 如果这张卡牌已经被消除，不处理点击事件
+        if (this.released) {
+            return;
+        }
+        
+        // 如果还没有选中任何卡牌，选中这张卡牌作为第一张
+        if (TObject.firstCard === null) {
+            TObject.firstCard = this;
+            this.Select();
+            return;
+        }
+        
+        // 如果点击的是已经选中的第一张卡牌，取消选中
+        if (TObject.firstCard === this) {
+            TObject.firstCard = null;
+            this.unSel();
+            return;
+        }
+        
+        // 设置第二张卡牌
+        TObject.secondCard = this;
+        
+        // 检查两张卡牌是否相邻
+        if (this.areAdjacent(TObject.firstCard, TObject.secondCard)) {
+            // 交换两张卡牌
+            this.swapCards(TObject.firstCard, TObject.secondCard);
+        } else {
+            // 不相邻，重新选择第一张卡牌
+            TObject.firstCard.unSel();
+            TObject.firstCard = this;
+            this.Select();
+            TObject.secondCard = null;
+            return;
+        }
+        
+        // 重置选中状态
+        if (TObject.firstCard) {
+            TObject.firstCard.unSel();
+            TObject.firstCard = null;
+        }
+        if (TObject.secondCard) {
+            TObject.secondCard.unSel();
+            TObject.secondCard = null;
+        }
+    }
+    
+    /**
+     * 检查两张卡牌是否相邻
+     */
+    private areAdjacent(card1: TObject, card2: TObject): boolean {
+        // 相邻的定义：在同一行且列相差1，或在同一列且行相差1
+        return (card1.x === card2.x && Math.abs(card1.y - card2.y) === 1) ||
+               (card1.y === card2.y && Math.abs(card1.x - card2.x) === 1);
+    }
+    
+    /**
+     * 交换两张卡牌的位置和数据 - 添加位移动画
+     */
+    private async swapCards(card1: TObject, card2: TObject): Promise<void> {
+        // 保存原始位置和数据用于恢复
+        const originalX1 = card1.x;
+        const originalY1 = card1.y;
+        const originalX2 = card2.x;
+        const originalY2 = card2.y;
+        const originalType1 = gridcreator.map[card1.x + 1][card1.y + 1];
+        const originalType2 = gridcreator.map[card2.x + 1][card2.y + 1];
+        
+        // 交换地图数据
+        const tempType = gridcreator.map[card1.x + 1][card1.y + 1];
+        gridcreator.map[card1.x + 1][card1.y + 1] = gridcreator.map[card2.x + 1][card2.y + 1];
+        gridcreator.map[card2.x + 1][card2.y + 1] = tempType;
+        
+        // 交换卡牌属性
+        const tempX = card1.x;
+        const tempY = card1.y;
+        card1.x = card2.x;
+        card1.y = card2.y;
+        card2.x = tempX;
+        card2.y = tempY;
+        
+        // 更新节点名称
+        card1.node.name = `${card1.x},${card1.y}`;
+        card2.node.name = `${card2.x},${card2.y}`;
+        
+        // 添加位移动画
+        if (this.creator) {
+            const pos1 = this.creator.tref.add(new Vec2((card1.x) * this.creator.gridsize, (card1.y) * this.creator.gridsize));
+            const pos2 = this.creator.tref.add(new Vec2((card2.x) * this.creator.gridsize, (card2.y) * this.creator.gridsize));
+            
+            // 创建并等待位移动画完成
+            await Promise.all([
+                new Promise<void>((resolve) => {
+                    tween(card1.node)
+                        .to(0.2, { position: new Vec3(pos1.x, pos1.y) }, { easing: 'quadInOut' })
+                        .call(() => resolve())
+                        .start();
+                }),
+                new Promise<void>((resolve) => {
+                    tween(card2.node)
+                        .to(0.2, { position: new Vec3(pos2.x, pos2.y) }, { easing: 'quadInOut' })
+                        .call(() => resolve())
+                        .start();
+                })
+            ]);
+        }
+        
+        // 检查是否有可消除的组合（只在三消模式下检查）
+        if (this.creator && this.creator.isSanxiaoMode) {
+            const hasElimination = await this.creator.checkAndEliminateSanxiaoForCards([card1, card2]);
+            
+            // 如果没有消除，则恢复原始位置
+            if (!hasElimination) {
+                // 恢复地图数据
+                gridcreator.map[originalX1 + 1][originalY1 + 1] = originalType1;
+                gridcreator.map[originalX2 + 1][originalY2 + 1] = originalType2;
+                
+                // 恢复卡牌属性
+                card1.x = originalX1;
+                card1.y = originalY1;
+                card2.x = originalX2;
+                card2.y = originalY2;
+                
+                // 更新节点名称
+                card1.node.name = `${card1.x},${card1.y}`;
+                card2.node.name = `${card2.x},${card2.y}`;
+                
+                // 恢复位置，同样添加动画
+                if (this.creator) {
+                    const pos1 = this.creator.tref.add(new Vec2((card1.x) * this.creator.gridsize, (card1.y) * this.creator.gridsize));
+                    const pos2 = this.creator.tref.add(new Vec2((card2.x) * this.creator.gridsize, (card2.y) * this.creator.gridsize));
+                    
+                    // 创建并等待恢复动画完成
+                    await Promise.all([
+                        new Promise<void>((resolve) => {
+                            tween(card1.node)
+                                .to(0.2, { position: new Vec3(pos1.x, pos1.y) }, { easing: 'quadInOut' })
+                                .call(() => resolve())
+                                .start();
+                        }),
+                        new Promise<void>((resolve) => {
+                            tween(card2.node)
+                                .to(0.2, { position: new Vec3(pos2.x, pos2.y) }, { easing: 'quadInOut' })
+                                .call(() => resolve())
+                                .start();
+                        })
+                    ]);
+                }
+            }
+        }
+    }
 }
-
-

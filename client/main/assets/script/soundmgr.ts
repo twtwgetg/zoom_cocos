@@ -20,6 +20,9 @@ export class soundmgr extends Component {
     win: AudioSource = null!;
     @property(AudioSource)
     fail: AudioSource = null!;
+    // 添加消除音效（用于三消模式）
+    @property(AudioSource)
+    eliminate: AudioSource = null!;
 
     protected onLoad(): void {
         Main.RegistEvent("event_lian", (parm) =>
@@ -111,6 +114,16 @@ export class soundmgr extends Component {
             if (soundmgr.bSoundEnable)
             {
                 this.fail.play();
+            }
+            return null;
+        });
+        
+        // 注册消除音效事件（用于三消模式）
+        Main.RegistEvent("event_add_jifen", (parm) =>
+        {
+            if (soundmgr.bSoundEnable)
+            {
+                this.eliminate.play();
             }
             return null;
         });

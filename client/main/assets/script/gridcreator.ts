@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math } from 'cc';
+import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween } from 'cc';
 import { Main } from './main';
 import { LevelMgr } from './levelmgr';
 import { frm_main } from './frm_main';
@@ -25,6 +25,9 @@ export class gridcreator extends Component {
 
     private gameOver: boolean = false; // 游戏结束标志
 
+    // 添加三消模式相关变量
+    private isSanxiaoMode: boolean = false;
+    
     onLoad() {
         // 注册事件
         this.registEvents();
@@ -170,6 +173,14 @@ export class gridcreator extends Component {
         this.gameOver = false;
         // 确保重置无限模式标志，这是修复卡牌布局偏左问题的关键
         this.isInfiniteMode = false;
+        // 重置三消模式标志
+        this.isSanxiaoMode = false;
+        
+        // 重置TObject中的静态变量
+        // 通过反射获取TObject类并重置静态变量
+        // 注意：这里我们需要获取场景中的TObject实例来重置静态变量
+        // 由于静态变量属于类而不是实例，我们需要通过其他方式重置
+        
         this.level_cur = level_playing;
 
         // 清空TObject（需要根据实际实现调整）
@@ -478,8 +489,8 @@ export class gridcreator extends Component {
 
     get tref(): Vec2 {
         const rect = this.node.getComponent(UITransform);
-        const width = this.isInfiniteMode ? this.infiniteWid : this.wid;
-        const height = this.isInfiniteMode ? this.infiniteHei : this.hei;
+        const width = (this.isInfiniteMode || this.isSanxiaoMode) ? this.infiniteWid : this.wid;
+        const height = (this.isInfiniteMode || this.isSanxiaoMode) ? this.infiniteHei : this.hei;
         const refx = (rect.width - width * this.gridsize) / 2;
         const refy = (rect.height - height * this.gridsize) / 2;
         return new Vec2(refx-rect.width/2, refy-rect.height/2);
@@ -499,13 +510,13 @@ export class gridcreator extends Component {
     private SpawnCard(mapPos: Vec2, type: number) {
         const cx = instantiate(this.item);
         this.node.addChild(cx);
- 
 
         this.MoveCardNode(cx, mapPos);
 
         // 设置精灵
         const xx = this.pl[type];
         const tobj = cx.getComponent('TObject') as any;
+        // 注意：mapPos是基于1的索引，而卡牌的x,y属性是基于0的索引
         tobj?.SetSprite(mapPos.x - 1, mapPos.y - 1, type, xx, this);
     }
 
@@ -737,8 +748,8 @@ export class gridcreator extends Component {
         this.gameOver = false;
         // 确保设置无限模式标志
         this.isInfiniteMode = true;
-        this.infiniteWid = width;
-        this.infiniteHei = height;
+        // 重置三消模式标志
+        this.isSanxiaoMode = false;
 
         // 清空TObject
         // TObject.clear();
@@ -863,5 +874,501 @@ export class gridcreator extends Component {
         
         // 检查是否已满
         return emptyPositions.length === 2; // 如果之前只有2个空位置，现在已满
+    }
+    
+    // 创建三消模式关卡
+    CreateSanxiaoMode(width: number, height: number) {
+        this.gameOver = false;
+        // 确保设置三消模式标志
+        this.isSanxiaoMode = true;
+        // 重置无限模式标志
+        this.isInfiniteMode = false;
+        // 使用传入的参数设置网格尺寸
+        this.infiniteWid = width;
+        this.infiniteHei = height;
+
+        // 清空TObject
+        // TObject.clear();
+
+        // 清空节点
+        this.clear();
+
+        // 初始化地图
+        gridcreator.map = [];
+        for (let i = 0; i < this.infiniteWid + 2; i++) {
+            gridcreator.map[i] = [];
+            for (let j = 0; j < this.infiniteHei + 2; j++) {
+                gridcreator.map[i][j] = 0;
+            }
+        }
+
+        // 计算网格大小
+        const parentRect = this.node.getComponent(UITransform)!;
+        const availableWidth = parentRect.width;
+        const availableHeight = parentRect.height;
+
+        const cellWidth = availableWidth / this.infiniteWid;
+        const cellHeight = availableHeight / this.infiniteHei;
+
+        this.gridsize = Math.min(cellWidth, cellHeight);
+        this.gridsize = Math.min(150, this.gridsize);
+
+        // 获取可用类型数量（减少类型数量以降低难度）
+        this.pl = this.plSprites;
+        // 只使用较少的卡牌类型以降低难度
+        const availableTypes = Math.min(4, this.pl.length - 1); // 最多使用4种类型
+        if (availableTypes < 2) {
+            console.error('图片类型不足，至少需要2个');
+            return;
+        }
+
+        // 填充整个网格
+        for (let x = 0; x < this.infiniteWid; x++) {
+            for (let y = 0; y < this.infiniteHei; y++) {
+                // 随机类型（使用较少的类型以降低难度）
+                const type = Math.floor(Math.random() * availableTypes) + 1;
+
+                // 更新地图
+                gridcreator.map[x + 1][y + 1] = type;
+
+                // 生成卡片
+                const mapPos = new Vec2(x + 1, y + 1);
+                this.SpawnCard(mapPos, type);
+            }
+        }
+    
+        console.log(`三消模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
+    }
+    
+    /**
+     * 检查并消除符合条件的卡牌组合（三消模式）
+     */
+    public async checkAndEliminateSanxiao(): Promise<boolean> {
+        // 获取所有可消除的卡牌组合（为了兼容性保留此方法，但实际使用checkAndEliminateSanxiaoForCards）
+        const eliminableCards = this.findEliminableCards();
+        
+        if (eliminableCards.length > 0) {
+            // 消除卡牌
+            for (const card of eliminableCards) {
+                // 标记为已消除
+                card.released = true;
+                // 更新地图数据
+                gridcreator.map[card.x + 1][card.y + 1] = 0;
+            }
+            
+            // 等待一小段时间再销毁卡牌，让玩家看到消除效果
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // 从场景中移除
+            for (const card of eliminableCards) {
+                card.node.removeFromParent();
+                card.node.destroy();
+            }
+            
+            // 触发积分增加事件
+            Main.DispEvent('event_add_jifen');
+            
+            // 等待一小段时间
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 让卡牌下落填充空位
+            await this.dropCardsDown();
+            
+            // 生成新的卡牌填充空位
+            this.generateNewCards();
+            
+            return true; // 有消除操作
+        }
+        
+        return false; // 没有消除操作
+    }
+    
+    /**
+     * 检查并消除指定卡牌形成的符合条件的卡牌组合（三消模式）
+     * 只检查与指定卡牌相连形成3个或以上连续卡牌的组合
+     */
+    public async checkAndEliminateSanxiaoForCards(cards: any[]): Promise<boolean> {
+        const eliminableCards = new Set();
+        
+        // 检查每个指定的卡牌
+        for (const card of cards) {
+            // 检查横向连续
+            const horizontalCards = this.findHorizontalConnectedCards(card);
+            if (horizontalCards.length >= 3) {
+                for (const c of horizontalCards) {
+                    eliminableCards.add(c);
+                }
+            }
+            
+            // 检查纵向连续
+            const verticalCards = this.findVerticalConnectedCards(card);
+            if (verticalCards.length >= 3) {
+                for (const c of verticalCards) {
+                    eliminableCards.add(c);
+                }
+            }
+        }
+        
+        // 如果有可消除的卡牌
+        if (eliminableCards.size > 0) {
+            const eliminableCardsArray = Array.from(eliminableCards);
+            
+            // 消除卡牌
+            for (const card of eliminableCardsArray) {
+                // 标记为已消除
+                card.released = true;
+                // 更新地图数据
+                gridcreator.map[card.x + 1][card.y + 1] = 0;
+            }
+            
+            // 等待一小段时间再销毁卡牌，让玩家看到消除效果
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // 从场景中移除
+            for (const card of eliminableCardsArray) {
+                card.node.removeFromParent();
+                card.node.destroy();
+            }
+            
+            // 触发积分增加事件
+            Main.DispEvent('event_add_jifen');
+            
+            // 等待一小段时间
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 让卡牌下落填充空位
+            await this.dropCardsDown();
+            
+            // 生成新的卡牌填充空位
+            this.generateNewCards();
+            
+            return true; // 有消除操作
+        }
+        
+        return false; // 没有消除操作
+    }
+    
+    /**
+     * 查找所有可消除的卡牌组合（三消模式）
+     */
+    private findEliminableCards(): any[] {
+        const eliminableCards: any[] = [];
+        const processedCards = new Set();
+        
+        // 检查横向连续三个或以上相同类型的卡牌
+        for (let y = 0; y < this.infiniteHei; y++) {
+            let count = 1;
+            let currentType = -1;
+            const sameTypeCards: any[] = [];
+            
+            for (let x = 0; x < this.infiniteWid; x++) {
+                const card = this.findCardAt(x, y);
+                if (card && !card.released) {
+                    if (card.type === currentType) {
+                        count++;
+                        sameTypeCards.push(card);
+                    } else {
+                        // 检查之前的连续卡牌是否达到消除条件
+                        if (count >= 3 && currentType !== -1) {
+                            for (const c of sameTypeCards) {
+                                if (!processedCards.has(c)) {
+                                    eliminableCards.push(c);
+                                    processedCards.add(c);
+                                }
+                            }
+                        }
+                        
+                        // 重置计数
+                        count = 1;
+                        currentType = card.type;
+                        sameTypeCards.length = 0;
+                        sameTypeCards.push(card);
+                    }
+                } else {
+                    // 遇到空位或已消除的卡牌，检查之前的连续卡牌是否达到消除条件
+                    if (count >= 3 && currentType !== -1) {
+                        for (const c of sameTypeCards) {
+                            if (!processedCards.has(c)) {
+                                eliminableCards.push(c);
+                                processedCards.add(c);
+                            }
+                        }
+                    }
+                    
+                    // 重置计数
+                    count = 0;
+                    currentType = -1;
+                    sameTypeCards.length = 0;
+                }
+            }
+            
+            // 检查最后一组连续卡牌
+            if (count >= 3 && currentType !== -1) {
+                for (const c of sameTypeCards) {
+                    if (!processedCards.has(c)) {
+                        eliminableCards.push(c);
+                        processedCards.add(c);
+                    }
+                }
+            }
+        }
+        
+        // 检查纵向连续三个或以上相同类型的卡牌
+        for (let x = 0; x < this.infiniteWid; x++) {
+            let count = 1;
+            let currentType = -1;
+            const sameTypeCards: any[] = [];
+            
+            for (let y = 0; y < this.infiniteHei; y++) {
+                const card = this.findCardAt(x, y);
+                if (card && !card.released) {
+                    if (card.type === currentType) {
+                        count++;
+                        sameTypeCards.push(card);
+                    } else {
+                        // 检查之前的连续卡牌是否达到消除条件
+                        if (count >= 3 && currentType !== -1) {
+                            for (const c of sameTypeCards) {
+                                if (!processedCards.has(c)) {
+                                    eliminableCards.push(c);
+                                    processedCards.add(c);
+                                }
+                            }
+                        }
+                        
+                        // 重置计数
+                        count = 1;
+                        currentType = card.type;
+                        sameTypeCards.length = 0;
+                        sameTypeCards.push(card);
+                    }
+                } else {
+                    // 遇到空位或已消除的卡牌，检查之前的连续卡牌是否达到消除条件
+                    if (count >= 3 && currentType !== -1) {
+                        for (const c of sameTypeCards) {
+                            if (!processedCards.has(c)) {
+                                eliminableCards.push(c);
+                                processedCards.add(c);
+                            }
+                        }
+                    }
+                    
+                    // 重置计数
+                    count = 0;
+                    currentType = -1;
+                    sameTypeCards.length = 0;
+                }
+            }
+            
+            // 检查最后一组连续卡牌
+            if (count >= 3 && currentType !== -1) {
+                for (const c of sameTypeCards) {
+                    if (!processedCards.has(c)) {
+                        eliminableCards.push(c);
+                        processedCards.add(c);
+                    }
+                }
+            }
+        }
+        
+        return eliminableCards;
+    }
+    
+    /**
+     * 查找指定卡牌横向连续的卡牌
+     */
+    private findHorizontalConnectedCards(card: any): any[] {
+        const connectedCards: any[] = [];
+        const type = card.type;
+        const y = card.y;
+        
+        // 向左查找
+        for (let x = card.x; x >= 0; x--) {
+            const c = this.findCardAt(x, y);
+            if (c && !c.released && c.type === type) {
+                connectedCards.push(c);
+            } else {
+                break;
+            }
+        }
+        
+        // 向右查找（排除自身）
+        for (let x = card.x + 1; x < this.infiniteWid; x++) {
+            const c = this.findCardAt(x, y);
+            if (c && !c.released && c.type === type) {
+                connectedCards.push(c);
+            } else {
+                break;
+            }
+        }
+        
+        return connectedCards;
+    }
+    
+    /**
+     * 查找指定卡牌纵向连续的卡牌
+     */
+    private findVerticalConnectedCards(card: any): any[] {
+        const connectedCards: any[] = [];
+        const type = card.type;
+        const x = card.x;
+        
+        // 向上查找
+        for (let y = card.y; y >= 0; y--) {
+            const c = this.findCardAt(x, y);
+            if (c && !c.released && c.type === type) {
+                connectedCards.push(c);
+            } else {
+                break;
+            }
+        }
+        
+        // 向下查找（排除自身）
+        for (let y = card.y + 1; y < this.infiniteHei; y++) {
+            const c = this.findCardAt(x, y);
+            if (c && !c.released && c.type === type) {
+                connectedCards.push(c);
+            } else {
+                break;
+            }
+        }
+        
+        return connectedCards;
+    }
+    
+    /**
+     * 根据坐标查找卡牌（三消模式）
+     */
+    private findCardAt(x: number, y: number): any {
+        const children = this.node.children;
+        for (const child of children) {
+            const card = child.getComponent('TObject') as any;
+            // 注意：卡牌的x和y属性是基于0的索引，而传入的x,y是基于1的索引减1
+            // 但对于在网格外生成的卡牌（如y为负数），我们需要特殊处理
+            if (card && card.x === x && card.y === y) {
+                return card;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * 让卡牌上移填充空位（三消模式）- 修改为自上而下填充
+     */
+    private async dropCardsDown(): Promise<void> {
+        // 对每一列进行处理
+        for (let x = 0; x < this.infiniteWid; x++) {
+            // 从上往下检查每一行（修改：从顶部开始向下）
+            for (let y = 0; y < this.infiniteHei; y++) {
+                // 如果当前位置为空
+                if (gridcreator.map[x + 1][y + 1] === 0) {
+                    // 向下查找第一个非空卡牌（修改：改为向下查找）
+                    for (let downY = y + 1; downY < this.infiniteHei; downY++) {
+                        const card = this.findCardAt(x, downY);
+                        if (card && !card.released) {
+                            // 找到可上移的卡牌，更新地图数据
+                            gridcreator.map[x + 1][y + 1] = gridcreator.map[card.x + 1][card.y + 1];
+                            gridcreator.map[card.x + 1][card.y + 1] = 0;
+                             
+                            // 更新卡牌位置属性
+                            card.x = x;
+                            card.y = y;
+                            card.node.name = `${card.x},${card.y}`;
+                             
+                            // 计算新位置
+                            const newPos = this.tref.add(new Vec2(card.x * this.gridsize, card.y * this.gridsize));
+                             
+                            // 使用tween动画实现上移效果
+                            tween(card.node)
+                                .to(0.3, { position: new Vec3(newPos.x, newPos.y) }, { easing: 'bounceOut' })
+                                .start();
+                             
+                            // 跳出内层循环，继续处理下一位置
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+         
+        // 等待所有移动动画完成
+        await new Promise(resolve => setTimeout(resolve, 350));
+    }
+    
+    /**
+     * 生成新的卡牌填充空位（三消模式）- 修改为自上而下填充
+     */
+    private generateNewCards(): Promise<void> {
+        return new Promise<void>((resolve) => {
+            const riseAnimations: Promise<void>[] = [];
+            
+            // 从左到右处理每一列
+            for (let x = 0; x < this.infiniteWid; x++) {
+                // 收集当前列的所有空位
+                const emptyPositions: {x: number, y: number}[] = [];
+                for (let y = 0; y < this.infiniteHei; y++) {
+                    const card = this.findCardAt(x, y);
+                    if (!card || card.released) {
+                        emptyPositions.push({x, y});
+                    }
+                }
+                
+                // 按从上到下的顺序处理空位，实现从下方到上方的填充效果
+                emptyPositions.sort((a, b) => a.y - b.y);
+                
+                // 从上到下处理空位（这样新卡牌会从下方上升填充上面的空位）
+                for (let i = 0; i < emptyPositions.length; i++) {
+                    const pos = emptyPositions[i];
+                    const y = pos.y;
+                    const x = pos.x;
+                    
+                    // 随机生成卡牌类型（使用较少的类型以降低难度）
+                    const availableTypes = Math.min(4, this.pl.length - 1);
+                    if (availableTypes >= 1) {
+                        const type = Math.floor(Math.random() * availableTypes) + 1;
+                        
+                        // 更新地图数据
+                        gridcreator.map[x + 1][y + 1] = type;
+                        
+                        // 在网格底部之外生成新卡牌（修改：从底部生成）
+                        const cx = instantiate(this.item);
+                        this.node.addChild(cx);
+                        
+                        // 设置卡牌位置（在网格底部之外）
+                        const rect = cx.getComponent(UITransform)!;
+                        cx.name = `${x},${y}`;
+                        rect.setContentSize(this.gridsize, this.gridsize);
+                        // 起始位置在网格底部之外
+                        const startPos = this.tref.add(new Vec2(x * this.gridsize, this.infiniteHei * this.gridsize));
+                        rect.anchorPoint = new Vec2(0, 0);
+                        cx.setPosition(startPos.x, startPos.y);
+                        
+                        // 设置精灵
+                        const xx = this.pl[type];
+                        const tobj = cx.getComponent('TObject') as any;
+                        tobj?.SetSprite(x, y, type, xx, this);
+                        
+                        // 计算目标位置
+                        const targetPos = this.tref.add(new Vec2(x * this.gridsize, y * this.gridsize));
+                        
+                        // 创建上升动画的Promise
+                        const animationPromise = new Promise<void>((animationResolve) => {
+                            tween(cx)
+                                .to(0.5, { position: new Vec3(targetPos.x, targetPos.y) }, { easing: 'bounceOut' })
+                                .call(() => animationResolve())
+                                .start();
+                        });
+                        
+                        riseAnimations.push(animationPromise);
+                    }
+                }
+            }
+            
+            // 等待所有上升动画完成
+            Promise.all(riseAnimations).then(() => {
+                console.log('所有新卡牌上升动画完成');
+                resolve(); // 解析Promise，表示生成新卡牌完成
+            });
+        });
     }
 }

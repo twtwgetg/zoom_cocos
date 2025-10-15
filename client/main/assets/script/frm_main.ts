@@ -8,6 +8,7 @@ import { ItemType } from './item_tools';
 import { WeatherShaderManager } from './WeatherShaderManager';
 import { ToutiaoEventMgr } from './ToutiaoEventMgr';
 import { PlayerPrefb } from './PlayerPrefb';
+import { TObject } from './TObject'; // 添加TObject导入
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -147,6 +148,9 @@ export class frm_main extends frmbase {
             // 上报挑战事件（主动进入游戏）
             ToutiaoEventMgr.reportCharge();
             
+            // 重置TObject中的静态变量
+            TObject.resetStaticVariables();
+            
             this.scheduleOnce(() => {
                 this.gridcreator.Create(x);
                 this.time_all = LevelMgr.getTimeAll(x);
@@ -187,6 +191,9 @@ export class frm_main extends frmbase {
             // 上报挑战事件（主动进入游戏）
             ToutiaoEventMgr.reportCharge();
             
+            // 重置TObject中的静态变量
+            TObject.resetStaticVariables();
+            
             this.scheduleOnce(() => {
                 // 创建无限模式关卡（8x10网格）
                 this.gridcreator.CreateInfiniteMode(8, 10);
@@ -203,6 +210,50 @@ export class frm_main extends frmbase {
 
             this.level_playing = -1; // 无限模式使用特殊关卡编号
             this.lbl_guanka.string = "无限模式";
+            
+            // 显示当前游戏模式
+            this.updateModeLabel();
+            
+            // 初始化积分并从本地存储加载
+            this.loadJifen();
+            this.updateJifenLabel();
+            
+            // 记录初始时间道具数量
+            this.initialTimeCount = tools.num_time;
+            
+            // 重置时间警告状态
+            this.timeWarningShown = false;
+            
+            // 重置卡牌消失检测
+            this.lastCardRemovedTime = 0;
+            this._lastCardCount = undefined;
+            this.stopRemindButtonFlashing();
+
+            return null;
+        });
+        // 添加三消模式事件处理
+        Main.RegistEvent("event_play_sanxiao",()=>{ 
+            this.show();
+            // 上报挑战事件（主动进入游戏）
+            ToutiaoEventMgr.reportCharge();
+            
+            // 重置TObject中的静态变量
+            TObject.resetStaticVariables();
+            
+            this.scheduleOnce(() => {
+                // 创建三消模式关卡（5x8网格）
+                this.gridcreator.CreateSanxiaoMode(5, 8);
+                // 三消模式不计时
+                this.time_all = 0;
+                this.time_now = 0;
+                this.jishi=false; // 三消模式不使用计时器
+                frm_main.isPause = false;
+                // 播放道具按钮入场动画
+                this.playToolButtonsEntranceAnimation();
+            }, 0);
+
+            this.level_playing = -2; // 三消模式使用特殊关卡编号
+            this.lbl_guanka.string = "三消模式";
             
             // 显示当前游戏模式
             this.updateModeLabel();
