@@ -14,6 +14,8 @@ export class frm_pause extends frmbase {
     @property(Button)
     btn_restart: Button = null!;
     @property(Button)
+    btn_refresh_sanxiao: Button = null!; // 三消模式刷新按钮
+    @property(Button)
     btn_menu:Button = null!;
     @property(Button)
     btn_quit: Button = null!;
@@ -79,6 +81,10 @@ export class frm_pause extends frmbase {
         this.btn_restart.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_restart");
+        }, this);
+        this.btn_refresh_sanxiao.node.on(Button.EventType.CLICK, () =>
+        {
+            Main.DispEvent("event_restart_sanxiao");
         }, this);
         this.btn_menu.node.on(Button.EventType.CLICK, () =>
         {
@@ -149,6 +155,9 @@ export class frm_pause extends frmbase {
             this.show();
             this.level_playing = x;
             this.brushflag();
+            
+            // 根据游戏模式显示/隐藏刷新按钮
+            this.updateRefreshButtonVisibility(x);
             return null;
         });
         Main.RegistEvent("event_begin",(x)=>{ 
@@ -162,6 +171,13 @@ export class frm_pause extends frmbase {
             frm_main.isPause = false;
             // 发送事件通知主游戏界面恢复游戏，以便重新评估是否需要播放心跳音效
             Main.DispEvent("event_resume_game");
+            return null;
+        });
+        Main.RegistEvent("event_restart_sanxiao",(x)=>{ 
+            this.hide();
+            frm_main.isPause = false;
+            // 重新开始三消模式
+            Main.DispEvent("event_play_sanxiao");
             return null;
         });
     }
@@ -204,5 +220,26 @@ export class frm_pause extends frmbase {
 
     update(deltaTime: number) {
         
+    }
+    
+    /**
+     * 根据游戏模式更新刷新按钮的可见性
+     * @param level 当前游戏关卡编号
+     */
+    private updateRefreshButtonVisibility(level: number) {
+        if (!this.btn_refresh_sanxiao || !this.btn_refresh_sanxiao.node) {
+            return;
+        }
+        
+        // 三消模式的关卡编号是-2
+        const isSanxiaoMode = level === -2;
+        
+        // 显示/隐藏刷新按钮
+        this.btn_refresh_sanxiao.node.active = isSanxiaoMode;
+        
+        // 同时调整重新开始按钮的可见性（在三消模式下隐藏重新开始按钮）
+        if (this.btn_restart && this.btn_restart.node) {
+            this.btn_restart.node.active = !isSanxiaoMode;
+        }
     }
 }

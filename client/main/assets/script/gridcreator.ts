@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween } from 'cc';
+import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color } from 'cc';
 import { Main } from './main';
 import { LevelMgr } from './levelmgr';
 import { frm_main } from './frm_main';
@@ -239,33 +239,66 @@ export class gridcreator extends Component {
         // 获取关卡计数（需要实现levelmgr）
         const count = LevelMgr.getCount(level_playing);
         
-        // 生成卡片对
-        // 确保新关卡中几乎全部是新卡牌，避免全是上一关的卡牌
+        // 生成卡片对 - 根据当前等级智能选择卡牌
         const cardTypes: number[] = [];
         
-        // 确保至少95%的卡牌是新的（基于当前关卡）
-        const newCardPairs = Math.ceil(totalPairs * 0.95);
-        const oldCardPairs = totalPairs - newCardPairs;
+        // 根据关卡难度调整新旧卡牌比例
+        let newCardRatio: number;
+        if (level_playing === 0) {
+            // 第一关：100%新卡牌，让玩家熟悉基础卡牌
+            newCardRatio = 1.0;
+        } else if (level_playing < 5) {
+            // 前5关：95%新卡牌，5%复习卡牌
+            newCardRatio = 0.95;
+        } else if (level_playing < 10) {
+            // 5-10关：85%新卡牌，15%复习卡牌
+            newCardRatio = 0.85;
+        } else if (level_playing < 20) {
+            // 10-20关：75%新卡牌，25%复习卡牌
+            newCardRatio = 0.75;
+        } else {
+            // 20关以上：60%新卡牌，40%复习卡牌（增加难度）
+            newCardRatio = 0.6;
+        }
         
-        // 生成新的卡牌类型（基于当前关卡）
+        const newCardPairs = Math.ceil(totalPairs * newCardRatio);
+        const reviewCardPairs = totalPairs - newCardPairs;
+        
+        // 生成当前关卡的卡牌类型
         for (let i = 0; i < newCardPairs; i++) {
             const type = Math.floor(Math.random() * count) + (level_playing + 1);
             cardTypes.push(type);
             cardTypes.push(type); // 成对添加
         }
         
-        // 几乎不会添加旧的卡牌类型
-        for (let i = 0; i < oldCardPairs; i++) {
+        // 生成复习卡牌类型（从之前关卡选择）
+        for (let i = 0; i < reviewCardPairs; i++) {
             let type: number;
-            // 只有在极其特殊的情况下（1%概率）并且关卡数足够大时才使用之前关卡的卡牌
-            if (level_playing > 5 && Math.random() < 0.01) {
-                // 从之前的关卡中选择卡牌类型，选择较近的关卡
-                const previousLevel = level_playing - Math.floor(Math.random() * Math.min(2, level_playing - 5)) - 1;
-                const previousCount = LevelMgr.getCount(previousLevel);
-                type = Math.floor(Math.random() * previousCount) + (previousLevel + 1);
+            
+            // 根据关卡数智能选择复习范围
+            if (level_playing <= 1) {
+                // 第2关：只复习第1关的卡牌
+                type = Math.floor(Math.random() * LevelMgr.getCount(0)) + 1;
+            } else if (level_playing <= 3) {
+                // 第3-4关：复习前2关的卡牌
+                const reviewLevel = Math.floor(Math.random() * 2); // 0或1
+                type = Math.floor(Math.random() * LevelMgr.getCount(reviewLevel)) + (reviewLevel + 1);
+            } else if (level_playing <= 10) {
+                // 第5-10关：复习前4关的卡牌
+                const reviewLevel = Math.floor(Math.random() * Math.min(4, level_playing));
+                type = Math.floor(Math.random() * LevelMgr.getCount(reviewLevel)) + (reviewLevel + 1);
             } else {
-                // 几乎总是使用当前关卡的卡牌类型
-                type = Math.floor(Math.random() * count) + (level_playing + 1);
+                // 10关以上：复习前10关的卡牌，但更倾向于近期关卡
+                // 70%概率复习最近5关，30%概率复习更早的关卡
+                let reviewLevel: number;
+                if (Math.random() < 0.7) {
+                    // 复习最近5关
+                    reviewLevel = level_playing - 1 - Math.floor(Math.random() * Math.min(5, level_playing));
+                } else {
+                    // 复习更早的关卡
+                    reviewLevel = Math.floor(Math.random() * Math.min(10, level_playing - 5));
+                }
+                type = Math.floor(Math.random() * LevelMgr.getCount(reviewLevel)) + (reviewLevel + 1);
             }
             cardTypes.push(type);
             cardTypes.push(type); // 成对添加
@@ -943,6 +976,96 @@ export class gridcreator extends Component {
     /**
      * 检查并消除符合条件的卡牌组合（三消模式）
      */
+    /**
+     * 在方块消失位置显示+1分提示
+     */
+    private showScorePopup(position: Vec3): void {
+        try {
+            // 创建分数提示节点
+            const scorePopup = new Node('ScorePopup');
+            
+            // 添加UI组件以确保正确的渲染层级
+            const uiTransform = scorePopup.addComponent(UITransform);
+            uiTransform.setContentSize(150, 80); // 增大UI组件大小以适应更大的字体
+            
+            // 添加Label组件
+            const label = scorePopup.addComponent(Label);
+            label.string = '+1';
+            label.fontSize = 48; // 加大字体大小
+            
+            // 设置金色文字
+            label.color = new Color(255, 215, 0, 255);
+            
+            // 尝试设置字体 - 在Cocos Creator中，我们需要确保有有效的字体资源
+            // 如果有默认字体，使用它；否则使用系统默认字体
+            try {
+                // 尝试使用内置字体或已加载的字体
+                if (label.font) {
+                    // 字体已存在，保持不变
+                } else {
+                    // 如果无法设置字体，则至少确保其他属性正确设置
+                    console.warn('Font resource not explicitly set, using system default');
+                }
+            } catch (e) {
+                console.warn('Failed to set font:', e);
+            }
+            
+            // 设置文本对齐方式
+            try {
+                label.horizontalAlign = Label.HorizontalAlign.CENTER;
+                label.verticalAlign = Label.VerticalAlign.CENTER;
+            } catch (e) {
+                // 如果上面的方法失败，使用更简单的方式
+                console.log('使用默认对齐方式');
+            }
+            
+            // 初始设置为完全透明，等待卡牌消失后再显示
+            label.color = new Color(255, 215, 0, 0);
+            
+            // 设置本地坐标
+            scorePopup.setPosition(position);
+            
+            // 添加到父节点
+            this.node.addChild(scorePopup);
+            
+            // 保存初始颜色
+            const originalColor = new Color(255, 215, 0, 255);
+            
+            // 使用tween动画：先等待卡牌消失（0.3秒），然后显示加分提示
+            tween(scorePopup)
+                .delay(0.3) // 等待卡牌消失动画完成
+                .call(() => {
+                    // 卡牌消失后，开始显示加分提示
+                    label.color = originalColor;
+                })
+                .to(0.8, { position: new Vec3(position.x, position.y + 80, position.z) }, { 
+                    easing: 'sineOut',
+                    onUpdate: (target, ratio) => {
+                        // 在动画过程中更新缩放
+                        const scaleRatio = 1 + 0.8 * ratio; // 加大缩放效果
+                        target.setScale(new Vec3(scaleRatio, scaleRatio, 1));
+                        
+                        // 前0.6秒保持完全不透明，后0.5秒淡出
+                        if (ratio > 0.6) {
+                            const fadeRatio = (ratio - 0.6) / 0.4;
+                            const alpha = originalColor.a * (1 - fadeRatio);
+                            label.color = new Color(originalColor.r, originalColor.g, originalColor.b, Math.floor(alpha));
+                        }
+                    }
+                })
+                .delay(0.3) // 等待淡出完成
+                .call(() => {
+                    // 确保动画结束后再销毁
+                    if (scorePopup && scorePopup.isValid) {
+                        scorePopup.destroy();
+                    }
+                })
+                .start();
+        } catch (error) {
+            console.error('显示分数提示失败:', error);
+        }
+    }
+
     public async checkAndEliminateSanxiao(): Promise<boolean> {
         // 获取所有可消除的卡牌组合（为了兼容性保留此方法，但实际使用checkAndEliminateSanxiaoForCards）
         const eliminableCards = this.findEliminableCards();
@@ -950,6 +1073,11 @@ export class gridcreator extends Component {
         if (eliminableCards.length > 0) {
             // 消除卡牌
             for (const card of eliminableCards) {
+                // 记录消除位置
+                const eliminatePos = card.node.position.clone();
+                // 显示分数提示
+                this.showScorePopup(eliminatePos);
+                
                 // 标记为已消除
                 card.released = true;
                 // 更新地图数据
@@ -959,14 +1087,14 @@ export class gridcreator extends Component {
             // 等待一小段时间再销毁卡牌，让玩家看到消除效果
             await new Promise(resolve => setTimeout(resolve, 300));
             
-            // 从场景中移除
+            // 从场景中移除并销毁卡牌
             for (const card of eliminableCards) {
-                card.node.removeFromParent();
+                // 直接销毁卡牌节点
                 card.node.destroy();
             }
             
-            // 触发积分增加事件
-            Main.DispEvent('event_add_jifen');
+            // 触发积分增加事件 - 每消除一个卡牌加一分
+            Main.DispEvent('event_add_jifen',eliminableCards.length);
             
             // 等待一小段时间
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -1011,28 +1139,32 @@ export class gridcreator extends Component {
         
         // 如果有可消除的卡牌
         if (eliminableCards.size > 0) {
-            const eliminableCardsArray = Array.from(eliminableCards);
+            const eliminableCardsArray = Array.from(eliminableCards) as any[];
             
             // 消除卡牌
             for (const card of eliminableCardsArray) {
+                // 记录消除位置
+                const eliminatePos = (card as any).node.position.clone();
+                // 显示分数提示
+                this.showScorePopup(eliminatePos);
+                
                 // 标记为已消除
-                card.released = true;
+                (card as any).released = true;
                 // 更新地图数据
-                gridcreator.map[card.x + 1][card.y + 1] = 0;
+                gridcreator.map[(card as any).x + 1][(card as any).y + 1] = 0;
             }
             
             // 等待一小段时间再销毁卡牌，让玩家看到消除效果
             await new Promise(resolve => setTimeout(resolve, 300));
             
-            // 从场景中移除
+            // 从场景中移除并销毁卡牌
             for (const card of eliminableCardsArray) {
-                card.node.removeFromParent();
-                card.node.destroy();
+                // 直接销毁卡牌节点
+                (card as any).node.destroy();
             }
             
-            // 触发积分增加事件
-            Main.DispEvent('event_add_jifen');
-            
+            // 触发积分增加事件 - 每消除一个卡牌加一分
+            Main.DispEvent('event_add_jifen',eliminableCardsArray.length);
             // 等待一小段时间
             await new Promise(resolve => setTimeout(resolve, 500));
             
@@ -1175,15 +1307,21 @@ export class gridcreator extends Component {
     }
     
     /**
-     * 查找指定卡牌横向连续的卡牌
+     * 查找指定方向上连续的相同类型卡牌
      */
-    private findHorizontalConnectedCards(card: any): any[] {
+    private findConnectedCardsInDirection(card: any, direction: 'horizontal' | 'vertical'): any[] {
         const connectedCards: any[] = [];
         const type = card.type;
-        const y = card.y;
+        const startX = card.x;
+        const startY = card.y;
         
-        // 向左查找
-        for (let x = card.x; x >= 0; x--) {
+        // 向左/上查找（不包括自身）
+        for (let i = -1; ; i--) {
+            const x = direction === 'horizontal' ? startX + i : startX;
+            const y = direction === 'vertical' ? startY + i : startY;
+            
+            if (x < 0 || y < 0) break;
+            
             const c = this.findCardAt(x, y);
             if (c && !c.released && c.type === type) {
                 connectedCards.push(c);
@@ -1192,8 +1330,17 @@ export class gridcreator extends Component {
             }
         }
         
-        // 向右查找（排除自身）
-        for (let x = card.x + 1; x < this.infiniteWid; x++) {
+        // 添加自身
+        connectedCards.push(card);
+        
+        // 向右/下查找（不包括自身）
+        for (let i = 1; ; i++) {
+            const x = direction === 'horizontal' ? startX + i : startX;
+            const y = direction === 'vertical' ? startY + i : startY;
+            
+            if (x >= (direction === 'horizontal' ? this.infiniteWid : this.infiniteWid) || 
+                y >= (direction === 'vertical' ? this.infiniteHei : this.infiniteHei)) break;
+            
             const c = this.findCardAt(x, y);
             if (c && !c.released && c.type === type) {
                 connectedCards.push(c);
@@ -1206,34 +1353,17 @@ export class gridcreator extends Component {
     }
     
     /**
+     * 查找指定卡牌横向连续的卡牌
+     */
+    private findHorizontalConnectedCards(card: any): any[] {
+        return this.findConnectedCardsInDirection(card, 'horizontal');
+    }
+    
+    /**
      * 查找指定卡牌纵向连续的卡牌
      */
     private findVerticalConnectedCards(card: any): any[] {
-        const connectedCards: any[] = [];
-        const type = card.type;
-        const x = card.x;
-        
-        // 向上查找
-        for (let y = card.y; y >= 0; y--) {
-            const c = this.findCardAt(x, y);
-            if (c && !c.released && c.type === type) {
-                connectedCards.push(c);
-            } else {
-                break;
-            }
-        }
-        
-        // 向下查找（排除自身）
-        for (let y = card.y + 1; y < this.infiniteHei; y++) {
-            const c = this.findCardAt(x, y);
-            if (c && !c.released && c.type === type) {
-                connectedCards.push(c);
-            } else {
-                break;
-            }
-        }
-        
-        return connectedCards;
+        return this.findConnectedCardsInDirection(card, 'vertical');
     }
     
     /**

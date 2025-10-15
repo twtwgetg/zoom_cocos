@@ -8,7 +8,7 @@ import { ItemType } from './item_tools';
 import { WeatherShaderManager } from './WeatherShaderManager';
 import { ToutiaoEventMgr } from './ToutiaoEventMgr';
 import { PlayerPrefb } from './PlayerPrefb';
-import { TObject } from './TObject'; // 添加TObject导入
+import { TObject } from './TObject';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -18,6 +18,8 @@ export class frm_main extends frmbase {
     @property(Button)
     btn_refrush: Button = null!;
 
+    @property(Label)
+    lbl_curr: Label = null!;
     @property(Label)
     lbl_jifen: Label = null!;
     @property(Button)
@@ -29,7 +31,8 @@ export class frm_main extends frmbase {
     time_all: number = 0;
     time_now: number = 0;
     // 添加积分变量
-    private jifen: number = 0;
+    private jifen: number = 0; // 总积分
+    private currentJifen: number = 0; // 本局积分
     // 添加初始时间道具数量变量
     private initialTimeCount: number = 0;
     @property(ProgressBar)
@@ -42,6 +45,10 @@ export class frm_main extends frmbase {
     @property(Label)
     lbl_mode: Label = null!;
 
+    /**
+     * -1 表示无限模式
+     * -2 表示三消模式
+     */
     level_playing: number = 0;
 
     @property(Node)
@@ -157,8 +164,10 @@ export class frm_main extends frmbase {
                 this.time_now = 0;
                 this.jishi=true;
                 frm_main.isPause = false;
-                // 播放道具按钮入场动画
-                this.playToolButtonsEntranceAnimation();
+                // 播放道具按钮入场动画，但不显示三消模式的道具按钮
+                if (x !== -2) { // 如果不是三消模式，才播放道具按钮动画
+                    this.playToolButtonsEntranceAnimation();
+                }
                 // 执行你的拦截逻辑
             }, 0);
 
@@ -182,6 +191,16 @@ export class frm_main extends frmbase {
             this.lastCardRemovedTime = 0;
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
+
+            // 在连连看模式下隐藏本局得分显示
+            if (x !== -2) { // 如果不是三消模式
+                this.hideCurrentScoreLabel();
+            } else {
+                this.showCurrentScoreLabel();
+            }
+
+            // 重置本局积分
+            this.resetCurrentJifen();
 
             return null;
         });
@@ -229,6 +248,12 @@ export class frm_main extends frmbase {
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
 
+            // 在无限模式下隐藏本局得分显示
+            this.hideCurrentScoreLabel();
+
+            // 重置本局积分
+            this.resetCurrentJifen();
+
             return null;
         });
         // 添加三消模式事件处理
@@ -272,6 +297,15 @@ export class frm_main extends frmbase {
             this.lastCardRemovedTime = 0;
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
+            
+            // 在三消模式下隐藏道具按钮
+            this.hideToolButtonsInSanxiaoMode();
+
+            // 在三消模式下显示本局得分
+            this.showCurrentScoreLabel();
+
+            // 重置本局积分
+            this.resetCurrentJifen();
 
             return null;
         });
@@ -310,8 +344,8 @@ export class frm_main extends frmbase {
             return null;
         });
         // 注册积分增加事件处理
-        Main.RegistEvent("event_add_jifen",()=>{ 
-            this.addJifen();
+        Main.RegistEvent("event_add_jifen",(val)=>{ 
+            this.addJifen(val);
             return null;
         });
         // 修复：不应该在event_play事件监听器中再次触发event_play事件
@@ -325,7 +359,7 @@ export class frm_main extends frmbase {
         this.btn_pause.node.on(Button.EventType.CLICK, () =>
         {
             
-            Main.DispEvent("event_pause");
+            Main.DispEvent("event_pause",this.level_playing);
         }, this);
         this.btn_refrush.node.on(Button.EventType.CLICK, () =>
         {
@@ -736,6 +770,14 @@ private stopRemindButtonFlashing() {
      * 三个按钮从底部向上滑动并带有缩放效果
      */
     private playToolButtonsEntranceAnimation() {
+        // 如果是三消模式，不显示道具按钮
+        if (this.level_playing === -2) {
+            return;
+        }
+        
+        // 先确保所有道具按钮都显示
+        this.showToolButtons();
+        
         const toolButtons = [this.btn_remind, this.btn_time, this.btn_refrush];
         
         toolButtons.forEach((button, index) => {
@@ -775,6 +817,30 @@ private stopRemindButtonFlashing() {
                 .start();
         });
     }
+
+
+
+    /**
+     * 显示所有道具按钮
+     */
+    private showToolButtons() {
+        // 显示刷新道具按钮
+        if (this.btn_refrush && this.btn_refrush.node) {
+            this.btn_refrush.node.active = true;
+        }
+        
+        // 显示提醒道具按钮
+        if (this.btn_remind && this.btn_remind.node) {
+            this.btn_remind.node.active = true;
+        }
+        
+        // 显示时间道具按钮
+        if (this.btn_time && this.btn_time.node) {
+            this.btn_time.node.active = true;
+        }
+    }
+    
+
 
     /**
      * 为按钮添加注意力弹跳效果
@@ -906,11 +972,62 @@ private stopRemindButtonFlashing() {
     /**
      * 增加积分
      */
-    private addJifen() {
-        this.jifen++;
+    private addJifen(val:number) {
+        const oldCurrentJifen = this.currentJifen;
+        this.currentJifen+=val; // 本局积分+1
+        this.jifen+=val; // 总积分+1
+        
+        // 使用动画效果更新本局得分显示
+        this.animateJifenChange(oldCurrentJifen, this.currentJifen);
+        
+        // 更新总积分标签
         this.updateJifenLabel();
-        // 保存积分到本地存储
+        // 保存总积分到本地存储
         this.saveJifen();
+    }
+    
+    /**
+     * 重置本局积分（每次游戏开始时调用）
+     */
+    private resetCurrentJifen() {
+        this.currentJifen = 0;
+        if (this.lbl_curr) {
+            this.lbl_curr.string = "0";
+        }
+        // 总积分保持不变
+        this.updateJifenLabel();
+    }
+    
+    /**
+     * 使用动画效果显示积分变化
+     * @param startValue 起始值
+     * @param endValue 结束值
+     */
+    private animateJifenChange(startValue: number, endValue: number) {
+        if (!this.lbl_curr) return;
+        
+        // 根据数值变化大小调整动画持续时间，让每个数值都能看到
+        const valueDiff = endValue - startValue;
+        const duration = Math.min(0.5 + valueDiff * 0.3, 2.0); // 最大不超过2秒
+        
+        // 停止之前的动画
+        tween(this.lbl_curr.node).stop();
+        
+        // 使用tween实现数值累加动画效果
+        tween({ value: startValue })
+            .to(duration, { value: endValue }, {
+                onUpdate: (target) => {
+                    // 使用Math.floor确保每个整数都能显示，避免跳过中间数值
+                    const currentValue = Math.floor(target.value);
+                    this.lbl_curr.string = currentValue.toString(); 
+                },
+                easing: 'linear' // 使用线性缓动，让数值变化更均匀可见
+            })
+            .call(() => {
+                // 动画结束，确保显示最终值
+                this.lbl_curr.string = endValue.toString();
+            })
+            .start();
     }
     
     /**
@@ -923,26 +1040,66 @@ private stopRemindButtonFlashing() {
     }
     
     /**
-     * 从本地存储加载积分
+     * 从本地存储加载总积分
      */
     private loadJifen() {
-        this.jifen = PlayerPrefb.getInt("jifen", 0);
+        this.jifen = PlayerPrefb.getInt("jifen", 0); // 只加载总积分
+        this.currentJifen = 0; // 本局积分始终从0开始
     }
     
     /**
-     * 保存积分到本地存储
+     * 保存总积分到本地存储
      */
     private saveJifen() {
-        PlayerPrefb.setInt("jifen", this.jifen);
+        PlayerPrefb.setInt("jifen", this.jifen); // 只保存总积分
     }
     
     /**
-     * 重置积分
+     * 重置总积分
      */
     private resetJifen() {
         this.jifen = 0;
+        this.currentJifen = 0;
         this.updateJifenLabel();
         this.saveJifen();
     }
     
+    /**
+     * 在三消模式下隐藏道具按钮
+     */
+    private hideToolButtonsInSanxiaoMode() {
+        // 隐藏刷新道具按钮
+        if (this.btn_refrush && this.btn_refrush.node) {
+            this.btn_refrush.node.active = false;
+        }
+        
+        // 隐藏提醒道具按钮
+        if (this.btn_remind && this.btn_remind.node) {
+            this.btn_remind.node.active = false;
+        }
+        
+        // 隐藏时间道具按钮
+        if (this.btn_time && this.btn_time.node) {
+            this.btn_time.node.active = false;
+        }
+    }
+
+    /**
+     * 隐藏本局得分标签（用于连连看模式）
+     */
+    private hideCurrentScoreLabel() {
+        if (this.lbl_curr && this.lbl_curr.node) {
+            this.lbl_curr.node.active = false;
+        }
+    }
+
+    /**
+     * 显示本局得分标签（用于三消模式）
+     */
+    private showCurrentScoreLabel() {
+        if (this.lbl_curr && this.lbl_curr.node) {
+            this.lbl_curr.node.active = true;
+        }
+    }
+
 }

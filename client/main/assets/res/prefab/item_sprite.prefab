@@ -170,10 +170,10 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
-      "a": 186
+      "r": 77,
+      "g": 77,
+      "b": 77,
+      "a": 201
     },
     "_spriteFrame": {
       "__uuid__": "6213624b-c1fc-4af3-bb9b-27ffb9c8777a@f9941",
