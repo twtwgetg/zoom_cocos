@@ -1,7 +1,7 @@
 [
   {
     "__type__": "cc.Prefab",
-    "_name": "Sprite",
+    "_name": "tips_source",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_native": "",
@@ -13,7 +13,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Sprite",
+    "_name": "tips_source",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": null,
@@ -73,8 +73,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 96,
-      "height": 96
+      "width": 24.79998779296875,
+      "height": 54.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -85,10 +85,10 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "68j999g8hIuYGfvQ9JauuH"
+    "fileId": "c3k435PbBBeK9/7jDmFjc4"
   },
   {
-    "__type__": "cc.Sprite",
+    "__type__": "cc.Label",
     "_name": "",
     "_objFlags": 0,
     "__editorExtras__": {},
@@ -109,28 +109,54 @@
       "b": 255,
       "a": 255
     },
-    "_spriteFrame": {
-      "__uuid__": "ecd0a21d-381b-4d1b-aeb1-883bbf921215@f9941",
-      "__expectedType__": "cc.SpriteFrame"
+    "_string": "+1",
+    "_horizontalAlign": 1,
+    "_verticalAlign": 1,
+    "_actualFontSize": 20,
+    "_fontSize": 20,
+    "_fontFamily": "Arial",
+    "_lineHeight": 40,
+    "_overflow": 0,
+    "_enableWrapText": true,
+    "_font": {
+      "__uuid__": "9b52d44f-88d9-4a27-8ee1-76b4877542af",
+      "__expectedType__": "cc.TTFFont"
     },
-    "_type": 0,
-    "_fillType": 0,
-    "_sizeMode": 0,
-    "_fillCenter": {
+    "_isSystemFontUsed": false,
+    "_spacingX": 0,
+    "_isItalic": false,
+    "_isBold": false,
+    "_isUnderline": false,
+    "_underlineHeight": 2,
+    "_cacheMode": 0,
+    "_enableOutline": true,
+    "_outlineColor": {
+      "__type__": "cc.Color",
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 255
+    },
+    "_outlineWidth": 2,
+    "_enableShadow": false,
+    "_shadowColor": {
+      "__type__": "cc.Color",
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 255
+    },
+    "_shadowOffset": {
       "__type__": "cc.Vec2",
-      "x": 0,
-      "y": 0
+      "x": 2,
+      "y": 2
     },
-    "_fillStart": 0,
-    "_fillRange": 0,
-    "_isTrimmedMode": true,
-    "_useGrayscale": false,
-    "_atlas": null,
+    "_shadowBlur": 2,
     "_id": ""
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "af9iV64gpH15jYtDmk3GYg"
+    "fileId": "99y/wDg7FJnrLf0QCsQAke"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -140,7 +166,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "c3kcPWPmhPH7vIc0Z1ITzn",
+    "fileId": "779w5YL5tDsr+bIFfFW7s5",
     "instance": null,
     "targetOverrides": null
   }

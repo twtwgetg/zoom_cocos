@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, EditBox, Node } from 'cc';
+import { _decorator, Button, Component, EditBox, Node, Prefab, Sprite } from 'cc';
 import { frmbase } from './frmbase';
 import { Main } from './main';
 import { frm_main } from './frm_main';
@@ -35,7 +35,7 @@ export class frm_pause extends frmbase {
     btn_submit: Button = null!;
     @property(EditBox)
     input_tucao: EditBox = null!;
-    
+
     // 添加音乐状态变量，用于记录暂停前的音乐状态
     private wasMusicPlaying: boolean = false;
     

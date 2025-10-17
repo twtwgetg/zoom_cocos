@@ -160,6 +160,14 @@ export class TObject extends Component {
         // 触发连线事件
         Main.DispEvent('event_lian');
 
+        // 在销毁对象前显示加分提示
+        if (this.creator && (this.creator as any).showScorePopup) {
+            // 显示第一个卡牌的加分提示
+            (this.creator as any).showScorePopup(self.node.position.clone());
+            // 显示第二个卡牌的加分提示
+            (this.creator as any).showScorePopup(gb.node.position.clone());
+        }
+
         // 销毁对象
         self.node.removeFromParent();
         self.node.destroy();
@@ -173,8 +181,8 @@ export class TObject extends Component {
         // 等待到下一帧确保节点被销毁
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        // 触发积分增加事件
-        Main.DispEvent('event_add_jifen');
+        // 触发积分增加事件（连连看模式每次消除一对卡牌加1分）
+        Main.DispEvent('event_add_jifen', 1);
         
         Main.DispEvent('event_zhengli'); 
     }

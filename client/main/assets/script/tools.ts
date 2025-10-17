@@ -1,3 +1,4 @@
+import { Main } from "./main";
 import { PlayerPrefb } from "./PlayerPrefb";
 
 export class tools { 
@@ -14,6 +15,7 @@ export class tools {
             value = 0;
         }
         PlayerPrefb.setInt("num_Remind", value); //设置剩余次数
+        Main.DispEvent("event_itemchanged", value);
     }
     
     /**
@@ -29,6 +31,7 @@ export class tools {
             value = 0;
         }
         PlayerPrefb.setInt("num_brush", value); 
+        Main.DispEvent("event_itemchanged", value);
     }
     
     /**
@@ -43,5 +46,6 @@ export class tools {
         if (value < 0)
             value = 0;
         PlayerPrefb.setInt("num_time", value);
+        Main.DispEvent("event_itemchanged", value);
     }
 }

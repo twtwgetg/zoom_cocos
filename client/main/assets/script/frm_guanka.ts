@@ -40,7 +40,16 @@ export class frm_guanka extends frmbase {
     // 添加积分显示标签
     @property(Label)
     public lbl_jifen: Label = null!;
-    
+        @property(Sprite)
+    sprite_time: Sprite = null!;
+    @property(Sprite)
+    sprite_brush: Sprite = null!;
+    @property(Sprite)
+    sprite_remind: Sprite = null!;
+    @property(Prefab)
+    prefab_item: Prefab = null!;
+    @property(Node)
+    trans_items: Node = null!;
     start() {
         if(Main.plat == platform.WECHAT){
             this.btn_libao.node.active = false;
@@ -146,6 +155,8 @@ export class frm_guanka extends frmbase {
         this.updateModeButtons();
         // 更新积分显示
         this.updateJifenLabel();
+        // 显示当前关卡的奖励
+        this.showLevelRewards();
     }
     brushlibao(): void { 
         if(Main.plat == platform.BYTE) {
@@ -198,5 +209,98 @@ export class frm_guanka extends frmbase {
 
     update(deltaTime: number) {
         
+    }
+
+    /**
+     * 显示当前关卡的奖励道具
+     */
+    private showLevelRewards() {
+        // 清空之前的奖励道具
+        this.trans_items.removeAllChildren();
+
+        const currentLevel = LevelMgr.level + 1;
+        let rewards = this.getLevelRewards(currentLevel);
+
+        // 生成奖励道具
+        // 统计每种奖励的数量
+        const rewardCounts = this.countRewards(rewards);
+
+        // 生成奖励道具（每种类型只显示一个，但显示数量）
+        let index = 0;
+        for (const [rewardType, count] of Object.entries(rewardCounts)) {
+            const itemNode = instantiate(this.prefab_item);
+            const itemTools = itemNode.getComponent('item_tools') as any;
+            
+            if (itemTools) {
+                // 根据奖励类型设置道具类型
+                let itemType = 0;
+                switch(rewardType) {
+                    case 'remind':
+                        itemType = 2; // ItemType.remind
+                        break;
+                    case 'brush':
+                        itemType = 0; // ItemType.brush
+                        break;
+                    case 'time':
+                        itemType = 1; // ItemType.time
+                        break;
+                }
+                
+                // 设置道具类型和数量
+                itemTools.setItemType({ tp: itemType });
+                if (itemTools.lbl_num) {
+                    itemTools.lbl_num.string = `×${count}`;
+                }
+            }
+
+            // 设置位置
+            const spacing = 80;
+            const startX = -((Object.keys(rewardCounts).length - 1) * spacing) / 2;
+            itemNode.setPosition(startX + index * spacing, 0);
+
+            this.trans_items.addChild(itemNode);
+            index++;
+        }
+    }
+
+    /**
+     * 根据关卡获取奖励道具类型
+     * @param level 关卡数
+     * @returns 奖励道具类型数组
+     */
+    private getLevelRewards(level: number): string[] {
+        // 基础奖励：三个道具
+        let rewards = ['remind', 'brush', 'time'];
+        
+        // 随着关卡增加，奖励道具数量也增加
+        if (level > 10) {
+            rewards.push('brush'); // 第11关开始多给一个刷子
+        }
+        if (level > 20) {
+            rewards.push('time'); // 第21关开始多给一个时间道具
+        }
+        if (level > 30) {
+            rewards.push('remind'); // 第31关开始多给一个提示道具
+        }
+        if (level > 40) {
+            rewards.push('brush'); // 第41关开始再多给一个刷子
+        }
+
+        return rewards;
+    }
+
+    /**
+     * 统计奖励数量
+     * @param rewards 奖励数组
+     * @returns 奖励数量统计对象
+     */
+    private countRewards(rewards: string[]): { [key: string]: number } {
+        const counts: { [key: string]: number } = {};
+        
+        rewards.forEach(rewardType => {
+            counts[rewardType] = (counts[rewardType] || 0) + 1;
+        });
+        
+        return counts;
     }
 }

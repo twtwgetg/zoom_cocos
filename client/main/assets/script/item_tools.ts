@@ -101,7 +101,9 @@ export class item_tools extends Component {
     }
 
     start() {
-        this.node_video.node.on(Button.EventType.CLICK,this.onClick,this);
+        if(this.node_video){
+            this.node_video.node.on(Button.EventType.CLICK,this.onClick,this);
+        }
     }
     onClick() {
         console.log('onClick'+this.funtype);

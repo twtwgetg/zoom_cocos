@@ -356,6 +356,10 @@ export class frm_main extends frmbase {
             
             return null;
         });
+        Main.RegistEvent("event_itemchanged",()=>{
+            this.brushTools();
+            return null;
+        })
         this.btn_pause.node.on(Button.EventType.CLICK, () =>
         {
             

@@ -2,6 +2,8 @@ import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, di
 import { Main } from './main';
 import { LevelMgr } from './levelmgr';
 import { frm_main } from './frm_main';
+import { item_tools } from './item_tools';
+import { tools } from './tools';
 const { ccclass, property } = _decorator;
 
  
@@ -58,6 +60,10 @@ export class gridcreator extends Component {
             this.clear();
             this.gameOver = true;
             this.initFruzon(); // 正确清除冷却状态和定时器
+            
+            // 游戏胜利时发放关卡奖励
+            this.distributeLevelRewards(x);
+            
             return null;
         })
 
@@ -514,9 +520,28 @@ export class gridcreator extends Component {
     private UpdateCardPositions() {
         const children = this.node.children;
         for (const child of children) {
-            const tobj = child.getComponent('TObject') as any;      
-            let pos =this.tref.add(new Vec2((tobj.x ) * this.gridsize, (tobj.y ) * this.gridsize)); 
-            child.setPosition(pos.x, pos.y);
+            const tobj = child.getComponent('TObject') as any;
+            // 添加空值检查，防止tobj为null时出现错误
+            if (!tobj || tobj.x === undefined || tobj.y === undefined) {
+                continue;
+            }
+            
+            let pos = this.tref.add(new Vec2((tobj.x) * this.gridsize, (tobj.y) * this.gridsize)); 
+            const targetPos = new Vec3(pos.x, pos.y, 0);
+            
+            // 只有当前位置与目标位置不同时才执行动画
+            if (child.position.x != targetPos.x || child.position.y != targetPos.y) {
+                // 使用tween动画实现平滑位移效果
+                tween(child)
+                    .to(0.3, { position: targetPos }, { 
+                        easing: 'sineOut',
+                        onComplete: () => {
+                            // 动画完成后确保最终位置正确
+                            child.setPosition(targetPos);
+                        }
+                    })
+                    .start();
+            }
         }
     }
 
@@ -834,7 +859,10 @@ export class gridcreator extends Component {
         // 生成新类型列表
         const newTypes: number[] = [];
         for (let i = 0; i < remainingCards.length; i++) {
-            newTypes.push(remainingCards[i].type);
+            // 添加空值检查，防止读取null的type属性
+            if (remainingCards[i] && remainingCards[i].type !== undefined) {
+                newTypes.push(remainingCards[i].type);
+            }
         }
 
         // 打乱类型列表
@@ -1226,7 +1254,8 @@ export class gridcreator extends Component {
     
         console.log(`三消模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
     }
-    
+    @property(Prefab)
+    private scorePopupNode: Prefab = null;
     /**
      * 检查并消除符合条件的卡牌组合（三消模式）
      */
@@ -1236,14 +1265,14 @@ export class gridcreator extends Component {
     private showScorePopup(position: Vec3): void {
         try {
             // 创建分数提示节点
-            const scorePopup = new Node('ScorePopup');
+            const scorePopup = instantiate(this.scorePopupNode);// new Node('ScorePopup');
             
             // 添加UI组件以确保正确的渲染层级
-            const uiTransform = scorePopup.addComponent(UITransform);
+            const uiTransform = scorePopup.getComponent(UITransform);
             uiTransform.setContentSize(150, 80); // 增大UI组件大小以适应更大的字体
             
             // 添加Label组件
-            const label = scorePopup.addComponent(Label);
+            const label = scorePopup.getComponent(Label);
             label.string = '+1';
             label.fontSize = 48; // 加大字体大小
             
@@ -1279,8 +1308,13 @@ export class gridcreator extends Component {
             // 设置本地坐标
             scorePopup.setPosition(position);
             
-            // 添加到父节点
-            this.node.addChild(scorePopup);
+            // 添加到当前节点的上一级，避免干扰游戏
+            if (this.node.parent) {
+                this.node.parent.addChild(scorePopup);
+            } else {
+                // 如果没有父节点，则添加到当前节点作为备用方案
+                this.node.addChild(scorePopup);
+            }
             
             // 保存初始颜色
             const originalColor = new Color(255, 215, 0, 255);
@@ -1349,6 +1383,24 @@ export class gridcreator extends Component {
             
             // 触发积分增加事件 - 每消除一个卡牌加一分
             Main.DispEvent('event_add_jifen',eliminableCards.length);
+            
+            // 检查游戏是否结束（所有卡牌都已消除）
+            if (this.node.children.length === 0) {
+                frm_main.isPause = true;
+                
+                // 等待0.5秒
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 检查是否为无限模式
+                if (this.isInfiniteMode) {
+                    // 无限模式下触发无限模式胜利事件
+                    Main.DispEvent('game_win_infinite');
+                } else {
+                    // 普通模式下触发普通胜利事件
+                    Main.DispEvent('game_win',LevelMgr.level);
+                }
+                return true;
+            }
             
             // 等待一小段时间
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -1753,5 +1805,98 @@ export class gridcreator extends Component {
                 resolve(); // 解析Promise，表示生成新卡牌完成
             });
         });
+    }
+
+    /**
+     * 游戏胜利时发放关卡奖励
+     * @param level 关卡数（从game_win事件传递）
+     */
+    private distributeLevelRewards(level: any): void {
+        try {
+            // 获取当前关卡数
+            const currentLevel = typeof level === 'number' ? level : LevelMgr.level;
+            
+            // 获取关卡奖励
+            const rewards = this.getLevelRewards(currentLevel + 1); // +1因为关卡从0开始计数
+            
+            // 统计奖励数量
+            const rewardCounts = this.countRewards(rewards);
+            
+            // 发放奖励到玩家道具栏
+            for (const rewardType in rewardCounts) {
+                if (rewardCounts.hasOwnProperty(rewardType)) {
+                    const count = rewardCounts[rewardType];
+                    this.addItemToPlayer(rewardType, count);
+                }
+            }
+            
+            console.log(`关卡 ${currentLevel + 1} 胜利，发放奖励:`, rewardCounts);
+            
+        } catch (error) {
+            console.error('发放关卡奖励失败:', error);
+        }
+    }
+
+    /**
+     * 根据关卡获取奖励道具类型（与frm_guanka.ts中的逻辑保持一致）
+     * @param level 关卡数
+     * @returns 奖励道具类型数组
+     */
+    private getLevelRewards(level: number): string[] {
+        // 基础奖励：三个道具
+        let rewards = ['remind', 'brush', 'time'];
+        
+        // 随着关卡增加，奖励道具数量也增加
+        if (level > 10) {
+            rewards.push('brush'); // 第11关开始多给一个刷子
+        }
+        if (level > 20) {
+            rewards.push('time'); // 第21关开始多给一个时间道具
+        }
+        if (level > 30) {
+            rewards.push('remind'); // 第31关开始多给一个提示道具
+        }
+        if (level > 40) {
+            rewards.push('brush'); // 第41关开始再多给一个刷子
+        }
+
+        return rewards;
+    }
+
+    /**
+     * 统计奖励数量（与frm_guanka.ts中的逻辑保持一致）
+     * @param rewards 奖励数组
+     * @returns 奖励数量统计对象
+     */
+    private countRewards(rewards: string[]): { [key: string]: number } {
+        const counts: { [key: string]: number } = {};
+        
+        rewards.forEach(rewardType => {
+            counts[rewardType] = (counts[rewardType] || 0) + 1;
+        });
+        
+        return counts;
+    }
+
+    /**
+     * 添加道具到玩家道具栏
+     * @param rewardType 奖励类型
+     * @param count 数量
+     */
+    private addItemToPlayer(rewardType: string, count: number): void {
+        // 通过事件系统通知主界面添加道具
+        Main.DispEvent('event_add_item', { type: rewardType, count: count });
+        
+        // 也可以直接更新玩家数据
+        // 这里假设有一个玩家数据管理器来处理道具添加
+        console.log(`添加道具: ${rewardType} × ${count}`);
+        if(rewardType === 'remind')
+            tools.num_Remind += count;
+        
+        if(rewardType === 'brush')
+            tools.num_brush += count;
+        
+        if(rewardType === 'time')
+            tools.num_time += count;
     }
 }
