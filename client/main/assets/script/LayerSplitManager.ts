@@ -13,8 +13,8 @@ export class LayerSplitManager extends Component {
     // 容器中的卡牌节点数组
     private containerCards: Node[] = [];
     
-    // 最大容器容量
-    private MAX_CONTAINER_SIZE: number = 9;
+    // 恢复容器容量为7个
+    private MAX_CONTAINER_SIZE: number = 7;
     
     // 当前关卡
     private currentLevel: number = 0;
@@ -162,6 +162,9 @@ export class LayerSplitManager extends Component {
             // 容器已满，游戏失败
             console.log('容器已满，游戏失败！');
             
+            // 清空所有卡牌
+            this.clearAllCards();
+            
             // 通知主场景隐藏 ylgyContainer
             try {
                 Main.DispEvent('event_show_ylgy_container', false);
@@ -302,7 +305,6 @@ export class LayerSplitManager extends Component {
                 1
             );
             
-            
             // 使用动画移动到目标位置和缩放
             tween(card)
                 .to(0.3, { position: targetPosition, scale: scale }, { easing: 'sineOut' })
@@ -313,6 +315,9 @@ export class LayerSplitManager extends Component {
                         // 不需要将卡牌设置为容器的子节点，只需要视觉上看起来落到了目标位置
                         // 检查是否满3个相同的卡牌
                         this.checkForElimination();
+                        
+                        // 检查是否卡槽已满且没有可消除的卡牌
+                        this.checkGameLoseCondition();
                     } else {
                         console.warn('卡牌或LayerSplitManager节点已无效，无法检查消除条件');
                     }
@@ -389,6 +394,9 @@ export class LayerSplitManager extends Component {
                         // 修复：不需要将卡牌设置为目标的子节点，只需要视觉上看起来落到了目标位置
                         // 检查是否满3个相同的卡牌
                         this.checkForElimination();
+                        
+                        // 检查是否卡槽已满且没有可消除的卡牌
+                        this.checkGameLoseCondition();
                     } else {
                         console.warn('LayerSplitManager节点已无效，无法检查消除条件');
                     }
@@ -397,6 +405,87 @@ export class LayerSplitManager extends Component {
         } catch (error) {
             console.error('播放移动到卡槽动画时出错:', error);
         }
+    }
+    
+    /**
+     * 检查游戏失败条件
+     */
+    private checkGameLoseCondition() {
+        // 检查是否卡槽已满且没有可消除的卡牌
+        if (this.containerCards.length >= this.MAX_CONTAINER_SIZE && !this.hasEliminableCards()) {
+            // 容器已满且没有可消除的卡牌，游戏失败
+            console.log('容器已满且没有可消除的卡牌，游戏失败！');
+            
+            // 清空所有卡牌
+            this.clearAllCards();
+            
+            // 通知主场景隐藏 ylgyContainer
+            try {
+                Main.DispEvent('event_show_ylgy_container', false);
+                Main.DispEvent('game_lose_layersplit');
+            } catch (error) {
+                console.error('触发游戏失败事件时出错:', error);
+            }
+        }
+    }
+    
+    /**
+     * 检查是否有可消除的卡牌
+     */
+    private hasEliminableCards(): boolean {
+        // 添加保护性检查
+        if (!this.containerCards || this.containerCards.length === 0) {
+            return false;
+        }
+        
+        // 按卡牌类型分组
+        const cardGroups: { [key: number]: Node[] } = {};
+        
+        // 遍历容器中的卡牌
+        for (let i = 0; i < this.containerCards.length; i++) {
+            // 添加保护性检查，确保索引有效
+            if (i >= this.containerCards.length) {
+                continue;
+            }
+            
+            const card = this.containerCards[i];
+            // 添加保护性检查
+            if (!card || !card.isValid) {
+                continue;
+            }
+            
+            const tobj = card.getComponent(TObject);
+            if (tobj) {
+                const type = tobj.type;
+                if (!cardGroups[type]) {
+                    cardGroups[type] = [];
+                }
+                cardGroups[type].push(card);
+            }
+        }
+        
+        // 检查是否有满3个的类型
+        for (const type in cardGroups) {
+            // 添加保护性检查
+            if (!cardGroups[type]) {
+                continue;
+            }
+            
+            const cards = cardGroups[type];
+            // 添加保护性检查
+            if (!cards || !Array.isArray(cards) || cards.length === undefined) {
+                console.warn('卡牌数组无效:', cards);
+                continue;
+            }
+            
+            if (cards.length >= 3) {
+                // 有可消除的卡牌
+                return true;
+            }
+        }
+        
+        // 没有可消除的卡牌
+        return false;
     }
     
     /**
@@ -506,6 +595,7 @@ export class LayerSplitManager extends Component {
         if (this.containerCards.length === 0) {
             // 添加保护性检查
             try {
+                // 修复：在分层叠加模式下，需要检查地图中是否还有卡牌
                 const hasCardsInGrid = Main.DispEvent('event_has_cards_in_grid');
                 // 添加保护性检查
                 if (hasCardsInGrid !== undefined && !hasCardsInGrid) {
@@ -575,5 +665,39 @@ export class LayerSplitManager extends Component {
         
         // 清空数组
         this.containerCards = [];
+    }
+    
+    /**
+     * 清空所有卡牌
+     */
+    private clearAllCards() {
+        // 清空容器中的卡牌
+        try {
+            // 销毁所有容器中的卡牌
+            if (this.containerCards && Array.isArray(this.containerCards)) {
+                for (const card of this.containerCards) {
+                    // 添加保护性检查，确保卡牌节点仍然有效
+                    if (card && card.isValid) {
+                        try {
+                            card.destroy();
+                        } catch (error) {
+                            console.warn('销毁卡牌时出错:', error);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('清空容器卡牌时出错:', error);
+        }
+        
+        // 清空数组
+        this.containerCards = [];
+        
+        // 通知网格创建器清空卡牌
+        try {
+            Main.DispEvent('event_clear_grid_cards');
+        } catch (error) {
+            console.error('通知清空网格卡牌时出错:', error);
+        }
     }
 }

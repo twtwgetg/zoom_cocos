@@ -78,7 +78,14 @@ export class frm_result extends frmbase {
                 // 无限模式失败后重新开始无限模式
                 Main.DispEvent("event_play_infinite");
                 this.hide();
-            } else {
+            } 
+            // 检查是否为分层叠加模式
+            else if (this.level_played === -3) {
+                // 分层叠加模式失败后重新开始分层叠加模式
+                Main.DispEvent("event_play_layersplit");
+                this.hide();
+            }
+            else {
                 // 普通模式失败后重新开始当前关卡
                 Main.DispEvent("event_play", this.level_played);
             }
@@ -98,7 +105,14 @@ export class frm_result extends frmbase {
                 // 无限模式胜利后重新开始无限模式
                 Main.DispEvent("event_play_infinite");
                 this.hide();
-            } else {
+            } 
+            // 检查是否为分层叠加模式
+            else if (this.level_played === -3) {
+                // 分层叠加模式胜利后重新开始分层叠加模式
+                Main.DispEvent("event_play_layersplit");
+                this.hide();
+            }
+            else {
                 // 普通模式胜利后重新开始当前关卡
                 Main.DispEvent("event_play", this.level_played);
             }
@@ -169,6 +183,26 @@ export class frm_result extends frmbase {
             // 积分会在frm_main.ts中保存
             return null;
         });
+        
+        // 添加分层叠加模式胜利事件处理
+        Main.RegistEvent("game_win_layersplit", () =>
+        {
+            this.level_played = -3; // 分层叠加模式使用特殊关卡编号
+            this.sucess.active=true;
+            this.faild.active=false;
+            frm_main.isPause=true;
+            this.level_suc.string = "分层叠加模式";
+            // 分层叠加模式没有时间概念，显示特殊信息
+            this.lbl_source_suc.string = "成功消除所有卡牌";
+            // 隐藏下一关按钮，只显示再玩一次按钮
+            this.btn_nextlevel.node.active = false;
+            this.show();
+            // 上报游戏胜利事件
+            ToutiaoEventMgr.reportGameWin(-3); // 使用-3表示分层叠加模式
+            // 积分会在frm_main.ts中保存
+            return null;
+        });
+        
         Main.RegistEvent("game_lose", (x) =>
         {
             this.level_played =x;
@@ -206,6 +240,25 @@ export class frm_result extends frmbase {
             // 积分会在frm_main.ts中保存
             return null;
         });
+        
+        // 添加分层叠加模式失败事件处理
+        Main.RegistEvent("game_lose_layersplit", () =>
+        {
+            this.level_played = -3; // 分层叠加模式使用特殊关卡编号
+            this.level_faild.string = "分层叠加模式";
+            this.faild.active=true;
+            this.sucess.active=false;
+            // 分层叠加模式没有时间概念，显示特殊信息
+            this.lbl_soruce_faild.string = "卡槽已填满";
+            // 隐藏下一关按钮
+            this.btn_nextlevel.node.active = false;
+            this.show(); 
+            // 上报游戏失败事件
+            ToutiaoEventMgr.reportGameLose(-3); // 使用-3表示分层叠加模式
+            // 积分会在frm_main.ts中保存
+            return null;
+        });
+        
         Main.RegistEvent("gamebegin", (x) =>
         {
             this.hide();

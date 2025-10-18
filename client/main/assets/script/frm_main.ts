@@ -162,9 +162,9 @@ export class frm_main extends frmbase {
             
             // 确保所有模式标志都被正确重置
             if (this.gridcreator) {
-                this.gridcreator.isInfiniteMode = false;
-                this.gridcreator.isSanxiaoMode = false;
-                this.gridcreator.isLayerSplitMode = false;
+                (this.gridcreator as any).isInfiniteMode = false;
+                (this.gridcreator as any).isSanxiaoMode = false;
+                (this.gridcreator as any).isLayerSplitMode = false;
             }
             
             this.scheduleOnce(() => {
@@ -224,9 +224,9 @@ export class frm_main extends frmbase {
             
             // 确保所有模式标志都被正确重置
             if (this.gridcreator) {
-                this.gridcreator.isInfiniteMode = true;
-                this.gridcreator.isSanxiaoMode = false;
-                this.gridcreator.isLayerSplitMode = false;
+                (this.gridcreator as any).isInfiniteMode = true;
+                (this.gridcreator as any).isSanxiaoMode = false;
+                (this.gridcreator as any).isLayerSplitMode = false;
             }
             
             this.scheduleOnce(() => {
@@ -281,9 +281,9 @@ export class frm_main extends frmbase {
             
             // 确保所有模式标志都被正确重置
             if (this.gridcreator) {
-                this.gridcreator.isInfiniteMode = false;
-                this.gridcreator.isSanxiaoMode = false;
-                this.gridcreator.isLayerSplitMode = true;
+                (this.gridcreator as any).isInfiniteMode = false;
+                (this.gridcreator as any).isSanxiaoMode = false;
+                (this.gridcreator as any).isLayerSplitMode = true;
             }
             
             this.scheduleOnce(() => {
@@ -423,9 +423,9 @@ export class frm_main extends frmbase {
             
             // 确保所有模式标志都被正确重置
             if (this.gridcreator) {
-                this.gridcreator.isInfiniteMode = false;
-                this.gridcreator.isSanxiaoMode = false;
-                this.gridcreator.isLayerSplitMode = false;
+                (this.gridcreator as any).isInfiniteMode = false;
+                (this.gridcreator as any).isSanxiaoMode = false;
+                (this.gridcreator as any).isLayerSplitMode = false;
             }
             
             // 重新创建当前关卡
@@ -1048,6 +1048,14 @@ private stopRemindButtonFlashing() {
         
         // 游戏结束处理
         Main.DispEvent("game_lose_infinite");
+    }
+    
+    /**
+     * 结束分层叠加模式
+     */
+    private endLayerSplitMode() {
+        // 游戏结束处理
+        Main.DispEvent("game_lose_layersplit");
     }
     
     // 重写hide方法，确保清理无限模式

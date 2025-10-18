@@ -82,6 +82,12 @@ export class TObject extends Component {
             // 分层叠加模式逻辑
             // 添加保护性检查，确保节点仍然有效
             if (this.node && this.node.isValid) {
+                // 在移动卡牌之前，从地图中移除顶层卡牌
+                const cell = gridcreator.map[this.x + 1][this.y + 1];
+                if (Array.isArray(cell) && cell.length > 0) {
+                    cell.pop(); // 移除顶层卡牌
+                }
+                
                 // 直接将卡牌移动到容器中
                 Main.DispEvent("event_move_to_container", this.node);
             } else {
@@ -97,8 +103,24 @@ export class TObject extends Component {
                     gb.released = true;
 
                     // 更新地图数据
-                    gridcreator.map[gb.x + 1][gb.y + 1] = 0;
-                    gridcreator.map[this.x + 1][this.y + 1] = 0;
+                    // 修复：在分层叠加模式下，需要正确更新地图数据
+                    if (this.creator && (this.creator as any).isLayerSplitMode) {
+                        // 在分层叠加模式下，需要移除顶层卡牌而不是整个位置
+                        const lastCell = gridcreator.map[gb.x + 1][gb.y + 1];
+                        const selfCell = gridcreator.map[this.x + 1][this.y + 1];
+                        
+                        if (Array.isArray(lastCell) && lastCell.length > 0) {
+                            lastCell.pop(); // 移除顶层卡牌
+                        }
+                        
+                        if (Array.isArray(selfCell) && selfCell.length > 0) {
+                            selfCell.pop(); // 移除顶层卡牌
+                        }
+                    } else {
+                        // 在普通模式下，清空整个位置
+                        gridcreator.map[gb.x + 1][gb.y + 1] = 0;
+                        gridcreator.map[this.x + 1][this.y + 1] = 0;
+                    }
 
                     TObject.obj = null;
 
@@ -210,6 +232,25 @@ export class TObject extends Component {
         // 触发积分增加事件（连连看模式每次消除一对卡牌加1分）
         Main.DispEvent('event_add_jifen', 1);
         
+        // 修复：在分层叠加模式下，需要正确更新地图数据
+        if (this.creator && (this.creator as any).isLayerSplitMode) {
+            // 在分层叠加模式下，需要移除顶层卡牌而不是整个位置
+            const lastCell = gridcreator.map[gb.x + 1][gb.y + 1];
+            const selfCell = gridcreator.map[self.x + 1][self.y + 1];
+            
+            if (Array.isArray(lastCell) && lastCell.length > 0) {
+                lastCell.pop(); // 移除顶层卡牌
+            }
+            
+            if (Array.isArray(selfCell) && selfCell.length > 0) {
+                selfCell.pop(); // 移除顶层卡牌
+            }
+        } else {
+            // 在普通模式下，清空整个位置
+            gridcreator.map[gb.x + 1][gb.y + 1] = 0;
+            gridcreator.map[self.x + 1][self.y + 1] = 0;
+        }
+        
         Main.DispEvent('event_zhengli'); 
     }
     /**
@@ -221,7 +262,35 @@ export class TObject extends Component {
             return false;
         }
         
-        if (_sel.type !== last.type) return false;
+        // 修复：在分层叠加模式下，需要检查卡牌是否在顶层
+        if (this.creator && (this.creator as any).isLayerSplitMode) {
+            // 在分层叠加模式下，需要检查卡牌是否在顶层才能被消除
+            // 获取两个卡牌位置的地图数据
+            const lastCell = gridcreator.map[last.x + 1][last.y + 1];
+            const selCell = gridcreator.map[_sel.x + 1][_sel.y + 1];
+            
+            // 检查是否为数组类型（分层模式）
+            if (Array.isArray(lastCell) && Array.isArray(selCell)) {
+                // 检查卡牌是否在顶层
+                if (lastCell.length === 0 || selCell.length === 0) {
+                    return false;
+                }
+                
+                const lastTopType = lastCell[lastCell.length - 1];
+                const selTopType = selCell[selCell.length - 1];
+                
+                // 检查顶层卡牌类型是否相同
+                if (lastTopType !== selTopType) {
+                    return false;
+                }
+            } else {
+                // 如果不是数组类型，使用原来的方法
+                if (_sel.type !== last.type) return false;
+            }
+        } else {
+            // 在普通模式下，直接比较类型
+            if (_sel.type !== last.type) return false;
+        }
         
         // 添加边界检查
         if (last.x + 1 < 0 || last.y + 1 < 0 || 
@@ -427,7 +496,7 @@ export class TObject extends Component {
         }
         
         // 检查是否有可消除的组合（只在三消模式下检查）
-        if (this.creator && this.creator.isSanxiaoMode) {
+        if (this.creator && (this.creator as any).isSanxiaoMode) {
             const hasElimination = await this.creator.checkAndEliminateSanxiaoForCards([card1, card2]);
             
             // 如果没有消除，则恢复原始位置

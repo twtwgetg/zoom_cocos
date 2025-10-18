@@ -74,6 +74,46 @@ export class gridcreator extends Component {
             this.brushkind();
             return null;
         });
+        
+        // 添加事件：获取网格中的子节点
+        Main.RegistEvent('event_get_grid_children', () => {
+            return this.node.children;
+        });
+        
+        // 添加事件：检查网格中是否还有卡牌（用于分层叠加模式）
+        Main.RegistEvent('event_has_cards_in_grid', () => {
+            // 修复：在分层叠加模式下，需要检查地图数据
+            if (this.isLayerSplitMode) {
+                // 在分层叠加模式下，检查地图中是否还有卡牌
+                for (let i = 0; i < gridcreator.map.length; i++) {
+                    for (let j = 0; j < gridcreator.map[i].length; j++) {
+                        const cell = gridcreator.map[i][j];
+                        // 检查是否为数组类型（分层模式）
+                        if (Array.isArray(cell)) {
+                            // 如果数组不为空，说明还有卡牌
+                            if (cell.length > 0) {
+                                return true;
+                            }
+                        } else if (typeof cell === 'number' && cell > 0) {
+                            // 如果是数字类型且大于0，说明还有卡牌
+                            return true;
+                        }
+                    }
+                }
+                // 如果所有位置都为空，说明没有卡牌了
+                return false;
+            } else {
+                // 在普通模式下，检查节点数量
+                return this.node.children.length > 0;
+            }
+        });
+        
+        // 添加事件：清空网格中的所有卡牌（用于分层叠加模式失败时）
+        Main.RegistEvent('event_clear_grid_cards', () => {
+            this.clear();
+            return null;
+        });
+        
         let that =this;
         Main.RegistEvent('event_zhengli', async ()=>{
 
@@ -919,15 +959,65 @@ export class gridcreator extends Component {
 
         // 生成新类型列表
         const newTypes: number[] = [];
-        for (let i = 0; i < remainingCards.length; i++) {
-            // 添加空值检查，防止读取null的type属性
-            if (remainingCards[i] && remainingCards[i].type !== undefined) {
-                newTypes.push(remainingCards[i].type);
+        
+        // 修复：在分层叠加模式下，需要特殊处理
+        if (this.isLayerSplitMode) {
+            // 在分层叠加模式下，确保每种类型数量是3的倍数
+            const typeCounts: { [key: number]: number } = {};
+            
+            // 收集当前所有卡牌的类型
+            for (let i = 0; i < remainingCards.length; i++) {
+                if (remainingCards[i] && remainingCards[i].type !== undefined) {
+                    const type = remainingCards[i].type;
+                    typeCounts[type] = (typeCounts[type] || 0) + 1;
+                }
             }
-        }
+            
+            // 生成新的类型列表，确保每种类型数量是3的倍数
+            const availableTypes = Math.min(10, this.pl.length - 1); // 控制在10种类型以内
+            const typesToUse: number[] = [];
+            
+            // 先添加现有的类型
+            for (const type in typeCounts) {
+                const typeNum = parseInt(type);
+                const currentCount = typeCounts[type];
+                const remainder = currentCount % 3;
+                
+                // 为每种类型添加足够的卡牌使其数量成为3的倍数
+                for (let i = 0; i < currentCount + (remainder > 0 ? 3 - remainder : 0); i++) {
+                    typesToUse.push(typeNum);
+                }
+            }
+            
+            // 如果卡牌数量不足，添加新的类型
+            while (typesToUse.length < remainingCards.length) {
+                const newType = Math.floor(Math.random() * availableTypes) + 1;
+                // 添加3张相同类型的卡牌
+                for (let i = 0; i < 3; i++) {
+                    typesToUse.push(newType);
+                }
+            }
+            
+            // 如果卡牌数量超过需要的数量，移除多余的卡牌
+            while (typesToUse.length > remainingCards.length) {
+                typesToUse.pop();
+            }
+            
+            // 打乱类型列表
+            this.Shuffle(typesToUse);
+            newTypes.push(...typesToUse);
+        } else {
+            // 在普通模式下，使用原来的方法
+            for (let i = 0; i < remainingCards.length; i++) {
+                // 添加空值检查，防止读取null的type属性
+                if (remainingCards[i] && remainingCards[i].type !== undefined) {
+                    newTypes.push(remainingCards[i].type);
+                }
+            }
 
-        // 打乱类型列表
-        this.Shuffle(newTypes);
+            // 打乱类型列表
+            this.Shuffle(newTypes);
+        }
 
         // 应用新类型
         for (let i = 0; i < remainingCards.length; i++) {
@@ -936,7 +1026,24 @@ export class gridcreator extends Component {
 
             // 更新地图数据
             const mapPos = new Vec2(card.x + 1, card.y + 1);
-            gridcreator.map[mapPos.x][mapPos.y] = newType;
+            
+            // 修复：在分层叠加模式下，需要特殊处理地图数据
+            if (this.isLayerSplitMode) {
+                // 在分层叠加模式下，确保该位置至少有一张卡牌
+                const cell = gridcreator.map[mapPos.x][mapPos.y];
+                if (Array.isArray(cell)) {
+                    if (cell.length === 0) {
+                        // 如果没有卡牌，添加一张
+                        cell.push(newType);
+                    } else {
+                        // 如果有卡牌，更新顶层卡牌
+                        cell[cell.length - 1] = newType;
+                    }
+                }
+            } else {
+                // 在普通模式下，直接更新地图数据
+                gridcreator.map[mapPos.x][mapPos.y] = newType;
+            }
 
             // 更新卡片显示
             if (newType < this.pl.length) {
@@ -975,7 +1082,28 @@ export class gridcreator extends Component {
         }
 
         // 检查类型是否相同且不为空
-        if (gridcreator.map[x1][y1] <= 0 || gridcreator.map[x2][y2] <= 0 || gridcreator.map[x1][y1] !== gridcreator.map[x2][y2]) {
+        // 修复：处理分层叠加模式下的数组类型
+        const cell1 = gridcreator.map[x1][y1];
+        const cell2 = gridcreator.map[x2][y2];
+        
+        // 检查是否为分层叠加模式（数组类型）
+        if (Array.isArray(cell1) && Array.isArray(cell2)) {
+            // 在分层模式下，比较顶层卡牌类型
+            if (cell1.length === 0 || cell2.length === 0) {
+                return false;
+            }
+            const type1 = cell1[cell1.length - 1]; // 顶层卡牌
+            const type2 = cell2[cell2.length - 1]; // 顶层卡牌
+            if (type1 <= 0 || type2 <= 0 || type1 !== type2) {
+                return false;
+            }
+        } else if (typeof cell1 === 'number' && typeof cell2 === 'number') {
+            // 在普通模式下，直接比较类型
+            if (cell1 <= 0 || cell2 <= 0 || cell1 !== cell2) {
+                return false;
+            }
+        } else {
+            // 类型不匹配
             return false;
         }
 
@@ -1015,7 +1143,10 @@ export class gridcreator extends Component {
                 if (y < 0 || y >= gridcreator.map[x1].length) {
                     return false;
                 }
-                if (gridcreator.map[x1][y] !== 0) {
+                // 修复：处理分层叠加模式下的数组类型
+                const cell = gridcreator.map[x1][y];
+                if ((Array.isArray(cell) && cell.length > 0) || 
+                    (typeof cell === 'number' && cell !== 0)) {
                     return false;
                 }
             }
@@ -1031,7 +1162,10 @@ export class gridcreator extends Component {
                 if (x < 0 || x >= gridcreator.map.length || y1 < 0 || y1 >= gridcreator.map[x].length) {
                     return false;
                 }
-                if (gridcreator.map[x][y1] !== 0) {
+                // 修复：处理分层叠加模式下的数组类型
+                const cell = gridcreator.map[x][y1];
+                if ((Array.isArray(cell) && cell.length > 0) || 
+                    (typeof cell === 'number' && cell !== 0)) {
                     return false;
                 }
             }
@@ -1056,15 +1190,21 @@ export class gridcreator extends Component {
         if (x1 >= 0 && x1 < gridcreator.map.length && 
             y2 >= 0 && y2 < gridcreator.map[x1].length &&
             x2 >= 0 && x2 < gridcreator.map.length && 
-            y2 >= 0 && y2 < gridcreator.map[x2].length &&
-            gridcreator.map[x1][y2] === 0 && 
-            gridcreator.IsDirectlyConnected(x1, y1, x1, y2) && 
-            gridcreator.IsDirectlyConnected(x1, y2, x2, y2)) {
-            const path: Vec2[] = [];
-            path.push(new Vec2(x1, y1));
-            path.push(new Vec2(x1, y2));
-            path.push(new Vec2(x2, y2));
-            paths.push(path);
+            y2 >= 0 && y2 < gridcreator.map[x2].length) {
+            // 修复：处理分层叠加模式下的数组类型
+            const cellXY = gridcreator.map[x1][y2];
+            const isEmpty = (Array.isArray(cellXY) && cellXY.length === 0) || 
+                           (typeof cellXY === 'number' && cellXY === 0);
+                           
+            if (isEmpty && 
+                gridcreator.IsDirectlyConnected(x1, y1, x1, y2) && 
+                gridcreator.IsDirectlyConnected(x1, y2, x2, y2)) {
+                const path: Vec2[] = [];
+                path.push(new Vec2(x1, y1));
+                path.push(new Vec2(x1, y2));
+                path.push(new Vec2(x2, y2));
+                paths.push(path);
+            }
         }
 
         // 转弯点2: (x2, y1)
@@ -1072,15 +1212,21 @@ export class gridcreator extends Component {
         if (x2 >= 0 && x2 < gridcreator.map.length && 
             y1 >= 0 && y1 < gridcreator.map[x2].length &&
             x2 >= 0 && x2 < gridcreator.map.length && 
-            y2 >= 0 && y2 < gridcreator.map[x2].length &&
-            gridcreator.map[x2][y1] === 0 && 
-            gridcreator.IsDirectlyConnected(x1, y1, x2, y1) && 
-            gridcreator.IsDirectlyConnected(x2, y1, x2, y2)) {
-            const path: Vec2[] = [];
-            path.push(new Vec2(x1, y1));
-            path.push(new Vec2(x2, y1));
-            path.push(new Vec2(x2, y2));
-            paths.push(path);
+            y2 >= 0 && y2 < gridcreator.map[x2].length) {
+            // 修复：处理分层叠加模式下的数组类型
+            const cellXY = gridcreator.map[x2][y1];
+            const isEmpty = (Array.isArray(cellXY) && cellXY.length === 0) || 
+                           (typeof cellXY === 'number' && cellXY === 0);
+                           
+            if (isEmpty && 
+                gridcreator.IsDirectlyConnected(x1, y1, x2, y1) && 
+                gridcreator.IsDirectlyConnected(x2, y1, x2, y2)) {
+                const path: Vec2[] = [];
+                path.push(new Vec2(x1, y1));
+                path.push(new Vec2(x2, y1));
+                path.push(new Vec2(x2, y2));
+                paths.push(path);
+            }
         }
         
         // 如果找到了路径，选择最短的路径
@@ -1132,7 +1278,12 @@ export class gridcreator extends Component {
                 // 添加边界检查
                 if (j >= gridcreator.map[i].length) continue;
                 
-                if (gridcreator.map[i][j] === 0) {
+                // 修复：处理分层叠加模式下的数组类型
+                const cell = gridcreator.map[i][j];
+                const isEmpty = (Array.isArray(cell) && cell.length === 0) || 
+                               (typeof cell === 'number' && cell === 0);
+                
+                if (isEmpty) {
                     // 检查(x1,y1)到(i,j)再到(x2,y2)是否连通
                     const tempList: Vec2[] = [];
                     if (gridcreator.IsDirectlyConnected(x1, y1, i, j) && gridcreator.IsConnectedWithOneTurn(i, j, x2, y2, tempList)) {
@@ -1409,23 +1560,75 @@ export class gridcreator extends Component {
 
         // 获取可用类型数量
         this.pl = this.plSprites;
-        // 降低难度：将卡牌种类控制在10种左右
-        const availableTypes = Math.min(10, this.pl.length - 1);
+        // 增加难度：将卡牌种类从8种增加到12种
+        const availableTypes = Math.min(12, this.pl.length - 1);
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
         }
 
+        // 创建类型计数字典，确保每种类型数量是3的倍数
+        const typeCounts: { [key: number]: number } = {};
+        const totalCells = this.infiniteWid * this.infiniteHei;
+        
+        // 计算需要的卡牌总数（确保是3的倍数）
+        // 保持平均每格2张卡牌
+        const totalCardsNeeded = Math.floor(totalCells * 2 / 3) * 3;
+        
+        // 生成满足条件的卡牌类型列表
+        const cardTypes: number[] = [];
+        
+        // 先为每种类型分配3张卡牌
+        for (let i = 0; i < availableTypes; i++) {
+            const type = i + 1;
+            for (let j = 0; j < 3; j++) {
+                cardTypes.push(type);
+            }
+            typeCounts[type] = 3;
+        }
+        
+        // 继续添加卡牌直到满足总数要求
+        while (cardTypes.length < totalCardsNeeded) {
+            // 随机选择一种类型并添加3张
+            const type = Math.floor(Math.random() * availableTypes) + 1;
+            for (let j = 0; j < 3; j++) {
+                cardTypes.push(type);
+            }
+            typeCounts[type] = (typeCounts[type] || 0) + 3;
+        }
+        
+        // 如果卡牌数量超过了需要的数量，随机移除多余的卡牌（保持3的倍数）
+        while (cardTypes.length > totalCardsNeeded) {
+            // 随机选择一种类型，移除3张卡牌
+            const typeToRemove = Math.floor(Math.random() * availableTypes) + 1;
+            if (typeCounts[typeToRemove] > 3) { // 确保至少保留3张
+                // 找到该类型的3张卡牌并移除
+                let removed = 0;
+                for (let i = cardTypes.length - 1; i >= 0 && removed < 3; i--) {
+                    if (cardTypes[i] === typeToRemove) {
+                        cardTypes.splice(i, 1);
+                        removed++;
+                    }
+                }
+                typeCounts[typeToRemove] -= 3;
+            }
+        }
+        
+        // 打乱卡牌类型列表
+        this.Shuffle(cardTypes);
+        
         // 填充整个网格，但允许叠加
+        let cardIndex = 0;
         for (let x = 0; x < this.infiniteWid; x++) {
             for (let y = 0; y < this.infiniteHei; y++) {
-                // 随机决定叠加层数（1-3层，减少层数以降低难度）
-                const layers =1;// Math.floor(Math.random() * 3) + 1;
+                // 保持叠加层数为2-4层
+                const layers = Math.floor(Math.random() * 3) + 2;
                 
                 // 为每一层生成不同类型的卡牌
-                for (let layer = 0; layer < layers; layer++) {
-                    // 随机类型
-                    const type = Math.floor(Math.random() * availableTypes) + 1;
+                for (let layer = 0; layer < layers && cardIndex < cardTypes.length; layer++) {
+                    // 获取预先生成的类型
+                    const type = cardTypes[cardIndex];
+                    cardIndex++;
                     
                     // 更新地图
                     (gridcreator.map[x + 1][y + 1] as number[]).push(type);
@@ -1438,6 +1641,7 @@ export class gridcreator extends Component {
         }
         
         console.log(`分层叠加模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
+        console.log('各类型卡牌数量:', typeCounts);
     }
     
     /**
