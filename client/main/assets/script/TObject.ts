@@ -68,10 +68,25 @@ export class TObject extends Component {
             Main.DispEvent("event_peng");
         }
         
+        // 检查creator是否存在
+        if (!this.creator) {
+            console.error("TObject creator is null");
+            return;
+        }
+        
         // 检查是否为三消模式
         if (this.creator && (this.creator as any).isSanxiaoMode) {
             // 三消模式逻辑
             this.handleSanxiaoMode();
+        } else if (this.creator && (this.creator as any).isLayerSplitMode) {
+            // 分层叠加模式逻辑
+            // 添加保护性检查，确保节点仍然有效
+            if (this.node && this.node.isValid) {
+                // 直接将卡牌移动到容器中
+                Main.DispEvent("event_move_to_container", this.node);
+            } else {
+                console.warn("试图移动无效的卡牌节点到容器中");
+            }
         } else {
             // 连连看模式逻辑
             if (TObject.lastobj !== null) {
@@ -100,6 +115,12 @@ export class TObject extends Component {
         }
     }
     public HasConnect(): boolean {
+        // 添加空值检查
+        if (!this.creator || !this.creator.node || !gridcreator.map) {
+            console.error("HasConnect: creator, creator.node or gridcreator.map is null");
+            return false;
+        }
+        
         let ret = false;
         const children = this.creator.node.children;
 
@@ -107,8 +128,13 @@ export class TObject extends Component {
             const _sel = child.getComponent(TObject);
             if (_sel) {
                 const poslist: Vec2[] = [];
-                ret = gridcreator.CanConnect(this.x + 1, this.y + 1, _sel.x + 1, _sel.y + 1, poslist);
-                if (ret) break;
+                // 添加边界检查
+                if (this.x + 1 >= 0 && this.y + 1 >= 0 && 
+                    this.x + 1 < gridcreator.map.length && 
+                    this.y + 1 < gridcreator.map[this.x + 1].length) {
+                    ret = gridcreator.CanConnect(this.x + 1, this.y + 1, _sel.x + 1, _sel.y + 1, poslist);
+                    if (ret) break;
+                }
             }
         }
         return ret;
@@ -190,11 +216,32 @@ export class TObject extends Component {
      * 检查是否可以连接
      */
     private Check(last: TObject, _sel: TObject, poslist: Vec2[]): boolean {
+        // 添加空值检查
+        if (!last || !_sel || !gridcreator.map) {
+            return false;
+        }
+        
         if (_sel.type !== last.type) return false;
+        
+        // 添加边界检查
+        if (last.x + 1 < 0 || last.y + 1 < 0 || 
+            last.x + 1 >= gridcreator.map.length || 
+            last.y + 1 >= gridcreator.map[last.x + 1].length ||
+            _sel.x + 1 < 0 || _sel.y + 1 < 0 || 
+            _sel.x + 1 >= gridcreator.map.length || 
+            _sel.y + 1 >= gridcreator.map[_sel.x + 1].length) {
+            return false;
+        }
 
         return gridcreator.CanConnect(last.x + 1, last.y + 1, _sel.x + 1, _sel.y + 1, poslist);
     }
     Tixing(): boolean {
+        // 添加空值检查
+        if (!this.creator || !this.creator.node) {
+            console.error("Tixing: creator or creator.node is null");
+            return false;
+        }
+        
         let ret = false;
         // 遍历 creator 节点的所有子节点
         for (let i = 0; i < this.creator!.node.children.length; i++) {
@@ -206,17 +253,33 @@ export class TObject extends Component {
                 ret = gridcreator.CanConnect(this.x + 1, this.y + 1, _sel.x + 1, _sel.y + 1, pres);
                 if (ret) {
                     // 获取路径最后一个点并高亮显示
-                    const p = pres[pres.length - 1];
-                    const node1 = this.creator!.node.getChildByName(`${p.x - 1},${p.y - 1}`);
-                    if (node1) {
-                        node1.getComponent(TObject)!.ShowTiXing();
+                    if (pres.length > 0) {
+                        const p = pres[pres.length - 1];
+                        // 添加边界检查
+                        if (p.x - 1 >= 0 && p.y - 1 >= 0) {
+                            const node1 = this.creator!.node.getChildByName(`${p.x - 1},${p.y - 1}`);
+                            if (node1) {
+                                const tobj1 = node1.getComponent(TObject);
+                                if (tobj1) {
+                                    tobj1.ShowTiXing();
+                                }
+                            }
+                        }
                     }
                     
                     // 获取路径第一个点并高亮显示
-                    const p2 = pres[0];
-                    const node2 = this.creator!.node.getChildByName(`${p2.x - 1},${p2.y - 1}`);
-                    if (node2) {
-                        node2.getComponent(TObject)!.ShowTiXing();
+                    if (pres.length > 0) {
+                        const p2 = pres[0];
+                        // 添加边界检查
+                        if (p2.x - 1 >= 0 && p2.y - 1 >= 0) {
+                            const node2 = this.creator!.node.getChildByName(`${p2.x - 1},${p2.y - 1}`);
+                            if (node2) {
+                                const tobj2 = node2.getComponent(TObject);
+                                if (tobj2) {
+                                    tobj2.ShowTiXing();
+                                }
+                            }
+                        }
                     }
                     break;
                 }
@@ -240,6 +303,12 @@ export class TObject extends Component {
         this.x = i;
         this.y = j;
         this.src.spriteFrame = xx;
+        
+        // 如果是分层叠加模式，添加特殊视觉效果
+        if (_creator && (_creator as any).isLayerSplitMode) {
+            // 可以在这里添加分层模式的特殊效果
+            // 例如添加边框或特殊颜色来表示可点击状态
+        }
     }
     update(deltaTime: number) {
         

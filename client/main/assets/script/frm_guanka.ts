@@ -32,6 +32,8 @@ export class frm_guanka extends frmbase {
     @property(Button)
     public btn_wuxian: Button = null!; 
     @property(Button)
+    public btn_layersplit: Button = null!;
+    @property(Button)
     public btn_libao: Button = null!;
     @property(Button)
     public btn_lingqu: Button = null!;
@@ -55,6 +57,10 @@ export class frm_guanka extends frmbase {
             this.btn_libao.node.active = false;
             this.btn_lingqu.node.active = false;
         }
+        this.btn_layersplit.node.on(Button.EventType.CLICK, () =>
+        {
+            Main.DispEvent("event_play_layersplit");
+        }, this);
         this.btn_addtodesktop.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_addtodesktop");

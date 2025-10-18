@@ -20,7 +20,7 @@ export class gridcreator extends Component {
 
     @property(Prefab)
     item_line: Prefab = null!;
-    public static map: number[][] = [];
+    public static map: (number | number[])[][] = [];
     public gridsize: number = 100;
     private level_cur: number = 0;
     private pl: Sprite[] = [];
@@ -29,6 +29,9 @@ export class gridcreator extends Component {
 
     // 添加三消模式相关变量
     private isSanxiaoMode: boolean = false;
+    
+    // 添加分层叠加模式相关变量
+    private isLayerSplitMode: boolean = false;
     
     onLoad() {
         // 注册事件
@@ -181,6 +184,8 @@ export class gridcreator extends Component {
         this.isInfiniteMode = false;
         // 重置三消模式标志
         this.isSanxiaoMode = false;
+        // 重置分层叠加模式标志
+        this.isLayerSplitMode = false;
         
         // 重置TObject中的静态变量
         // 通过反射获取TObject类并重置静态变量
@@ -210,6 +215,7 @@ export class gridcreator extends Component {
 
         // 计算网格大小
         const parentRect = this.node.getComponent(UITransform)!;
+
         const availableWidth = parentRect.width;
         const availableHeight = parentRect.height;
 
@@ -547,8 +553,9 @@ export class gridcreator extends Component {
 
     get tref(): Vec2 {
         const rect = this.node.getComponent(UITransform);
-        const width = (this.isInfiniteMode || this.isSanxiaoMode) ? this.infiniteWid : this.wid;
-        const height = (this.isInfiniteMode || this.isSanxiaoMode) ? this.infiniteHei : this.hei;
+        // 修复：添加对分层叠加模式的支持
+        const width = (this.isInfiniteMode || this.isSanxiaoMode || this.isLayerSplitMode) ? this.infiniteWid : this.wid;
+        const height = (this.isInfiniteMode || this.isSanxiaoMode || this.isLayerSplitMode) ? this.infiniteHei : this.hei;
         const refx = (rect.width - width * this.gridsize) / 2;
         const refy = (rect.height - height * this.gridsize) / 2;
         return new Vec2(refx-rect.width/2, refy-rect.height/2);
@@ -559,6 +566,7 @@ export class gridcreator extends Component {
         cx.name = `${mapPos.x - 1},${mapPos.y - 1}`;
 
         rect.setContentSize(this.gridsize, this.gridsize);
+        // 修复：确保分层叠加模式也使用正确的居中逻辑
         let pos =this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize, (mapPos.y - 1) * this.gridsize)); 
         rect.anchorPoint = new Vec2(0,0);// 
         //设置rect的位置
@@ -592,9 +600,13 @@ export class gridcreator extends Component {
         cardNode.setPosition(targetPos);
         
         // 根据游戏模式选择不同的动画效果
+        // 修复：添加对分层叠加模式的支持
         if (this.isSanxiaoMode) {
             // 三消模式：快速简洁的动画
             this.addSanxiaoEntranceAnimation(cardNode, targetPos, cardType);
+        } else if (this.isLayerSplitMode) {
+            // 分层叠加模式：使用特定的动画效果
+            this.addLayerSplitEntranceAnimation(cardNode, targetPos, cardType);
         } else {
             // 连连看模式：丰富多样的动画
             this.addLianlianEntranceAnimation(cardNode, targetPos, cardType);
@@ -818,6 +830,55 @@ export class gridcreator extends Component {
                             .start();
                     })
                     .start();
+            }
+    }
+
+    /**
+     * 分层叠加模式出场动画
+     */
+    private addLayerSplitEntranceAnimation(cardNode: Node, targetPos: Vec3, cardType: number) {
+        // 使用随机数生成器，确保每次效果不同
+        const animationType = this.getRandomAnimationType(targetPos, cardType, 3);
+        
+        switch (animationType) {
+            case 0: // 缩放和旋转组合效果
+                cardNode.setScale(new Vec3(0.1, 0.1, 1));
+                cardNode.eulerAngles = new Vec3(0, 0, 180);
+                tween(cardNode)
+                    .parallel(
+                        tween().to(0.4, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' }),
+                        tween().to(0.4, { eulerAngles: new Vec3(0, 0, 0) }, { easing: 'backOut' })
+                    )
+                    .call(() => {
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
+                break;
+                
+            case 1: // 从上方掉落效果
+                cardNode.setScale(new Vec3(1, 1, 1));
+                cardNode.setPosition(targetPos.x, targetPos.y + 200, 0);
+                tween(cardNode)
+                    .to(0.5, { position: targetPos }, { 
+                        easing: 'bounceOut'
+                    })
+                    .start();
+                break;
+                
+            case 2: // 淡入效果
+                const sprite = cardNode.getComponent(Sprite);
+                if (sprite) {
+                    sprite.color = new Color(255, 255, 255, 0);
+                    tween(sprite)
+                        .to(0.4, { color: new Color(255, 255, 255, 255) })
+                        .start();
+                }
+                tween(cardNode)
+                    .to(0.4, { scale: new Vec3(1, 1, 1) }, { easing: 'elasticOut' })
+                    .call(() => {
+                        cardNode.setScale(new Vec3(1, 1, 1));
+                    })
+                    .start();
                 break;
                 
             default:
@@ -895,11 +956,21 @@ export class gridcreator extends Component {
 
     // 检查两个卡片是否可以连接
     public static CanConnect(x1: number, y1: number, x2: number, y2: number, poslist: Vec2[]): boolean {
-        if (x1 === x2 && y1 === y2) {
+        // 添加空值检查
+        if (!gridcreator.map) {
+            console.error("gridcreator.map is null");
             return false;
         }
 
-        if (!gridcreator.map) {
+        // 检查坐标是否有效
+        if (x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0 || 
+            x1 >= gridcreator.map.length || y1 >= (gridcreator.map[x1] ? gridcreator.map[x1].length : 0) ||
+            x2 >= gridcreator.map.length || y2 >= (gridcreator.map[x2] ? gridcreator.map[x2].length : 0)) {
+            console.warn("Invalid coordinates for CanConnect:", x1, y1, x2, y2);
+            return false;
+        }
+
+        if (x1 === x2 && y1 === y2) {
             return false;
         }
 
@@ -930,11 +1001,20 @@ export class gridcreator extends Component {
 
     // 检查是否直接连接
     private static IsDirectlyConnected(x1: number, y1: number, x2: number, y2: number): boolean {
+        // 添加空值检查
+        if (!gridcreator.map) {
+            return false;
+        }
+
         // 水平连接
         if (x1 === x2) {
             const startY = Math.min(y1, y2);
             const endY = Math.max(y1, y2);
             for (let y = startY + 1; y < endY; y++) {
+                // 添加边界检查
+                if (y < 0 || y >= gridcreator.map[x1].length) {
+                    return false;
+                }
                 if (gridcreator.map[x1][y] !== 0) {
                     return false;
                 }
@@ -947,6 +1027,10 @@ export class gridcreator extends Component {
             const startX = Math.min(x1, x2);
             const endX = Math.max(x1, x2);
             for (let x = startX + 1; x < endX; x++) {
+                // 添加边界检查
+                if (x < 0 || x >= gridcreator.map.length || y1 < 0 || y1 >= gridcreator.map[x].length) {
+                    return false;
+                }
                 if (gridcreator.map[x][y1] !== 0) {
                     return false;
                 }
@@ -959,11 +1043,23 @@ export class gridcreator extends Component {
 
     // 检查一个转弯连接
     private static IsConnectedWithOneTurn(x1: number, y1: number, x2: number, y2: number, poslist: Vec2[]): boolean {
+        // 添加空值检查
+        if (!gridcreator.map) {
+            return false;
+        }
+
         // 用于存储找到的路径
         const paths: Vec2[][] = [];
         
         // 转弯点1: (x1, y2)
-        if (gridcreator.map[x1][y2] === 0 && gridcreator.IsDirectlyConnected(x1, y1, x1, y2) && gridcreator.IsDirectlyConnected(x1, y2, x2, y2)) {
+        // 添加边界检查
+        if (x1 >= 0 && x1 < gridcreator.map.length && 
+            y2 >= 0 && y2 < gridcreator.map[x1].length &&
+            x2 >= 0 && x2 < gridcreator.map.length && 
+            y2 >= 0 && y2 < gridcreator.map[x2].length &&
+            gridcreator.map[x1][y2] === 0 && 
+            gridcreator.IsDirectlyConnected(x1, y1, x1, y2) && 
+            gridcreator.IsDirectlyConnected(x1, y2, x2, y2)) {
             const path: Vec2[] = [];
             path.push(new Vec2(x1, y1));
             path.push(new Vec2(x1, y2));
@@ -972,7 +1068,14 @@ export class gridcreator extends Component {
         }
 
         // 转弯点2: (x2, y1)
-        if (gridcreator.map[x2][y1] === 0 && gridcreator.IsDirectlyConnected(x1, y1, x2, y1) && gridcreator.IsDirectlyConnected(x2, y1, x2, y2)) {
+        // 添加边界检查
+        if (x2 >= 0 && x2 < gridcreator.map.length && 
+            y1 >= 0 && y1 < gridcreator.map[x2].length &&
+            x2 >= 0 && x2 < gridcreator.map.length && 
+            y2 >= 0 && y2 < gridcreator.map[x2].length &&
+            gridcreator.map[x2][y1] === 0 && 
+            gridcreator.IsDirectlyConnected(x1, y1, x2, y1) && 
+            gridcreator.IsDirectlyConnected(x2, y1, x2, y2)) {
             const path: Vec2[] = [];
             path.push(new Vec2(x1, y1));
             path.push(new Vec2(x2, y1));
@@ -1009,6 +1112,11 @@ export class gridcreator extends Component {
 
     // 检查两个转弯连接
     private static IsConnectedWithTwoTurns(x1: number, y1: number, x2: number, y2: number, poslist: Vec2[]): boolean {
+        // 添加空值检查
+        if (!gridcreator.map || gridcreator.map.length === 0) {
+            return false;
+        }
+
         const rows = gridcreator.map.length;
         const cols = gridcreator.map[0].length;
 
@@ -1017,7 +1125,13 @@ export class gridcreator extends Component {
         let shortestLength = Infinity;
 
         for (let i = 0; i < rows; i++) {
+            // 添加边界检查
+            if (i >= gridcreator.map.length) continue;
+            
             for (let j = 0; j < cols; j++) {
+                // 添加边界检查
+                if (j >= gridcreator.map[i].length) continue;
+                
                 if (gridcreator.map[i][j] === 0) {
                     // 检查(x1,y1)到(i,j)再到(x2,y2)是否连通
                     const tempList: Vec2[] = [];
@@ -1254,6 +1368,107 @@ export class gridcreator extends Component {
     
         console.log(`三消模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
     }
+    
+    /**
+     * 创建分层叠加模式关卡
+     */
+    CreateLayerSplitMode(width: number, height: number) {
+        this.gameOver = false;
+        // 确保设置分层叠加模式标志
+        this.isLayerSplitMode = true;
+        // 重置无限模式标志
+        this.isInfiniteMode = false;
+        // 重置三消模式标志
+        this.isSanxiaoMode = false;
+        // 使用传入的参数设置网格尺寸
+        this.infiniteWid = width;
+        this.infiniteHei = height;
+
+        // 清空节点
+        this.clear();
+
+        // 初始化地图
+        gridcreator.map = [];
+        for (let i = 0; i < this.infiniteWid + 2; i++) {
+            gridcreator.map[i] = [];
+            for (let j = 0; j < this.infiniteHei + 2; j++) {
+                gridcreator.map[i][j] = []; // 初始化为空数组以支持分层
+            }
+        }
+
+        // 计算网格大小
+        const parentRect = this.node.getComponent(UITransform)!;
+        const availableWidth = parentRect.width;
+        const availableHeight = parentRect.height;
+
+        const cellWidth = availableWidth / this.infiniteWid;
+        const cellHeight = availableHeight / this.infiniteHei;
+
+        this.gridsize = Math.min(cellWidth, cellHeight);
+        this.gridsize = Math.min(150, this.gridsize);
+
+        // 获取可用类型数量
+        this.pl = this.plSprites;
+        // 降低难度：将卡牌种类控制在10种左右
+        const availableTypes = Math.min(10, this.pl.length - 1);
+        if (availableTypes < 2) {
+            console.error('图片类型不足，至少需要2个');
+            return;
+        }
+
+        // 填充整个网格，但允许叠加
+        for (let x = 0; x < this.infiniteWid; x++) {
+            for (let y = 0; y < this.infiniteHei; y++) {
+                // 随机决定叠加层数（1-3层，减少层数以降低难度）
+                const layers =1;// Math.floor(Math.random() * 3) + 1;
+                
+                // 为每一层生成不同类型的卡牌
+                for (let layer = 0; layer < layers; layer++) {
+                    // 随机类型
+                    const type = Math.floor(Math.random() * availableTypes) + 1;
+                    
+                    // 更新地图
+                    (gridcreator.map[x + 1][y + 1] as number[]).push(type);
+                    
+                    // 生成卡片
+                    const mapPos = new Vec2(x + 1, y + 1);
+                    this.SpawnLayeredCard(mapPos, type, layer);
+                }
+            }
+        }
+        
+        console.log(`分层叠加模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
+    }
+    
+    /**
+     * 生成分层卡牌
+     */
+    private SpawnLayeredCard(mapPos: Vec2, type: number, layer: number) {
+        const cx = instantiate(this.item);
+        this.node.addChild(cx);
+        
+        // 设置精灵
+        const xx = this.pl[type];
+        const tobj = cx.getComponent('TObject') as any;
+        // 注意：mapPos是基于1的索引，而卡牌的x,y属性是基于0的索引
+        tobj?.SetSprite(mapPos.x - 1, mapPos.y - 1, type, xx, this);
+        
+        // 为分层卡牌添加特殊标识
+        cx.name = `${mapPos.x - 1},${mapPos.y - 1}_layer${layer}`;
+        
+        // 添加位移效果以显示叠加
+        const offset = layer * 5; // 每层偏移5个像素
+        // 修复：使用tref确保居中对齐
+        const targetPos2D = this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize + offset, (mapPos.y - 1) * this.gridsize - offset));
+        const targetPos = new Vec3(targetPos2D.x, targetPos2D.y, layer); // 使用z轴表示层级
+        cx.setPosition(targetPos);
+        
+        // 设置卡牌尺寸
+        const rect = cx.getComponent(UITransform)!;
+        rect.setContentSize(this.gridsize, this.gridsize);
+        rect.anchorPoint = new Vec2(0, 0);
+    }
+
     @property(Prefab)
     private scorePopupNode: Prefab = null;
     /**

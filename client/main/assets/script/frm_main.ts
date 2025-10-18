@@ -41,6 +41,8 @@ export class frm_main extends frmbase {
     @property(Label)
     lbl_guanka: Label = null!;
 
+    @property(Node)
+    node_c: Node = null!;
     // 添加模式标签
     @property(Label)
     lbl_mode: Label = null!;
@@ -158,6 +160,13 @@ export class frm_main extends frmbase {
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
+            // 确保所有模式标志都被正确重置
+            if (this.gridcreator) {
+                this.gridcreator.isInfiniteMode = false;
+                this.gridcreator.isSanxiaoMode = false;
+                this.gridcreator.isLayerSplitMode = false;
+            }
+            
             this.scheduleOnce(() => {
                 this.gridcreator.Create(x);
                 this.time_all = LevelMgr.getTimeAll(x);
@@ -213,6 +222,13 @@ export class frm_main extends frmbase {
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
+            // 确保所有模式标志都被正确重置
+            if (this.gridcreator) {
+                this.gridcreator.isInfiniteMode = true;
+                this.gridcreator.isSanxiaoMode = false;
+                this.gridcreator.isLayerSplitMode = false;
+            }
+            
             this.scheduleOnce(() => {
                 // 创建无限模式关卡（8x10网格）
                 this.gridcreator.CreateInfiniteMode(8, 10);
@@ -256,6 +272,62 @@ export class frm_main extends frmbase {
 
             return null;
         });
+        //添加分层叠加模式
+        Main.RegistEvent("event_play_layersplit",()=>{
+            this.show();
+            
+            // 重置TObject中的静态变量
+            TObject.resetStaticVariables();
+            
+            // 确保所有模式标志都被正确重置
+            if (this.gridcreator) {
+                this.gridcreator.isInfiniteMode = false;
+                this.gridcreator.isSanxiaoMode = false;
+                this.gridcreator.isLayerSplitMode = true;
+            }
+            
+            this.scheduleOnce(() => {
+                // 添加保护性检查，确保gridcreator对象已正确初始化
+                if (this.gridcreator) {
+                    // 创建分层叠加模式关卡（5x8网格）
+                    this.gridcreator.CreateLayerSplitMode(5, 8);
+                    // 分层叠加模式不计时
+                    this.time_all = 0;
+                    this.time_now = 0;
+                    this.jishi=false; // 分层叠加模式不使用计时器
+                    frm_main.isPause = false;
+                    // 播放道具按钮入场动画
+                    this.playToolButtonsEntranceAnimation();
+                } else {
+                    console.error("gridcreator对象未正确初始化");
+                }
+            }, 0);
+
+            this.level_playing = -3; // -3表示分层叠加模式
+            this.lbl_guanka.string = "分层叠加模式";
+            
+            // 显示当前游戏模式
+            this.updateModeLabel();
+            
+            // 初始化积分并从本地存储加载
+            this.loadJifen();
+            this.updateJifenLabel();
+            
+            // 记录初始时间道具数量
+            this.initialTimeCount = tools.num_time;
+            
+            // 重置时间警告状态
+            this.timeWarningShown = false;
+            
+            // 重置卡牌消失检测
+            this.lastCardRemovedTime = 0;
+            this._lastCardCount = undefined;
+            this.stopRemindButtonFlashing();
+ 
+            // 重置本局积分
+            this.resetCurrentJifen();
+
+        })
         // 添加三消模式事件处理
         Main.RegistEvent("event_play_sanxiao",()=>{ 
             this.show();
@@ -271,7 +343,7 @@ export class frm_main extends frmbase {
                 // 三消模式不计时
                 this.time_all = 0;
                 this.time_now = 0;
-                this.jishi=false; // 三消模式不使用计时器
+                this.jishi = false; // 三消模式不使用计时器
                 frm_main.isPause = false;
                 // 播放道具按钮入场动画
                 this.playToolButtonsEntranceAnimation();
@@ -341,6 +413,24 @@ export class frm_main extends frmbase {
             this.heartbeatPlaying = false;
             // 重置卡牌消失检测时间，避免暂停后立即触发闪烁
             this.lastCardRemovedTime = this.time_now;
+            return null;
+        });
+        // 添加测试连连看模式修复的事件
+        Main.RegistEvent("event_test_lianliankan",()=>{ 
+            console.log("测试连连看模式连接功能");
+            // 重置所有状态
+            TObject.resetStaticVariables();
+            
+            // 确保所有模式标志都被正确重置
+            if (this.gridcreator) {
+                this.gridcreator.isInfiniteMode = false;
+                this.gridcreator.isSanxiaoMode = false;
+                this.gridcreator.isLayerSplitMode = false;
+            }
+            
+            // 重新创建当前关卡
+            this.gridcreator.Create(this.level_playing);
+            
             return null;
         });
         // 注册积分增加事件处理
