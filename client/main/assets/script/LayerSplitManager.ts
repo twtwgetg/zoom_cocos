@@ -536,10 +536,15 @@ export class LayerSplitManager extends Component {
             const card = this.containerCards[i];
             // 添加保护性检查，确保卡牌节点仍然有效
             if (card && card.isValid) {
-                const targetPosition = this.calculateTargetPosition(i);
+                //const targetPosition = this.calculateTargetPosition(i);
                 
                 // 直接设置位置，不使用动画
-                card.setPosition(targetPosition);
+                //card.setPosition(targetPosition);
+
+
+                const targetSlot = this.slotNodes[i]; 
+                this.playMoveToSlotAnimation(card, targetSlot);
+
             } else {
                 console.warn('试图移动无效的卡牌节点');
             }
