@@ -114,6 +114,14 @@ export class gridcreator extends Component {
             return null;
         });
         
+        // 添加事件：显示分数弹出效果（用于分层叠加模式）
+        Main.RegistEvent('event_show_score_popup', (position) => {
+            if (position) {
+                this.showScorePopup(position);
+            }
+            return null;
+        });
+        
         let that =this;
         Main.RegistEvent('event_zhengli', async ()=>{
 

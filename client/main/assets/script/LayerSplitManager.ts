@@ -31,7 +31,12 @@ export class LayerSplitManager extends Component {
     }
 
     start() {
-        // 初始化
+        // 初始化时隐藏 ylgyContainer
+        try {
+            Main.DispEvent('event_show_ylgy_container', false);
+        } catch (error) {
+            console.error('隐藏容器时出错:', error);
+        }
     }
     
     /**
@@ -74,7 +79,10 @@ export class LayerSplitManager extends Component {
             }
             return null;
         });
-        
+        Main.RegistEvent('event_show_ylgy_container', (acitve) => {
+            this.ylgyContainer.active = acitve;
+            return null;
+        });
         // 卡牌被点击并移动到容器
         Main.RegistEvent('event_move_to_container', (card) => {
             if (card && card instanceof Node) {
@@ -554,6 +562,21 @@ export class LayerSplitManager extends Component {
         if (!cards || cards.length === 0) {
             console.warn('试图消除空的卡牌数组');
             return;
+        }
+        
+        // 显示分数弹出效果
+        for (const card of cards) {
+            // 添加保护性检查，确保卡牌节点仍然有效
+            if (card && card.isValid) {
+                try {
+                    // 记录消除位置
+                    const eliminatePos = card.position.clone();
+                    // 显示分数提示
+                    Main.DispEvent('event_show_score_popup', eliminatePos);
+                } catch (error) {
+                    console.warn('显示分数提示时出错:', error);
+                }
+            }
         }
         
         // 从容器中移除这些卡牌

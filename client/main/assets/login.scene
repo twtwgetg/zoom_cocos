@@ -8532,7 +8532,7 @@
     "node": {
       "__id__": 237
     },
-    "_enabled": true,
+    "_enabled": false,
     "__prefab": null,
     "_customMaterial": null,
     "_srcBlendFactor": 2,
@@ -9128,7 +9128,7 @@
       "__id__": 231
     },
     "_children": [],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 256
@@ -9210,7 +9210,7 @@
       "a": 255
     },
     "_string": "分数：0",
-    "_horizontalAlign": 1,
+    "_horizontalAlign": 0,
     "_verticalAlign": 1,
     "_actualFontSize": 40,
     "_fontSize": 40,
@@ -9278,7 +9278,7 @@
     "_prefab": null,
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": -435.889,
+      "x": -413.429,
       "y": 1022.5639999999999,
       "z": 0
     },
@@ -9339,9 +9339,9 @@
     "__prefab": null,
     "_alignFlags": 9,
     "_target": null,
-    "_left": 27.11099999999999,
+    "_left": 49.571000000000026,
     "_right": 0,
-    "_top": 31.236000000000107,
+    "_top": 31.235999999999994,
     "_bottom": 0,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
@@ -15359,7 +15359,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 216.884765625,
-      "height": 50.4
+      "height": 75.6
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -15394,7 +15394,7 @@
     "_actualFontSize": 60,
     "_fontSize": 60,
     "_fontFamily": "Arial",
-    "_lineHeight": 40,
+    "_lineHeight": 60,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,

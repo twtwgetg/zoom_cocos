@@ -55,6 +55,27 @@ export class musicmgr extends Component {
             this.source.stop();
             return null;
         });
+        Main.RegistEvent("game_stopbackground_music",(x)=>
+        {
+            // 停止背景音乐
+            this.source.stop();
+            return null;
+        });
+        // 添加分层叠加模式失败时停止背景音乐的处理
+        Main.RegistEvent("game_lose_layersplit", (x) =>
+        {
+            // 分层叠加模式失败时停止背景音乐
+            this.source.stop();
+            return null;
+        });
+        
+        // 添加停止背景音乐事件处理（用于分层叠加模式）
+        Main.RegistEvent("stop_background_music", (x) =>
+        {
+            // 停止背景音乐
+            this.source.stop();
+            return null;
+        });
         
         Main.RegistEvent("event_music_change", (x) =>
         {

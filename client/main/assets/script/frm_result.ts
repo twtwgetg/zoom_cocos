@@ -158,7 +158,7 @@ export class frm_result extends frmbase {
             this.show();
             // 上报游戏胜利事件
             ToutiaoEventMgr.reportGameWin(x);
-            
+            Main.DispEvent("event_playwin", x);
             // 显示当前游戏模式
             this.updateModeLabel(true);
             // 积分会在frm_main.ts中保存
@@ -180,6 +180,7 @@ export class frm_result extends frmbase {
             this.show();
             // 上报游戏胜利事件
             ToutiaoEventMgr.reportGameWin(-1); // 使用-1表示无限模式
+            Main.DispEvent("event_playwin", -1);
             // 积分会在frm_main.ts中保存
             return null;
         });
@@ -197,6 +198,8 @@ export class frm_result extends frmbase {
             // 隐藏下一关按钮，只显示再玩一次按钮
             this.btn_nextlevel.node.active = false;
             this.show();
+            Main.DispEvent("event_playwin", -3); // 使用-3表示分层叠加模式
+            Main.DispEvent("game_stopbackground_music");
             // 上报游戏胜利事件
             ToutiaoEventMgr.reportGameWin(-3); // 使用-3表示分层叠加模式
             // 积分会在frm_main.ts中保存
@@ -255,6 +258,18 @@ export class frm_result extends frmbase {
             this.show(); 
             // 上报游戏失败事件
             ToutiaoEventMgr.reportGameLose(-3); // 使用-3表示分层叠加模式
+            
+            // 停止背景音乐并播放失败音效
+            try {
+                Main.DispEvent("event_heartbeat_stop"); // 停止心跳音效
+                // 直接调用失败音效，避免事件循环
+                Main.DispEvent("game_stopbackground_music"); // 使用通用失败事件播放音效
+                // 添加停止背景音乐的处理
+                Main.DispEvent("stop_background_music"); // 停止背景音乐
+            } catch (error) {
+                console.error('播放失败音效时出错:', error);
+            }
+            
             // 积分会在frm_main.ts中保存
             return null;
         });

@@ -89,32 +89,21 @@ export class soundmgr extends Component {
         });
         
         // 注册胜利音效事件
-        Main.RegistEvent("game_win", (parm) =>
+        Main.RegistEvent("event_playwin", (parm) =>
         {
-            // 游戏胜利时停止心跳音效
-            if (this.heartbeat.playing) {
-                this.heartbeat.stop();
-            }
-            
-            if (soundmgr.bSoundEnable)
-            {
-                this.win.play();
-            }
+            this.PlayWin();
             return null;
         });
         
         // 注册失败音效事件
         Main.RegistEvent("game_lose", (parm) =>
         {
-            // 游戏失败时停止心跳音效
-            if (this.heartbeat.playing) {
-                this.heartbeat.stop();
-            }
-            
-            if (soundmgr.bSoundEnable)
-            {
-                this.fail.play();
-            }
+            this.OnGameLose();
+            return null;
+        });
+        Main.RegistEvent("game_lose_layersplit", (parm) =>
+        {
+            this.OnGameLose();
             return null;
         });
         
@@ -127,6 +116,28 @@ export class soundmgr extends Component {
             }
             return null;
         });
+    }
+    PlayWin(){
+        // 游戏胜利时停止心跳音效
+        if (this.heartbeat.playing) {
+            this.heartbeat.stop();
+        }
+        
+        if (soundmgr.bSoundEnable)
+        {
+            this.win.play();
+        }
+    }
+    OnGameLose()
+    {
+        if (this.heartbeat.playing) {
+            this.heartbeat.stop();
+        }
+        
+        if (soundmgr.bSoundEnable)
+        {
+            this.fail.play();
+        }
     }
     static get bSoundEnable() : boolean
     {
