@@ -132,7 +132,7 @@ export class LevelMgr {
         } else if (t < 0.4) {
             return 6; // 中期关卡适中
         } else if (t < 0.7) {
-            return 8; // 中后期关卡较难
+            return 8; // 中后期关卡较难，确保至少8列
         } else {
             return 10; // 后期关卡非常雾
         }

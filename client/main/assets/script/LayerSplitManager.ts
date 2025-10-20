@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Vec3, tween, SpriteFrame, Sprite, UITransform } from 'cc';
+import { _decorator, Component, Node, Vec3, tween, SpriteFrame, Sprite, UITransform, Button } from 'cc';
 import { Main } from './main';
 import { TObject } from './TObject';
 
@@ -72,11 +72,7 @@ export class LayerSplitManager extends Component {
     private registerEvents() {
         // 开始叠加拆分模式游戏
         Main.RegistEvent('event_play_layersplit', (level) => {
-            if (typeof level === 'number') {
-                this.startLayerSplitGame(level);
-            } else {
-                console.warn('无效的关卡参数:', level);
-            }
+            this.startLayerSplitGame(level); 
             return null;
         });
         Main.RegistEvent('event_show_ylgy_container', (acitve) => {
@@ -119,6 +115,12 @@ export class LayerSplitManager extends Component {
             } else {
                 console.warn('无效的卡牌节点参数:', cardNode);
             }
+            return null;
+        });
+        
+        // 处理清除道具使用事件
+        Main.RegistEvent('event_layer_clear', () => {
+            this.handleLayerClear();
             return null;
         });
     }
@@ -185,6 +187,12 @@ export class LayerSplitManager extends Component {
         
         // 将卡牌添加到容器数组
         this.containerCards.push(card);
+        
+        // 禁用卡牌的点击事件
+        const button = card.getComponent(Button);
+        if (button) {
+            button.enabled = false;
+        }
         
         // 确保卡槽节点已初始化
         if (this.slotNodes.length === 0) {
@@ -722,5 +730,134 @@ export class LayerSplitManager extends Component {
         } catch (error) {
             console.error('通知清空网格卡牌时出错:', error);
         }
+    }
+    
+    /**
+     * 处理清除道具使用事件
+     * 在层级叠加模式下，使用清除道具会从卡池中找到对应的卡牌并消除卡槽中的所有卡牌
+     */
+    private handleLayerClear() {
+        console.log('使用清除道具，开始处理卡槽中的卡牌');
+        
+        // 检查是否处于层级叠加模式
+        if (!this.ylgyContainer.active) {
+            console.warn('当前不处于层级叠加模式，无法使用清除道具');
+            return;
+        }
+        
+        // 统计卡槽中每种卡牌类型的数量
+        const containerCardTypeCounts: { [type: number]: number } = {};
+        for (const card of this.containerCards) {
+            if (card && card.isValid) {
+                const tobj = card.getComponent('TObject') as TObject | null;
+                if (tobj) {
+                    const type = tobj.type;
+                    if (!containerCardTypeCounts[type]) {
+                        containerCardTypeCounts[type] = 0;
+                    }
+                    containerCardTypeCounts[type]++;
+                }
+            }
+        }
+        
+        // 如果卡槽中没有卡牌，直接返回
+        if (Object.keys(containerCardTypeCounts).length === 0) {
+            console.log('卡槽中没有卡牌，无需处理');
+            return;
+        }
+        
+        // 计算每种类型还需要多少张卡牌才能凑够3个
+        const cardsNeeded: { [type: number]: number } = {};
+        for (const typeStr in containerCardTypeCounts) {
+            const type = parseInt(typeStr);
+            const currentCount = containerCardTypeCounts[type];
+            // 如果当前数量小于3，则需要补充到3个
+            if (currentCount < 3) {
+                cardsNeeded[type] = 3 - currentCount;
+            }
+        }
+        
+        // 如果所有类型都已经有3个或以上，直接返回
+        const neededTypes = Object.keys(cardsNeeded);
+        if (neededTypes.length === 0) {
+            console.log('所有卡牌类型都已经有3个或以上，无需补充');
+            return;
+        }
+        
+        // 从卡池中找到需要的卡牌
+        try {
+            // 获取网格中的所有卡牌节点
+            const gridChildren = Main.DispEvent('event_get_grid_children') as Node[] | null;
+            if (gridChildren && Array.isArray(gridChildren)) {
+                // 为每种类型存储可消除的卡牌
+                const cardsToEliminateByType: { [type: number]: Node[] } = {};
+                
+                // 初始化每种类型需要的卡牌数组
+                for (const typeStr in cardsNeeded) {
+                    const type = parseInt(typeStr);
+                    cardsToEliminateByType[type] = [];
+                }
+                
+                // 遍历网格中的卡牌
+                for (const child of gridChildren) {
+                    if (child && child.isValid) {
+                        const tobj = child.getComponent('TObject') as TObject | null;
+                        if (tobj) {
+                            const type = tobj.type;
+                            // 检查该卡牌类型是否是我们需要的
+                            if (cardsNeeded[type] && cardsToEliminateByType[type]) {
+                                // 如果该类型还需要更多卡牌，则添加到待消除列表
+                                if (cardsToEliminateByType[type].length < cardsNeeded[type]) {
+                                    cardsToEliminateByType[type].push(child);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 消除找到的卡牌
+                let totalEliminated = 0;
+                for (const typeStr in cardsToEliminateByType) {
+                    const type = parseInt(typeStr);
+                    const cardsToEliminate = cardsToEliminateByType[type];
+                    
+                    if (cardsToEliminate.length > 0) {
+                        console.log(`找到${cardsToEliminate.length}张类型为${type}的卡牌`);
+                        
+                        // 消除这些卡牌
+                        for (const card of cardsToEliminate) {
+                            if (card && card.isValid) {
+                                // 显示分数弹出效果
+                                const eliminatePos = card.position.clone();
+                                Main.DispEvent('event_show_score_popup', eliminatePos);
+                                
+                                // 销毁卡牌
+                                card.destroy();
+                                totalEliminated++;
+                            }
+                        }
+                    }
+                }
+                
+                if (totalEliminated > 0) {
+                    // 触发积分增加事件（每张卡牌加1分）
+                    Main.DispEvent('event_add_jifen', totalEliminated);
+                    
+                    // 通知整理卡牌
+                    Main.DispEvent('event_zhengli');
+                    
+                    console.log(`成功消除${totalEliminated}张卡牌`);
+                } else {
+                    console.log('没有找到需要的卡牌');
+                }
+            }
+        } catch (error) {
+            console.error('从卡池中查找并消除卡牌时出错:', error);
+        }
+        
+        // 清空卡槽中的所有卡牌
+        this.clearContainer();
+        
+        console.log('清除道具使用完成');
     }
 }

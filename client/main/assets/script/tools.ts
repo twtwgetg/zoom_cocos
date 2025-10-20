@@ -48,4 +48,19 @@ export class tools {
         PlayerPrefb.setInt("num_time", value);
         Main.DispEvent("event_itemchanged", value);
     }
+    /**
+     * 找齐道具数量
+     */
+    static get num_layer()
+    {
+        return PlayerPrefb.getInt("num_layer", 3);
+    }
+    static set num_layer(value)
+    {
+        if (value < 0)
+            value = 0;
+        PlayerPrefb.setInt("num_layer", value);
+        Main.DispEvent("event_itemchanged", value);
+    }
+
 }

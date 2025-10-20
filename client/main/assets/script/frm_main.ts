@@ -1,35 +1,37 @@
-import { _decorator, Button, Color, Component, Label, Node, ProgressBar, Sprite, tween, Vec3 } from 'cc';
+import { _decorator, Button, Color, Component, instantiate, Label, Node, Prefab, ProgressBar, Sprite, tween, Vec3 } from 'cc';
 import { gridcreator } from './gridcreator';
 import { Main } from './main';
 import { frmbase } from './frmbase';
 import { LevelMgr, GameMode } from './levelmgr';
 import { tools } from './tools';
-import { ItemType } from './item_tools'; 
+import { enum_paly_type, item_tools, ItemType } from './item_tools'; 
 import { WeatherShaderManager } from './WeatherShaderManager';
 import { ToutiaoEventMgr } from './ToutiaoEventMgr';
 import { PlayerPrefb } from './PlayerPrefb';
 import { TObject } from './TObject';
+import { titem } from './item/titem';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
 export class frm_main extends frmbase {
     @property(gridcreator)
     public gridcreator: gridcreator = null!;
-    @property(Button)
-    btn_refrush: Button = null!;
+    // @property(Button)
+    // btn_refrush: Button = null!;
 
     @property(Label)
     lbl_curr: Label = null!;
     @property(Label)
     lbl_jifen: Label = null!;
     @property(Button)
-    btn_remind: Button = null!;
-    @property(Button)
-    btn_time: Button = null!;
-    @property(Button)
     btn_pause: Button = null!;
     time_all: number = 0;
     time_now: number = 0;
+
+    @property(Prefab)
+    item_prefab: Prefab = null!;
+    @property(Node)
+    node_list: Node = null!;
     // 添加积分变量
     private jifen: number = 0; // 总积分
     private currentJifen: number = 0; // 本局积分
@@ -50,6 +52,7 @@ export class frm_main extends frmbase {
     /**
      * -1 表示无限模式
      * -2 表示三消模式
+     * -3 表示层级叠加模式
      */
     level_playing: number = 0;
 
@@ -77,6 +80,8 @@ export class frm_main extends frmbase {
     private isInfinityMode: boolean = false; // 是否为无限模式
     private infiniteModeGeneratorId: any = null; // 无限模式生成器ID
     private stopInfiniteModeGenerator: boolean = false; // 是否停止无限模式生成器
+    static isInfinityMode: any;
+    static stopInfiniteModeGenerator: boolean;
     
     /**
      * 添加无限模式生成器
@@ -147,11 +152,40 @@ export class frm_main extends frmbase {
             Main.DispEvent("event_heartbeat_stop");
         }
     }
+    /**
+     * 添加填充道具功能
+     * 连连看模式填充提醒，刷新，和冰封
+     */
+    fillItems(type:enum_paly_type){
+        this.node_list.removeAllChildren();
+        if(type==enum_paly_type.LIANLIANKAN){
+            this.fillItem(ItemType.brush, tools.num_brush);
+            this.fillItem(ItemType.remind, tools.num_Remind);
+            this.fillItem(ItemType.time, tools.num_time);
+        }
+        else if(type==enum_paly_type.SANXIAO){
+            
+        }
+        else if(type==enum_paly_type.LAYERSPLIT){ 
+            this.fillItem(ItemType.layer,tools.num_layer);
+        }
+        else{
+            console.error("未知的游戏模式"+type);
+        }
+    }
+    fillItem(tp:ItemType, num:number){
+        
+        let item= instantiate(this.item_prefab);
+        item.setParent(this.node_list);
+        item.getComponent(titem).init({tp:tp},num);
+    
+    }
     protected onLoad(): void {
         super.onLoad();
         let that =this;
         Main.RegistEvent("event_play",(x)=>{ 
             this.show();
+            this.fillItems(enum_paly_type.LIANLIANKAN);
             // 上报进入关卡事件
             ToutiaoEventMgr.reportLevel(x);
             // 上报挑战事件（主动进入游戏）
@@ -208,6 +242,11 @@ export class frm_main extends frmbase {
                 this.showCurrentScoreLabel();
             }
 
+            // 显示时间进度条（普通连连看模式计时）
+            if (this.progress_time && this.progress_time.node) {
+                this.progress_time.node.active = true;
+            }
+
             // 重置本局积分
             this.resetCurrentJifen();
 
@@ -216,6 +255,7 @@ export class frm_main extends frmbase {
         // 添加无限模式事件处理
         Main.RegistEvent("event_play_infinite",()=>{ 
             this.show();
+            this.fillItems(enum_paly_type.LIANLIANKAN);
             // 上报挑战事件（主动进入游戏）
             ToutiaoEventMgr.reportCharge();
             
@@ -267,6 +307,11 @@ export class frm_main extends frmbase {
             // 在无限模式下隐藏本局得分显示
             this.hideCurrentScoreLabel();
 
+            // 隐藏时间进度条（无限模式不计时）
+            if (this.progress_time && this.progress_time.node) {
+                this.progress_time.node.active = false;
+            }
+
             // 重置本局积分
             this.resetCurrentJifen();
 
@@ -275,7 +320,7 @@ export class frm_main extends frmbase {
         //添加分层叠加模式
         Main.RegistEvent("event_play_layersplit",()=>{
             this.show();
-            
+            this.fillItems(enum_paly_type.LAYERSPLIT);
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
@@ -289,8 +334,8 @@ export class frm_main extends frmbase {
             this.scheduleOnce(() => {
                 // 添加保护性检查，确保gridcreator对象已正确初始化
                 if (this.gridcreator) {
-                    // 创建分层叠加模式关卡（5x8网格）
-                    this.gridcreator.CreateLayerSplitMode(5, 8);
+                    // 修改为8x8网格
+                    this.gridcreator.CreateLayerSplitMode(8, 8);
                     // 分层叠加模式不计时
                     this.time_all = 0;
                     this.time_now = 0;
@@ -327,10 +372,16 @@ export class frm_main extends frmbase {
             // 重置本局积分
             this.resetCurrentJifen();
 
+            // 隐藏时间进度条（分层叠加模式不计时）
+            if (this.progress_time && this.progress_time.node) {
+                this.progress_time.node.active = false;
+            }
+
         })
         // 添加三消模式事件处理
         Main.RegistEvent("event_play_sanxiao",()=>{ 
             this.show();
+            this.fillItems(enum_paly_type.SANXIAO);
             // 上报挑战事件（主动进入游戏）
             ToutiaoEventMgr.reportCharge();
             
@@ -376,6 +427,11 @@ export class frm_main extends frmbase {
             // 在三消模式下显示本局得分
             this.showCurrentScoreLabel();
 
+            // 隐藏时间进度条（三消模式不计时）
+            if (this.progress_time && this.progress_time.node) {
+                this.progress_time.node.active = false;
+            }
+
             // 重置本局积分
             this.resetCurrentJifen();
 
@@ -392,10 +448,7 @@ export class frm_main extends frmbase {
             this.fruzonBar(f);
             return null;
         });
-        Main.RegistEvent("update_tools",()=>{ 
-            this.brushTools();
-            return null;
-        });
+   
         Main.RegistEvent("event_begin",()=>{ 
             // 停止心跳音效
             Main.DispEvent("event_heartbeat_stop");
@@ -446,120 +499,20 @@ export class frm_main extends frmbase {
             
             return null;
         });
-        Main.RegistEvent("event_itemchanged",()=>{
-            this.brushTools();
-            return null;
-        })
+
         this.btn_pause.node.on(Button.EventType.CLICK, () =>
         {
-            
             Main.DispEvent("event_pause",this.level_playing);
         }, this);
-        this.btn_refrush.node.on(Button.EventType.CLICK, () =>
-        {
-            if(tools.num_brush>0)
-            {
-                tools.num_brush--;
-                this.brushTools();
-                Main.DispEvent("event_msg_top",{msg:"使用刷新道具"});
-                Main.DispEvent("event_brush");
-                // 上报使用道具事件
-                ToutiaoEventMgr.reportUseItem(1); // 1表示刷新道具
-            }
-            else{
-                Main.DispEvent("event_tools",{tp:ItemType.brush,autouse:()=>{
-                    // if(tools.num_brush>0)
-                    // {
-                    //     tools.num_brush--;
-                        that.brushTools();
-                        // 上报使用道具事件
-                        ToutiaoEventMgr.reportUseItem(1); // 1表示刷新道具
-                    //     Main.DispEvent("event_brush");    
-                    // }
-                    // else{
 
-                    // }
-                }});
-            }
-        }, this);
-        this.btn_remind.node.on(Button.EventType.CLICK, () =>
-        {
-            if(tools.num_Remind>0){
-                tools.num_Remind--;
-                this.brushTools();
-                Main.DispEvent("event_msg_top",{msg:"使用提醒道具..."});
-                Main.DispEvent("event_tixing");
-                // 上报使用道具事件
-                ToutiaoEventMgr.reportUseItem(2); // 2表示提醒道具
-                // 停止提醒道具按钮闪烁
-                this.stopRemindButtonFlashing();
-            }
-            else{
-                Main.DispEvent("event_tools",{tp:ItemType.remind,autouse:()=>{
-                    // if(tools.num_Remind>0){
-                    //     tools.num_Remind--;
-                        that.brushTools();
-                        // 上报使用道具事件
-                        ToutiaoEventMgr.reportUseItem(2); // 2表示提醒道具
-                        // 停止提醒道具按钮闪烁
-                        this.stopRemindButtonFlashing();
-                    //     Main.DispEvent("event_tixing");    
-                    // }
-                }});
-            }
-        }, this); 
-        this.btn_time.node.on(Button.EventType.CLICK,()=>{
-            // 
-            if(Main.DispEvent("event_isfruszon")){
-                Main.DispEvent("event_msg_top",{msg:"时间冷却中..."});
-            }
-            else{
-                if(tools.num_time>0){
-                    tools.num_time--;
-                    this.brushTools();
-                    Main.DispEvent("event_resettime");     
-                    Main.DispEvent("event_msg_top",{msg:"使用时间道具..."});
-                    
-                    // 在无限模式下，使用时间道具可以停止生成新卡牌
-                    if (this.isInfinityMode) {
-                        this.stopInfiniteModeGenerator = true;
-                        Main.DispEvent("event_msg_top",{msg:"时间道具已使用，停止生成新卡牌"});
-                    }
-                    
-                    // 上报使用道具事件
-                    ToutiaoEventMgr.reportUseItem(3); // 3表示时间道具
-                }
-                else{
-                    console.log("no time");
-    
-                    Main.DispEvent("event_tools",{tp:ItemType.time,autouse:()=>{
-                        // if(tools.num_time>0){
-                        //     tools.num_time--;
-                          that.brushTools();
-                          
- 
-                          // 上报使用道具事件
-                          ToutiaoEventMgr.reportUseItem(3); // 3表示时间道具
-                        //     Main.DispEvent("event_resettime");    
-                        // }
-                    }});
-                }
-            }
-            
-        },this);
 
         Main.RegistEvent("time_used",()=>{
             return this.time_now;
         });
         this.fruzonBar(false);
-
-        this.brushTools();
+ 
     }
-    brushTools(){ 
-        this.btn_time.node.getChildByName("num").getComponent(Label).string = tools.num_time.toString();
-        this.btn_remind.node.getChildByName("num").getComponent(Label).string = tools.num_Remind.toString();
-        this.btn_refrush.node.getChildByName("num").getComponent(Label).string = tools.num_brush.toString();
-    }
+ 
     
     /**
      * 更新模式标签显示
@@ -727,9 +680,9 @@ export class frm_main extends frmbase {
         if (this.isRemindButtonFlashing) {
             return;
         }
-        
+        let remind = this.getItemByType(ItemType.remind);
         // 检查提醒道具按钮是否存在
-        if (!this.btn_remind || !this.btn_remind.node) {
+        if (!remind) {
             console.warn('提醒道具按钮未找到');
             return;
         }
@@ -738,7 +691,7 @@ export class frm_main extends frmbase {
         this.isRemindButtonFlashing = true;
         
         // 保存原始缩放
-        const originalScale = this.btn_remind.node.scale.clone();
+        const originalScale = remind.node.scale.clone();
         
         // 停止之前的动画
         if (this.remindButtonFlashTween) {
@@ -746,7 +699,7 @@ export class frm_main extends frmbase {
         }
         
         // 创建闪烁动画（通过改变缩放实现）
-        this.remindButtonFlashTween = tween(this.btn_remind.node)
+        this.remindButtonFlashTween = tween(remind.node)
             .repeatForever(
                 tween()
                     .to(0.3, { scale: new Vec3(originalScale.x * 1.2, originalScale.y * 1.2, originalScale.z) })
@@ -757,28 +710,30 @@ export class frm_main extends frmbase {
             .start();
 }
 
-/**
- * 停止提醒道具按钮闪烁动画
- */
-private stopRemindButtonFlashing() {
-    // 重置闪烁状态
-    this.isRemindButtonFlashing = false;
-    
-    // 停止动画
-    if (this.remindButtonFlashTween) {
-        this.remindButtonFlashTween.stop();
-        this.remindButtonFlashTween = null;
-    }
-    
-    // 恢复按钮原始状态
-    if (this.btn_remind && this.btn_remind.node) {
+    /**
+     * 停止提醒道具按钮闪烁动画
+     */
+    private stopRemindButtonFlashing() {
+        // 重置闪烁状态
+        this.isRemindButtonFlashing = false;
+        
+        // 停止动画
+        if (this.remindButtonFlashTween) {
+            this.remindButtonFlashTween.stop();
+            this.remindButtonFlashTween = null;
+        }
+        let remind = this.getItemByType(ItemType.remind);
+        // 检查提醒道具按钮是否存在
+        if (!remind) {
+            console.warn('提醒道具按钮未找到');
+            return;
+        }
         // 停止所有动画
-        tween(this.btn_remind.node).stop();
+        tween(remind.node).stop();
         
         // 恢复原始缩放
-        this.btn_remind.node.scale = new Vec3(1, 1, 1);
+        remind.node.scale = new Vec3(1, 1, 1);
     }
-}
 
     /**
      * 获取初始时间道具数量（用于判断是否使用了时间道具）
@@ -786,25 +741,37 @@ private stopRemindButtonFlashing() {
     private getInitialTimeCount(): number {
         return this.initialTimeCount;
     }
-    
+    getItemByType(type:ItemType): titem {
+     
+        let ret :titem = null   ;
+        let items = this.node_list.getComponentsInChildren(titem);
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i];
+            if (item.itemtype == type)
+                ret = item;
+        }
+        return ret;
+    }
     /**
      * 播放时间道具按钮动画以吸引玩家注意
      */
-    private playTimeButtonAnimation() {
-        if (!this.btn_time || !this.btn_time.node) {
-            console.warn('时间道具按钮未找到');
-            return;
+    private playTimeButtonAnimation() 
+    {
+        let item = this.getItemByType(ItemType.time);
+        if (!item) {
+            return ;
         }
         
-        // 停止之前的动画
-        tween(this.btn_time.node).stop();
+        
+        // // 停止之前的动画
+        tween(item.node).stop();
         
         // 保存原始状态
-        const originalScale = this.btn_time.node.scale.clone();
-        const originalPosition = this.btn_time.node.position.clone();
+        const originalScale = item.node.scale.clone();
+        const originalPosition = item.node.position.clone();
         
         // 创建吸引注意的动画序列
-        tween(this.btn_time.node)
+        tween(item.node)
             .repeat(3, // 重复3次
                 tween()
                     .to(0.2, { scale: new Vec3(originalScale.x * 1.2, originalScale.y * 1.2, originalScale.z) })
@@ -865,51 +832,51 @@ private stopRemindButtonFlashing() {
      */
     private playToolButtonsEntranceAnimation() {
         // 如果是三消模式，不显示道具按钮
-        if (this.level_playing === -2) {
-            return;
-        }
+        // if (this.level_playing === -2) {
+        //     return;
+        // }
         
-        // 先确保所有道具按钮都显示
-        this.showToolButtons();
+        // // 先确保所有道具按钮都显示
+        // this.showToolButtons();
         
-        const toolButtons = [this.btn_remind, this.btn_time, this.btn_refrush];
+        // const toolButtons = [this.btn_remind, this.btn_time, this.btn_refrush];
         
-        toolButtons.forEach((button, index) => {
-            if (!button || !button.node) {
-                console.warn(`道具按钮 ${index} 未找到`);
-                return;
-            }
+        // toolButtons.forEach((button, index) => {
+        //     if (!button || !button.node) {
+        //         console.warn(`道具按钮 ${index} 未找到`);
+        //         return;
+        //     }
 
-            const originalPosition = button.node.position.clone();
-            const originalScale = button.node.scale.clone();
+        //     const originalPosition = button.node.position.clone();
+        //     const originalScale = button.node.scale.clone();
             
-            // 设置初始状态：在原位置下方100像素，缩放为0
-            button.node.setPosition(originalPosition.x, originalPosition.y - 100, originalPosition.z);
-            button.node.setScale(0, 0, 1);
+        //     // 设置初始状态：在原位置下方100像素，缩放为0
+        //     button.node.setPosition(originalPosition.x, originalPosition.y - 100, originalPosition.z);
+        //     button.node.setScale(0, 0, 1);
             
-            // 延迟播放，每个按钮间隔0.1秒
-            const delay = index * 0.1;
+        //     // 延迟播放，每个按钮间隔0.1秒
+        //     const delay = index * 0.1;
             
-            // 创建入场动画
-            tween(button.node)
-                .delay(delay)
-                .parallel(
-                    // 位置动画：从下方滑动到原位置
-                    tween().to(0.6, { position: originalPosition }, {
-                        easing: 'backOut' // 使用回弹效果
-                    }),
-                    // 缩放动画：从0缩放到原始大小
-                    tween().to(0.6, { scale: originalScale }, {
-                        easing: 'backOut'
-                    })
-                )
-                .call(() => {
-                    console.log(`道具按钮 ${index} 入场动画完成`);
-                    // 添加一个小的弹跳效果来吸引注意
-                    this.addAttentionBounce(button.node);
-                })
-                .start();
-        });
+        //     // 创建入场动画
+        //     tween(button.node)
+        //         .delay(delay)
+        //         .parallel(
+        //             // 位置动画：从下方滑动到原位置
+        //             tween().to(0.6, { position: originalPosition }, {
+        //                 easing: 'backOut' // 使用回弹效果
+        //             }),
+        //             // 缩放动画：从0缩放到原始大小
+        //             tween().to(0.6, { scale: originalScale }, {
+        //                 easing: 'backOut'
+        //             })
+        //         )
+        //         .call(() => {
+        //             console.log(`道具按钮 ${index} 入场动画完成`);
+        //             // 添加一个小的弹跳效果来吸引注意
+        //             this.addAttentionBounce(button.node);
+        //         })
+        //         .start();
+        // });
     }
 
 
@@ -919,19 +886,19 @@ private stopRemindButtonFlashing() {
      */
     private showToolButtons() {
         // 显示刷新道具按钮
-        if (this.btn_refrush && this.btn_refrush.node) {
-            this.btn_refrush.node.active = true;
-        }
+        // if (this.btn_refrush && this.btn_refrush.node) {
+        //     this.btn_refrush.node.active = true;
+        // }
         
-        // 显示提醒道具按钮
-        if (this.btn_remind && this.btn_remind.node) {
-            this.btn_remind.node.active = true;
-        }
+        // // 显示提醒道具按钮
+        // if (this.btn_remind && this.btn_remind.node) {
+        //     this.btn_remind.node.active = true;
+        // }
         
-        // 显示时间道具按钮
-        if (this.btn_time && this.btn_time.node) {
-            this.btn_time.node.active = true;
-        }
+        // // 显示时间道具按钮
+        // if (this.btn_time && this.btn_time.node) {
+        //     this.btn_time.node.active = true;
+        // }
     }
     
 
@@ -1170,20 +1137,20 @@ private stopRemindButtonFlashing() {
      * 在三消模式下隐藏道具按钮
      */
     private hideToolButtonsInSanxiaoMode() {
-        // 隐藏刷新道具按钮
-        if (this.btn_refrush && this.btn_refrush.node) {
-            this.btn_refrush.node.active = false;
-        }
+        // // 隐藏刷新道具按钮
+        // if (this.btn_refrush && this.btn_refrush.node) {
+        //     this.btn_refrush.node.active = false;
+        // }
         
-        // 隐藏提醒道具按钮
-        if (this.btn_remind && this.btn_remind.node) {
-            this.btn_remind.node.active = false;
-        }
+        // // 隐藏提醒道具按钮
+        // if (this.btn_remind && this.btn_remind.node) {
+        //     this.btn_remind.node.active = false;
+        // }
         
-        // 隐藏时间道具按钮
-        if (this.btn_time && this.btn_time.node) {
-            this.btn_time.node.active = false;
-        }
+        // // 隐藏时间道具按钮
+        // if (this.btn_time && this.btn_time.node) {
+        //     this.btn_time.node.active = false;
+        // }
     }
 
     /**

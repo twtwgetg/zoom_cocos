@@ -69,6 +69,9 @@ export class frm_tools extends frmbase {
                 else if(this.dt.tp==ItemType.remind) {
                     tools.num_Remind+=num;
                 }
+                else if(this.dt.tp==ItemType.layer) {
+                    tools.num_layer+=num;
+                }
                 else{
                     console.error('道具使用错误'+this.dt.tp);
                 }
@@ -96,6 +99,8 @@ export class frm_tools extends frmbase {
             case ItemType.brush:
                 this.lbl_title.string = "刷新道具";
                 break;
+            case ItemType.layer:
+                this.lbl_title.string = "消除道具";
             default:
                 break;
         }

@@ -80,6 +80,12 @@ export class TObject extends Component {
             this.handleSanxiaoMode();
         } else if (this.creator && (this.creator as any).isLayerSplitMode) {
             // 分层叠加模式逻辑
+            // 检查卡牌是否已经被移动到容器中
+            if (this.released) {
+                console.log('卡牌已经被移动到容器中，无法再次点击');
+                return;
+            }
+            
             // 添加保护性检查，确保节点仍然有效
             if (this.node && this.node.isValid) {
                 // 在移动卡牌之前，从地图中移除顶层卡牌
@@ -87,6 +93,9 @@ export class TObject extends Component {
                 if (Array.isArray(cell) && cell.length > 0) {
                     cell.pop(); // 移除顶层卡牌
                 }
+                
+                // 标记卡牌为已释放（已移动到容器中）
+                this.released = true;
                 
                 // 直接将卡牌移动到容器中
                 Main.DispEvent("event_move_to_container", this.node);
@@ -410,29 +419,49 @@ export class TObject extends Component {
         
         // 设置第二张卡牌
         TObject.secondCard = this;
+        // 选中第二张卡牌
+        this.Select();
         
-        // 检查两张卡牌是否相邻
-        if (this.areAdjacent(TObject.firstCard, TObject.secondCard)) {
-            // 交换两张卡牌
-            this.swapCards(TObject.firstCard, TObject.secondCard);
-        } else {
-            // 不相邻，重新选择第一张卡牌
-            TObject.firstCard.unSel();
-            TObject.firstCard = this;
-            this.Select();
-            TObject.secondCard = null;
-            return;
-        }
-        
-        // 重置选中状态
-        if (TObject.firstCard) {
-            TObject.firstCard.unSel();
-            TObject.firstCard = null;
-        }
-        if (TObject.secondCard) {
-            TObject.secondCard.unSel();
-            TObject.secondCard = null;
-        }
+        //延迟1秒
+        this.scheduleOnce(async () => {
+            // 检查两张卡牌是否仍然有效
+            if (!TObject.firstCard || !TObject.secondCard) {
+                console.warn("卡牌已被销毁，取消交换操作");
+                return;
+            }
+            
+            // 检查两张卡牌的节点是否仍然有效
+            if (!TObject.firstCard.node || !TObject.secondCard.node) {
+                console.warn("卡牌节点已被销毁，取消交换操作");
+                TObject.firstCard = null;
+                TObject.secondCard = null;
+                return;
+            }
+            
+            // 检查两张卡牌是否相邻
+            if (this.areAdjacent(TObject.firstCard, TObject.secondCard)) {
+                // 交换两张卡牌
+                await this.swapCards(TObject.firstCard, TObject.secondCard);
+            } else {
+                // 不相邻，重新选择第一张卡牌
+                TObject.firstCard.unSel();
+                TObject.firstCard = this;
+                this.Select();
+                TObject.secondCard = null;
+                return;
+            }
+            
+            // 重置选中状态
+            if (TObject.firstCard) {
+                TObject.firstCard.unSel();
+                TObject.firstCard = null;
+            }
+            if (TObject.secondCard) {
+                TObject.secondCard.unSel();
+                TObject.secondCard = null;
+            }
+        }, 0.2);
+       
     }
     
     /**
@@ -448,6 +477,12 @@ export class TObject extends Component {
      * 交换两张卡牌的位置和数据 - 添加位移动画
      */
     private async swapCards(card1: TObject, card2: TObject): Promise<void> {
+        // 检查卡牌节点是否存在
+        if (!card1.node || !card2.node) {
+            console.error("无法交换卡牌：卡牌节点不存在");
+            return;
+        }
+        
         // 保存原始位置和数据用于恢复
         const originalX1 = card1.x;
         const originalY1 = card1.y;
@@ -512,8 +547,10 @@ export class TObject extends Component {
                 card2.y = originalY2;
                 
                 // 更新节点名称
-                card1.node.name = `${card1.x},${card1.y}`;
-                card2.node.name = `${card2.x},${card2.y}`;
+                if (card1.node && card2.node) {
+                    card1.node.name = `${card1.x},${card1.y}`;
+                    card2.node.name = `${card2.x},${card2.y}`;
+                }
                 
                 // 恢复位置，同样添加动画
                 if (this.creator) {
@@ -538,5 +575,9 @@ export class TObject extends Component {
                 }
             }
         }
+        
+        // 取消两张卡牌的选中状态
+        card1.unSel();
+        card2.unSel();
     }
 }

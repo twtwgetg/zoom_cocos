@@ -189,6 +189,18 @@ export class frm_guanka extends frmbase {
             this.hide();
             return null;
         });
+        Main.RegistEvent("event_play_infinite",(x)=>{
+            this.hide();
+            return null;
+        })
+        Main.RegistEvent("event_play_layersplit",(x)=>{
+            this.hide();
+            return null;
+        })
+        Main.RegistEvent("event_play_sanxiao",(x)=>{
+            this.hide();
+            return null;
+        }); 
         Main.RegistEvent("event_play",(x)=>{
             this.hide();
             return null;
@@ -275,23 +287,36 @@ export class frm_guanka extends frmbase {
      * @returns 奖励道具类型数组
      */
     private getLevelRewards(level: number): string[] {
-        // 基础奖励：三个道具
-        let rewards = ['remind', 'brush', 'time'];
+        // 定义所有可能的奖励类型
+        const allRewards = ['remind', 'brush', 'time'];
         
-        // 随着关卡增加，奖励道具数量也增加
-        if (level > 10) {
-            rewards.push('brush'); // 第11关开始多给一个刷子
+        // 随机选择1到3种奖励类型
+        const numRewardTypes = Math.floor(Math.random() * 3) + 1; // 1到3之间
+        const selectedRewards: string[] = [];
+        
+        // 创建一个副本用于随机选择
+        const availableRewards = [...allRewards];
+        
+        // 随机打乱数组
+        for (let i = availableRewards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [availableRewards[i], availableRewards[j]] = [availableRewards[j], availableRewards[i]];
         }
-        if (level > 20) {
-            rewards.push('time'); // 第21关开始多给一个时间道具
+        
+        // 选择指定数量的奖励类型
+        for (let i = 0; i < numRewardTypes; i++) {
+            selectedRewards.push(availableRewards[i]);
         }
-        if (level > 30) {
-            rewards.push('remind'); // 第31关开始多给一个提示道具
-        }
-        if (level > 40) {
-            rewards.push('brush'); // 第41关开始再多给一个刷子
-        }
-
+        
+        // 为每种选中的奖励类型添加1到2个奖励
+        const rewards: string[] = [];
+        selectedRewards.forEach(rewardType => {
+            const count = Math.floor(Math.random() * 2) + 1; // 1到2之间
+            for (let i = 0; i < count; i++) {
+                rewards.push(rewardType);
+            }
+        });
+        
         return rewards;
     }
 

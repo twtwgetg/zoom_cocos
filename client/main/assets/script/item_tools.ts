@@ -1,6 +1,7 @@
 import { __private, _decorator, Button, Component, Label, Node, Sprite, SpriteFrame } from 'cc';
 import { Main } from './main'; 
 import { tools } from './tools';
+import { titem } from './item/titem';
 const { ccclass, property } = _decorator;
 declare global {
     interface Wx {
@@ -10,7 +11,11 @@ declare global {
 
 // 声明tt类型（抖音小程序）
 declare const tt: any;
-
+export enum enum_paly_type {
+    LIANLIANKAN = 0,
+    SANXIAO = 1,
+    LAYERSPLIT, // 分层
+}
 export enum ToolsType{ 
     video = 0,
     share = 1,  
@@ -19,17 +24,11 @@ export enum ItemType{
     brush = 0,
     time = 1,
     remind = 2,  
+    layer = 3,//层级叠加找齐道具
 }
 @ccclass('item_tools')
-export class item_tools extends Component {
-    @property(SpriteFrame)
-    sprite_time: SpriteFrame = null!;
-    @property(SpriteFrame)
-    sprite_remind: SpriteFrame = null!;
-    @property(SpriteFrame)
-    sprite_refrush: SpriteFrame = null!;
-    @property(Sprite)
-    image_icon: Sprite = null!;
+export class item_tools extends titem {
+   
 
     @property(Button)
     node_video: Button = null!;
@@ -41,8 +40,7 @@ export class item_tools extends Component {
     image_icon_video: Sprite = null!;
     @property(Label)
     lbl_txt: Label = null!;
-    @property(Label)
-    lbl_num: Label = null!;
+
     wechatShare(callBack?:any) {
         this.initativeShare(callBack); // 主动分享 
     }
@@ -120,6 +118,9 @@ export class item_tools extends Component {
                     else if(this.itemtype==ItemType.brush){
                         tools.num_brush++;
                     } 
+                    else if(this.itemtype==ItemType.layer){
+                        tools.num_layer++;
+                    }
                     else{
                         console.error("itemtype error"+this.itemtype);
                     } 
@@ -137,25 +138,7 @@ export class item_tools extends Component {
             console.error('道具使用错误'+this.funtype);
         }
     }
-    itemtype: ItemType = ItemType.remind;
-    dt:any
-    setItemType(dt:any) {
-        this.dt = dt;
-        this.itemtype = dt.tp;
-        switch (this.itemtype) {
-            case ItemType.time: 
-                this.image_icon.spriteFrame = this.sprite_time; 
-                break;
-            case ItemType.remind: 
-                this.image_icon.spriteFrame = this.sprite_remind;
-                break;
-            case ItemType.brush: 
-                this.image_icon.spriteFrame = this.sprite_refrush;
-                break;
-            default:
-                break;
-        }
-    }
+    
 
     funtype: ToolsType =  ToolsType.share;
     setFunType(type: number) {

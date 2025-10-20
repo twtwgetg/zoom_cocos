@@ -1225,6 +1225,13 @@
     "__prefab": {
       "__id__": 51
     },
+    "lbl_num": {
+      "__id__": 14
+    },
+    "sprite_layer": {
+      "__uuid__": "de4d8796-def7-4764-a041-1298d19a4477@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
     "sprite_time": {
       "__uuid__": "ae1b2821-6910-4b10-83c4-05852dd645a8@f9941",
       "__expectedType__": "cc.SpriteFrame"
@@ -1257,9 +1264,6 @@
     "lbl_txt": {
       "__id__": 28
     },
-    "lbl_num": {
-      "__id__": 14
-    },
     "_id": ""
   },
   {
@@ -1275,6 +1279,7 @@
       "__id__": 0
     },
     "fileId": "85TX9dMR9N2KO6TBl53GXG",
-    "instance": null
+    "instance": null,
+    "targetOverrides": null
   }
 ]

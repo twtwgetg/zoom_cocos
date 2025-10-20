@@ -22,7 +22,7 @@ export enum platform {
 }
 @ccclass('Main')
 export class Main extends Component {
-    
+
     // 单例实例
     static plat: platform = platform.BYTE; // 当前平台
     // 事件映射表
@@ -62,6 +62,15 @@ export class Main extends Component {
         
         this.eventMap.get(eventName)!.push(callback);
     }
+    static UnRegistEvent(eventName: string,callback: IEventCallback) {
+        if (this.eventMap.has(eventName)) {
+            this.eventMap.get(eventName)!.splice(this.eventMap.get(eventName)!.indexOf(callback), 1);
+        }
+        else{
+            console.log("事件不存在"+eventName);
+        }
+    }
+    
     
     // 静态方法：分发事件
     public static DispEvent(eventName: string, data?: any): any {
