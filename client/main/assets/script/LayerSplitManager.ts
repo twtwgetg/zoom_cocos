@@ -1,6 +1,7 @@
 import { _decorator, Component, Node, Vec3, tween, SpriteFrame, Sprite, UITransform, Button } from 'cc';
 import { Main } from './main';
 import { TObject } from './TObject';
+import { gridcreator } from './gridcreator';
 
 const { ccclass, property } = _decorator;
 
@@ -556,6 +557,11 @@ export class LayerSplitManager extends Component {
             if (cards.length >= 3) {
                 // 消除这3个卡牌
                 this.eliminateCards(cards.slice(0, 3));
+ 
+                // 延迟一帧调用checkGameWin方法
+                setTimeout(() => {
+                    this.checkGameWin();
+                }, 0); 
                 return; // 一次只消除一组
             }
         }
@@ -613,23 +619,21 @@ export class LayerSplitManager extends Component {
         
         // 重新排列剩余卡牌
         this.rearrangeCards();
-        
-        // 检查游戏是否胜利
-        this.checkGameWin();
+
     }
     
     /**
      * 检查游戏是否胜利
      */
     private checkGameWin() {
-        // 如果容器为空且网格中没有卡牌，则游戏胜利
+        // 如果容器为空，则检查网格中是否还有卡牌
         if (this.containerCards.length === 0) {
             // 添加保护性检查
             try {
-                // 修复：在分层叠加模式下，需要检查地图中是否还有卡牌
-                const hasCardsInGrid = Main.DispEvent('event_has_cards_in_grid');
-                // 添加保护性检查
-                if (hasCardsInGrid !== undefined && !hasCardsInGrid) {
+                 
+                // 如果无法通过地图数据检查，则使用原来的事件检查方式
+                const hasCardsInGrid = Main.DispEvent('event_get_grid_children');
+                if (hasCardsInGrid ==0) {
                     console.log('分层叠加模式游戏胜利！');
                     // 通知主场景隐藏 ylgyContainer
                     Main.DispEvent('event_show_ylgy_container', false);
@@ -734,7 +738,8 @@ export class LayerSplitManager extends Component {
     
     /**
      * 处理清除道具使用事件
-     * 在层级叠加模式下，使用清除道具会从卡池中找到对应的卡牌并消除卡槽中的所有卡牌
+     * 在层级叠加模式下，使用清除道具会将卡槽中的卡牌以及与它们类型相同的网格中的卡牌一并消除
+     * 消除规则：凑成3个相同类型的卡牌组合
      */
     private handleLayerClear() {
         console.log('使用清除道具，开始处理卡槽中的卡牌');
@@ -745,119 +750,129 @@ export class LayerSplitManager extends Component {
             return;
         }
         
-        // 统计卡槽中每种卡牌类型的数量
-        const containerCardTypeCounts: { [type: number]: number } = {};
-        for (const card of this.containerCards) {
-            if (card && card.isValid) {
-                const tobj = card.getComponent('TObject') as TObject | null;
-                if (tobj) {
-                    const type = tobj.type;
-                    if (!containerCardTypeCounts[type]) {
-                        containerCardTypeCounts[type] = 0;
-                    }
-                    containerCardTypeCounts[type]++;
-                }
-            }
-        }
-        
         // 如果卡槽中没有卡牌，直接返回
-        if (Object.keys(containerCardTypeCounts).length === 0) {
+        if (this.containerCards.length === 0) {
             console.log('卡槽中没有卡牌，无需处理');
             return;
         }
         
-        // 计算每种类型还需要多少张卡牌才能凑够3个
-        const cardsNeeded: { [type: number]: number } = {};
-        for (const typeStr in containerCardTypeCounts) {
-            const type = parseInt(typeStr);
-            const currentCount = containerCardTypeCounts[type];
-            // 如果当前数量小于3，则需要补充到3个
-            if (currentCount < 3) {
-                cardsNeeded[type] = 3 - currentCount;
+        // 统计卡槽中每种卡牌类型的数量
+        const cardTypeCountInContainer: Map<number, number> = new Map();
+        for (const card of this.containerCards) {
+            if (card && card.isValid) {
+                const tobj = card.getComponent('TObject') as any;
+                if (tobj) {
+                    const type = tobj.type;
+                    cardTypeCountInContainer.set(type, (cardTypeCountInContainer.get(type) || 0) + 1);
+                }
             }
         }
         
-        // 如果所有类型都已经有3个或以上，直接返回
-        const neededTypes = Object.keys(cardsNeeded);
-        if (neededTypes.length === 0) {
-            console.log('所有卡牌类型都已经有3个或以上，无需补充');
+        // 如果没有有效的卡牌类型，直接返回
+        if (cardTypeCountInContainer.size === 0) {
+            console.log('卡槽中没有有效的卡牌类型，无需处理');
             return;
         }
         
-        // 从卡池中找到需要的卡牌
+        // 查找网格中所有卡牌，并按类型分组
+        const allGridCards: Map<number, any[]> = new Map();
         try {
-            // 获取网格中的所有卡牌节点
-            const gridChildren = Main.DispEvent('event_get_grid_children') as Node[] | null;
-            if (gridChildren && Array.isArray(gridChildren)) {
-                // 为每种类型存储可消除的卡牌
-                const cardsToEliminateByType: { [type: number]: Node[] } = {};
-                
-                // 初始化每种类型需要的卡牌数组
-                for (const typeStr in cardsNeeded) {
-                    const type = parseInt(typeStr);
-                    cardsToEliminateByType[type] = [];
-                }
-                
-                // 遍历网格中的卡牌
-                for (const child of gridChildren) {
-                    if (child && child.isValid) {
-                        const tobj = child.getComponent('TObject') as TObject | null;
-                        if (tobj) {
-                            const type = tobj.type;
-                            // 检查该卡牌类型是否是我们需要的
-                            if (cardsNeeded[type] && cardsToEliminateByType[type]) {
-                                // 如果该类型还需要更多卡牌，则添加到待消除列表
-                                if (cardsToEliminateByType[type].length < cardsNeeded[type]) {
-                                    cardsToEliminateByType[type].push(child);
-                                }
-                            }
+            // 通过事件获取网格创建器实例
+            const gridCreator = Main.DispEvent('event_get_gridcreator');
+            if (gridCreator) {
+                // 遍历网格中的所有卡牌
+                const children = gridCreator.node.children;
+                for (const child of children) {
+                    const card = child.getComponent('TObject') as any;
+                    if (card && !card.released) {
+                        const type = card.type;
+                        if (!allGridCards.has(type)) {
+                            allGridCards.set(type, []);
                         }
+                        allGridCards.get(type)!.push(card);
                     }
-                }
-                
-                // 消除找到的卡牌
-                let totalEliminated = 0;
-                for (const typeStr in cardsToEliminateByType) {
-                    const type = parseInt(typeStr);
-                    const cardsToEliminate = cardsToEliminateByType[type];
-                    
-                    if (cardsToEliminate.length > 0) {
-                        console.log(`找到${cardsToEliminate.length}张类型为${type}的卡牌`);
-                        
-                        // 消除这些卡牌
-                        for (const card of cardsToEliminate) {
-                            if (card && card.isValid) {
-                                // 显示分数弹出效果
-                                const eliminatePos = card.position.clone();
-                                Main.DispEvent('event_show_score_popup', eliminatePos);
-                                
-                                // 销毁卡牌
-                                card.destroy();
-                                totalEliminated++;
-                            }
-                        }
-                    }
-                }
-                
-                if (totalEliminated > 0) {
-                    // 触发积分增加事件（每张卡牌加1分）
-                    Main.DispEvent('event_add_jifen', totalEliminated);
-                    
-                    // 通知整理卡牌
-                    Main.DispEvent('event_zhengli');
-                    
-                    console.log(`成功消除${totalEliminated}张卡牌`);
-                } else {
-                    console.log('没有找到需要的卡牌');
                 }
             }
         } catch (error) {
-            console.error('从卡池中查找并消除卡牌时出错:', error);
+            console.error('查找网格中卡牌时出错:', error);
         }
         
-        // 清空卡槽中的所有卡牌
-        this.clearContainer();
+        // 计算需要从网格中删除的卡牌
+        const cardsToRemoveFromGrid: any[] = [];
+        for (const [type, countInContainer] of cardTypeCountInContainer) {
+            // 计算需要从网格中删除多少张该类型的卡牌（凑成3的倍数）
+            const needToRemove = 3 - (countInContainer % 3);
+            
+            // 获取网格中该类型的卡牌
+            const gridCards = allGridCards.get(type) || [];
+            
+            // 从网格中选择需要删除的卡牌
+            for (let i = 0; i < Math.min(needToRemove, gridCards.length); i++) {
+                cardsToRemoveFromGrid.push(gridCards[i]);
+            }
+        }
         
+        // 显示分数弹出效果并移除卡槽中的卡牌
+        let totalReturned = 0;
+        const cardsToReturn = [...this.containerCards]; // 创建副本以避免在迭代时修改数组
+        for (const card of cardsToReturn) {
+            if (card && card.isValid) {
+                // 显示分数弹出效果
+                const returnPos = card.position.clone();
+                Main.DispEvent('event_show_score_popup', returnPos);
+                
+                // 销毁卡槽中的卡牌
+                card.destroy();
+                totalReturned++;
+            }
+        }
+        
+        // 显示分数弹出效果并移除网格中的指定卡牌
+        let totalRemovedFromGrid = 0;
+        for (const card of cardsToRemoveFromGrid) {
+            if (card && card.node && card.node.isValid) {
+                // 显示分数弹出效果
+                const removePos = card.node.position.clone();
+                Main.DispEvent('event_show_score_popup', removePos);
+                
+                // 从地图数据中移除卡牌
+                try {
+                    const gridCreator = Main.DispEvent('event_get_gridcreator');
+                    if (gridCreator && gridCreator.map) {
+                        // 更新地图数据
+                        const mapX = card.x + 1;
+                        const mapY = card.y + 1;
+                        const cell = gridCreator.map[mapX][mapY];
+                        
+                        if (Array.isArray(cell) && cell.length > 0) {
+                            // 在分层模式下，移除顶层卡牌
+                            cell.pop();
+                        } else {
+                            // 在普通模式下，清空位置
+                            gridCreator.map[mapX][mapY] = 0;
+                        }
+                    }
+                } catch (error) {
+                    console.error('更新地图数据时出错:', error);
+                }
+                
+                // 销毁网格中的卡牌
+                card.node.destroy();
+                totalRemovedFromGrid++;
+            }
+        }
+        
+        // 触发积分增加事件（每组3张卡牌加1分）
+        const totalCards = totalReturned + totalRemovedFromGrid;
+        const totalScore = Math.floor(totalCards / 3);
+        if (totalScore > 0) {
+            Main.DispEvent('event_add_jifen', totalScore);
+        }
+        
+        // 清空卡槽中的卡牌引用
+        this.containerCards = [];
+        
+        console.log(`成功移除${totalReturned}张卡槽卡牌和${totalRemovedFromGrid}张网格卡牌，共获得${totalScore}分`);
         console.log('清除道具使用完成');
     }
 }

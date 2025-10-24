@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color } from 'cc';
+import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button } from 'cc';
 import { Main } from './main';
 import { LevelMgr } from './levelmgr';
 import { frm_main } from './frm_main';
@@ -75,6 +75,11 @@ export class gridcreator extends Component {
             return null;
         });
         
+        // 添加事件：获取网格创建器实例
+        Main.RegistEvent('event_get_gridcreator', () => {
+            return this;
+        });
+        
         // 添加事件：获取网格中的子节点
         Main.RegistEvent('event_get_grid_children', () => {
             return this.node.children;
@@ -118,6 +123,16 @@ export class gridcreator extends Component {
         Main.RegistEvent('event_show_score_popup', (position) => {
             if (position) {
                 this.showScorePopup(position);
+            }
+            return null;
+        });
+        
+        // 添加事件：将卡牌从卡槽移回网格（用于分层叠加模式）
+        Main.RegistEvent('event_move_card_to_grid', (cardNode) => {
+            if (cardNode && cardNode instanceof Node) {
+                this.moveCardToGrid(cardNode);
+            } else {
+                console.warn('无效的卡牌节点参数:', cardNode);
             }
             return null;
         });
@@ -2232,6 +2247,121 @@ export class gridcreator extends Component {
                 resolve(); // 解析Promise，表示生成新卡牌完成
             });
         });
+    }
+
+    /**
+     * 将卡牌从卡槽移回网格（用于分层叠加模式）
+     * @param cardNode 要移回网格的卡牌节点
+     */
+    public moveCardToGrid(cardNode: Node): void {
+        if (!cardNode || !cardNode.isValid) {
+            console.warn('无效的卡牌节点，无法移回网格');
+            return;
+        }
+        
+        try {
+            // 获取卡牌的TObject组件
+            const tobj = cardNode.getComponent('TObject') as any;
+            if (!tobj) {
+                console.warn('卡牌没有TObject组件，无法移回网格');
+                return;
+            }
+            
+            // 获取卡牌类型
+            const cardType = tobj.type;
+            
+            // 查找网格中的空位置
+            const emptyPosition = this.findEmptyGridPosition();
+            if (!emptyPosition) {
+                console.warn('网格中没有空位置，无法移回卡牌');
+                return;
+            }
+            
+            // 更新地图数据
+            const mapX = emptyPosition.x + 1;
+            const mapY = emptyPosition.y + 1;
+            
+            // 修复：处理分层叠加模式下的数组类型
+            if (this.isLayerSplitMode) {
+                // 在分层模式下，将卡牌添加到该位置的顶层
+                const cell = gridcreator.map[mapX][mapY] as number[];
+                cell.push(cardType);
+            } else {
+                // 在普通模式下，直接设置地图数据
+                gridcreator.map[mapX][mapY] = cardType;
+            }
+            
+            // 更新卡牌的位置属性
+            tobj.x = emptyPosition.x;
+            tobj.y = emptyPosition.y;
+            tobj.node.name = `${tobj.x},${tobj.y}`;
+            
+            // 计算目标位置
+            const targetPos2D = this.tref.add(new Vec2(emptyPosition.x * this.gridsize, emptyPosition.y * this.gridsize));
+            const targetPos = new Vec3(targetPos2D.x, targetPos2D.y, 0);
+            
+            // 设置卡牌尺寸
+            const rect = cardNode.getComponent(UITransform)!;
+            rect.setContentSize(this.gridsize, this.gridsize);
+            rect.anchorPoint = new Vec2(0, 0);
+            
+            // 使用动画将卡牌移回网格
+            tween(cardNode)
+                .to(0.3, { position: targetPos, scale: new Vec3(1, 1, 1) }, { easing: 'sineOut' })
+                .call(() => {
+                    console.log(`卡牌已成功移回网格，位置: (${emptyPosition.x}, ${emptyPosition.y})`);
+                    
+                    // 重新启用卡牌的点击功能，确保可以再次选中并移动到卡槽
+                    const button = cardNode.getComponent(Button);
+                    if (button) {
+                        button.enabled = true;
+                        console.log('卡牌点击功能已重新启用');
+                    }
+                    
+                    // 确保卡牌处于可点击状态
+                    cardNode.active = true;
+                })
+                .start();
+                
+        } catch (error) {
+            console.error('将卡牌移回网格时出错:', error);
+        }
+    }
+    
+    /**
+     * 查找网格中的空位置
+     */
+    private findEmptyGridPosition(): Vec2 | null {
+        // 根据当前模式确定网格尺寸
+        const width = this.isInfiniteMode || this.isSanxiaoMode || this.isLayerSplitMode ? this.infiniteWid : this.wid;
+        const height = this.isInfiniteMode || this.isSanxiaoMode || this.isLayerSplitMode ? this.infiniteHei : this.hei;
+        
+        // 查找空位置
+        for (let x = 0; x < width; x++) {
+            for (let y = 0; y < height; y++) {
+                const mapX = x + 1;
+                const mapY = y + 1;
+                
+                // 检查该位置是否为空
+                const cell = gridcreator.map[mapX][mapY];
+                let isEmpty = false;
+                
+                if (this.isLayerSplitMode) {
+                    // 在分层模式下，检查数组是否为空
+                    isEmpty = Array.isArray(cell) && cell.length === 0;
+                } else {
+                    // 在普通模式下，检查是否为0
+                    isEmpty = typeof cell === 'number' && cell === 0;
+                }
+                
+                if (isEmpty) {
+                    return new Vec2(x, y);
+                }
+            }
+        }
+        
+        // 如果没有找到空位置，返回null
+        return null;
     }
 
     /**

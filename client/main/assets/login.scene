@@ -9921,7 +9921,7 @@
     "node": {
       "__id__": 255
     },
-    "_enabled": true,
+    "_enabled": false,
     "__prefab": null,
     "_customMaterial": null,
     "_srcBlendFactor": 2,

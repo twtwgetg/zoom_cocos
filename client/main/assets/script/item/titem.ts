@@ -174,6 +174,7 @@ export class titem  extends Component {
                 break;
             case ItemType.layer:
                 this.image_icon.spriteFrame = this.sprite_layer;
+                break;
             default:
                 console.error("no item"+this.itemtype);
                 break;
