@@ -56,8 +56,8 @@ export class frm_main extends frmbase {
      */
     level_playing: number = 0;
 
-    @property(Node)
-    ice_node: Node = null!;
+    // @property(Node)
+    // ice_node: Node = null!;
     @property(Sprite)
     spr_bar: Sprite = null!;
      
@@ -119,7 +119,7 @@ export class frm_main extends frmbase {
     fruzonBar(f:boolean){
         if(!f){
             this.spr_bar.color=new Color(255,173,0,255);
-            this.ice_node.active=false;
+            //this.ice_node.active=false;
             // 只有在非无限模式下才恢复计时
             if (!this.isInfinityMode) {
                 this.jishi=true;
@@ -139,7 +139,7 @@ export class frm_main extends frmbase {
         }
         else{
             this.spr_bar.color=new Color(0,214,255,255);
-            this.ice_node.active=true;
+            //this.ice_node.active=true;
             this.jishi=false;
             // 冰封开始，渐变为冰封颜色 #00689C
             this.animateGridColor(new Color(0, 104, 156, 255), 0.5);
@@ -159,9 +159,21 @@ export class frm_main extends frmbase {
     fillItems(type:enum_paly_type){
         this.node_list.removeAllChildren();
         if(type==enum_paly_type.LIANLIANKAN){
-            this.fillItem(ItemType.brush, tools.num_brush);
-            this.fillItem(ItemType.remind, tools.num_Remind);
-            this.fillItem(ItemType.time, tools.num_time);
+            // 根据游戏模式调整道具数量
+            let brushCount = tools.num_brush;
+            let remindCount = tools.num_Remind;
+            let timeCount = tools.num_time;
+            
+            // 在困难模式下减少道具数量
+            if (LevelMgr.gameMode === GameMode.HARD) {
+                brushCount = Math.max(1, Math.floor(brushCount * 0.7)); // 减少30%的刷新道具
+                remindCount = Math.max(1, Math.floor(remindCount * 0.7)); // 减少30%的提醒道具
+                timeCount = Math.max(1, Math.floor(timeCount * 0.7)); // 减少30%的时间道具
+            }
+            
+            this.fillItem(ItemType.brush, brushCount);
+            this.fillItem(ItemType.remind, remindCount);
+            this.fillItem(ItemType.time, timeCount);
         }
         else if(type==enum_paly_type.SANXIAO){
             

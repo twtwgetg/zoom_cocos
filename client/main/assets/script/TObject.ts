@@ -3,6 +3,7 @@
 import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween } from 'cc';
 import { gridcreator } from './gridcreator';
 import { Main } from './main';
+import { LevelMgr, GameMode } from './levelmgr';
 const { ccclass, property } = _decorator;
 
 @ccclass('TObject')
@@ -66,6 +67,15 @@ export class TObject extends Component {
             TObject.firstClickReported = true;
             // 使用Main.DispEvent触发埋点事件
             Main.DispEvent("event_peng");
+        }
+        
+        // 在困难模式下增加点击误判率
+        if (LevelMgr.gameMode === GameMode.HARD) {
+            // 10%的概率忽略点击
+            if (Math.random() < 0.1) {
+                console.log("困难模式下点击被忽略");
+                return;
+            }
         }
         
         // 检查creator是否存在

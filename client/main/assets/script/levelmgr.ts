@@ -65,29 +65,40 @@ export class LevelMgr {
      * 获取关卡时间
      * @param level 关卡
      * @return 时间
-     * 第一关给予更充裕的时间，后续关卡逐渐增加难度
+     * 根据卡牌数量计算时间，而不是关卡级别
      */
     public static getTimeAll(level: number): number {
-        // 基础时间
-        let baseTime: number;
+        // 计算当前关卡的卡牌数量
+        const width = this.getWid(level);
+        const height = this.getHei(level);
+        const totalCells = width * height;
+        const totalPairs = totalCells / 2; // 卡牌对数
+        const totalCards = totalPairs * 2; // 总卡牌数
         
-        // 第一关给予更多时间
-        if (level === 0) {
-            baseTime = 60; // 第一关60秒，足够新手熟悉
-        } else {
-            const t = level / LevelMgr.realmaxlevel;
-            // 从第二关开始：30-80秒
-            baseTime = this.lerp(30, 80, t);
-        }
+        // 基础时间：每张卡牌给予一定的时间
+        let baseTimePerCard: number;
         
-        // 根据游戏模式调整时间
+        // 根据游戏模式调整每张卡牌的时间
         if (this.gameMode === GameMode.EASY) {
-            // 简单模式时间增加150%（变为原来的2.5倍），比之前更长
-            return baseTime * 2.5;
+            baseTimePerCard = 2; // 简单模式每张卡牌2秒
         } else {
-            // 困难模式使用基础时间
-            return baseTime;
+            baseTimePerCard = 1; // 困难模式每张卡牌1秒
         }
+        
+        // 计算基础时间
+        let baseTime = totalCards * baseTimePerCard;
+        
+        // 设置最小和最大时间限制
+        const minTime = 30;  // 最少30秒
+        const maxTime = 180; // 最多180秒（3分钟）
+        baseTime = Math.max(minTime, Math.min(baseTime, maxTime));
+        
+        // 第一关给予更多时间作为新手引导
+        if (level === 0) {
+            baseTime = Math.max(baseTime, 60); // 第一关至少60秒
+        }
+        
+        return baseTime;
     }
 
     /**
@@ -111,12 +122,12 @@ export class LevelMgr {
     public static getCount(level: number): number {
         // 第一关只用更少的碎片种类
         if (level === 0) {
-            return 8; // 第一关只用8种不同的碎片
+            return 6; // 第一关只用6种不同的碎片（比之前更少）
         }
         
         const t = level / LevelMgr._maxlevel;
-        // 从第二关开始：从15种类型开始，最高达到25种类型
-        return Math.floor(this.lerp(15, 25, t));
+        // 从第二关开始：从18种类型开始，最高达到30种类型（比之前更多）
+        return Math.floor(this.lerp(18, 30, t));
     }
 
     public static getWid(level_playing: number): number {
@@ -134,7 +145,7 @@ export class LevelMgr {
         } else if (t < 0.7) {
             return 8; // 中后期关卡较难，确保至少8列
         } else {
-            return 10; // 后期关卡非常雾
+            return 12; // 后期关卡更难（从10增加到12）
         }
     }
 
@@ -151,9 +162,9 @@ export class LevelMgr {
         } else if (t < 0.4) {
             return 10; // 中期关卡适中
         } else if (t < 0.7) {
-            return 12; // 中后期关卡较难
+            return 14; // 中后期关卡更难（从12增加到14）
         } else {
-            return 14; // 后期关卡非常雾
+            return 16; // 后期关卡非常难（从14增加到16）
         }
     }
 
@@ -184,8 +195,8 @@ export class LevelMgr {
      */
     public static getToolCooldown(level: number): number {
         const t = level / LevelMgr.realmaxlevel;
-        // 随着关卡推进，道具冷却时间从15秒增加到25秒
-        return this.lerp(15000, 25000, t);
+        // 随着关卡推进，道具冷却时间从10秒增加到30秒（比之前更长）
+        return this.lerp(10000, 30000, t);
     }
 
     /**

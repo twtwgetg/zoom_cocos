@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button } from 'cc';
 import { Main } from './main';
-import { LevelMgr } from './levelmgr';
+import { LevelMgr, GameMode } from './levelmgr';
 import { frm_main } from './frm_main';
 import { item_tools } from './item_tools';
 import { tools } from './tools';
@@ -314,26 +314,26 @@ export class gridcreator extends Component {
         // 获取关卡计数（需要实现levelmgr）
         const count = LevelMgr.getCount(level_playing);
         
-        // 生成卡片对 - 根据当前等级智能选择卡牌
+        // 生成卡片对 - 根据当前等级和游戏模式智能选择卡牌
         const cardTypes: number[] = [];
         
-        // 根据关卡难度调整新旧卡牌比例
+        // 根据关卡难度和游戏模式调整新旧卡牌比例
         let newCardRatio: number;
         if (level_playing === 0) {
             // 第一关：100%新卡牌，让玩家熟悉基础卡牌
             newCardRatio = 1.0;
         } else if (level_playing < 5) {
-            // 前5关：95%新卡牌，5%复习卡牌
-            newCardRatio = 0.95;
+            // 前5关：简单模式90%新卡牌，困难模式80%新卡牌
+            newCardRatio = LevelMgr.gameMode === GameMode.EASY ? 0.90 : 0.80;
         } else if (level_playing < 10) {
-            // 5-10关：85%新卡牌，15%复习卡牌
-            newCardRatio = 0.85;
+            // 5-10关：简单模式75%新卡牌，困难模式65%新卡牌
+            newCardRatio = LevelMgr.gameMode === GameMode.EASY ? 0.75 : 0.65;
         } else if (level_playing < 20) {
-            // 10-20关：75%新卡牌，25%复习卡牌
-            newCardRatio = 0.75;
+            // 10-20关：简单模式60%新卡牌，困难模式50%新卡牌
+            newCardRatio = LevelMgr.gameMode === GameMode.EASY ? 0.60 : 0.50;
         } else {
-            // 20关以上：60%新卡牌，40%复习卡牌（增加难度）
-            newCardRatio = 0.6;
+            // 20关以上：简单模式50%新卡牌，困难模式40%新卡牌（增加难度）
+            newCardRatio = LevelMgr.gameMode === GameMode.EASY ? 0.50 : 0.40;
         }
         
         const newCardPairs = Math.ceil(totalPairs * newCardRatio);
@@ -350,23 +350,27 @@ export class gridcreator extends Component {
         for (let i = 0; i < reviewCardPairs; i++) {
             let type: number;
             
-            // 根据关卡数智能选择复习范围
+            // 根据关卡数和游戏模式智能选择复习范围
             if (level_playing <= 1) {
                 // 第2关：只复习第1关的卡牌
                 type = Math.floor(Math.random() * LevelMgr.getCount(0)) + 1;
             } else if (level_playing <= 3) {
-                // 第3-4关：复习前2关的卡牌
-                const reviewLevel = Math.floor(Math.random() * 2); // 0或1
+                // 第3-4关：简单模式复习前2关的卡牌，困难模式复习前3关的卡牌
+                const maxReviewLevels = LevelMgr.gameMode === GameMode.EASY ? 2 : 3;
+                const reviewLevel = Math.floor(Math.random() * maxReviewLevels); // 0或1或2
                 type = Math.floor(Math.random() * LevelMgr.getCount(reviewLevel)) + (reviewLevel + 1);
             } else if (level_playing <= 10) {
-                // 第5-10关：复习前4关的卡牌
-                const reviewLevel = Math.floor(Math.random() * Math.min(4, level_playing));
+                // 第5-10关：简单模式复习前4关的卡牌，困难模式复习前6关的卡牌
+                const maxReviewLevels = LevelMgr.gameMode === GameMode.EASY ? 4 : 6;
+                const reviewLevel = Math.floor(Math.random() * Math.min(maxReviewLevels, level_playing));
                 type = Math.floor(Math.random() * LevelMgr.getCount(reviewLevel)) + (reviewLevel + 1);
             } else {
                 // 10关以上：复习前10关的卡牌，但更倾向于近期关卡
-                // 70%概率复习最近5关，30%概率复习更早的关卡
+                // 简单模式：70%概率复习最近5关，30%概率复习更早的关卡
+                // 困难模式：50%概率复习最近5关，50%概率复习更早的关卡
+                const recentProbability = LevelMgr.gameMode === GameMode.EASY ? 0.7 : 0.5;
                 let reviewLevel: number;
-                if (Math.random() < 0.7) {
+                if (Math.random() < recentProbability) {
                     // 复习最近5关
                     reviewLevel = level_playing - 1 - Math.floor(Math.random() * Math.min(5, level_playing));
                 } else {
@@ -648,6 +652,46 @@ export class gridcreator extends Component {
 
         // 为所有模式添加出场动画，传递卡牌类型确保随机性
         this.addCardEntranceAnimation(cx, mapPos, type);
+        
+        // 在困难模式下，为某些卡牌添加视觉干扰效果
+        if (LevelMgr.gameMode === GameMode.HARD) {
+            // 30%的概率添加视觉干扰效果
+            if (Math.random() < 0.3) {
+                this.addVisualInterference(cx, type);
+            }
+        }
+    }
+    
+    /**
+     * 为卡牌添加视觉干扰效果（仅在困难模式下使用）
+     */
+    private addVisualInterference(cardNode: Node, cardType: number) {
+        // 添加一个半透明的遮罩层，使卡牌更难识别
+        const mask = new Node('interferenceMask');
+        cardNode.addChild(mask);
+        
+        const maskSprite = mask.addComponent(Sprite);
+        // 修复：正确设置spriteFrame，从Sprite数组中获取spriteFrame
+        if (this.pl[cardType] && this.pl[cardType].spriteFrame) {
+            maskSprite.spriteFrame = this.pl[cardType].spriteFrame; // 使用相同类型的精灵帧
+        }
+        maskSprite.color = new Color(255, 255, 255, 100); // 半透明白色
+        
+        // 设置遮罩层的位置和大小
+        const cardTransform = cardNode.getComponent(UITransform);
+        if (cardTransform) {
+
+            let maskTransform = mask.getComponent(UITransform);
+            if(maskTransform==null){
+               maskTransform =mask.addComponent(UITransform);
+            } 
+            maskTransform.setContentSize(cardTransform.contentSize);
+            maskTransform.anchorPoint = new Vec2(0.5, 0.5);
+            mask.setPosition(0, 0, 0);
+        }
+        
+        // 添加轻微的旋转效果，使卡牌更难识别
+        cardNode.angle = (Math.random() - 0.5) * 10; // 随机旋转-5到5度
     }
 
     /**

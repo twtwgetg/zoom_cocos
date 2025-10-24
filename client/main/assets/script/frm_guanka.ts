@@ -114,6 +114,8 @@ export class frm_guanka extends frmbase {
      *  设置当前关卡
      */
     brushGuanKa() { 
+        // 清空之前的关卡显示
+        this.trans_anis.removeAllChildren();
         this.lbl_level.string = "当前关卡：" + (LevelMgr.level + 1);
         let count = LevelMgr.getCount(LevelMgr.level) ;
         for(let i = 0; i < count; i++) {
@@ -163,7 +165,24 @@ export class frm_guanka extends frmbase {
         this.updateJifenLabel();
         // 显示当前关卡的奖励
         this.showLevelRewards();
+        // 刷新关卡UI
+        this.refreshLevelUI();
     }
+    
+    /**
+     * 刷新关卡UI
+     */
+    private refreshLevelUI() {
+        // 重新设置当前关卡显示
+        this.brushGuanKa();
+        
+        // 更新关卡标签
+        this.lbl_level.string = "当前关卡：" + (LevelMgr.level + 1);
+        
+        // 重新填充关卡列表（如果需要）
+        // this.fillGuanKa();
+    }
+
     brushlibao(): void { 
         if(Main.plat == platform.BYTE) {
             this.btn_libao.node.active = !EntrySceneChecker.isFromSidebar;
@@ -245,7 +264,11 @@ export class frm_guanka extends frmbase {
 
         // 生成奖励道具（每种类型只显示一个，但显示数量）
         let index = 0;
-        for (const [rewardType, count] of Object.entries(rewardCounts)) {
+        // 使用 Object.keys 替代 Object.entries 以兼容 ES2015
+        const keys = Object.keys(rewardCounts);
+        for (let i = 0; i < keys.length; i++) {
+            const rewardType = keys[i];
+            const count = rewardCounts[rewardType];
             const itemNode = instantiate(this.prefab_item);
             const itemTools = itemNode.getComponent('item_tools') as any;
             
@@ -273,7 +296,7 @@ export class frm_guanka extends frmbase {
 
             // 设置位置
             const spacing = 80;
-            const startX = -((Object.keys(rewardCounts).length - 1) * spacing) / 2;
+            const startX = -((keys.length - 1) * spacing) / 2;
             itemNode.setPosition(startX + index * spacing, 0);
 
             this.trans_items.addChild(itemNode);
