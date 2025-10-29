@@ -346,8 +346,8 @@ export class frm_main extends frmbase {
             this.scheduleOnce(() => {
                 // 添加保护性检查，确保gridcreator对象已正确初始化
                 if (this.gridcreator) {
-                    // 修改为8x8网格
-                    this.gridcreator.CreateLayerSplitMode(8, 8);
+                    // 修改为8行5列网格
+                    this.gridcreator.CreateLayerSplitMode(5, 8);
                     // 分层叠加模式不计时
                     this.time_all = 0;
                     this.time_now = 0;

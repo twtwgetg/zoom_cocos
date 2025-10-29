@@ -1602,7 +1602,7 @@ export class gridcreator extends Component {
         this.infiniteWid = width;
         this.infiniteHei = height;
 
-        // 清空节点
+
         this.clear();
 
         // 初始化地图
@@ -1627,88 +1627,114 @@ export class gridcreator extends Component {
 
         // 获取可用类型数量
         this.pl = this.plSprites;
-        // 增加难度：将卡牌种类从8种增加到12种
+        // 设置卡牌种类为12种
         const availableTypes = Math.min(12, this.pl.length - 1);
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
         }
 
-        // 创建类型计数字典，确保每种类型数量是3的倍数
-        const typeCounts: { [key: number]: number } = {};
-        const totalCells = this.infiniteWid * this.infiniteHei;
-        
-        // 计算需要的卡牌总数（确保是3的倍数）
-        // 保持平均每格2张卡牌
-        const totalCardsNeeded = Math.floor(totalCells * 2 / 3) * 3;
-        
-        // 生成满足条件的卡牌类型列表
+        // 生成卡牌：3（成3个才能消除）* 12（卡牌种类）* 5（每种卡牌数量5组）= 180个卡牌
         const cardTypes: number[] = [];
         
-        // 先为每种类型分配3张卡牌
-        for (let i = 0; i < availableTypes; i++) {
-            const type = i + 1;
-            for (let j = 0; j < 3; j++) {
-                cardTypes.push(type);
-            }
-            typeCounts[type] = 3;
-        }
-        
-        // 继续添加卡牌直到满足总数要求
-        while (cardTypes.length < totalCardsNeeded) {
-            // 随机选择一种类型并添加3张
-            const type = Math.floor(Math.random() * availableTypes) + 1;
-            for (let j = 0; j < 3; j++) {
-                cardTypes.push(type);
-            }
-            typeCounts[type] = (typeCounts[type] || 0) + 3;
-        }
-        
-        // 如果卡牌数量超过了需要的数量，随机移除多余的卡牌（保持3的倍数）
-        while (cardTypes.length > totalCardsNeeded) {
-            // 随机选择一种类型，移除3张卡牌
-            const typeToRemove = Math.floor(Math.random() * availableTypes) + 1;
-            if (typeCounts[typeToRemove] > 3) { // 确保至少保留3张
-                // 找到该类型的3张卡牌并移除
-                let removed = 0;
-                for (let i = cardTypes.length - 1; i >= 0 && removed < 3; i--) {
-                    if (cardTypes[i] === typeToRemove) {
-                        cardTypes.splice(i, 1);
-                        removed++;
-                    }
+        // 为每种类型生成5组，每组3个相同的卡牌
+        for (let type = 1; type <= availableTypes; type++) {
+            for (let group = 0; group < 5; group++) { // 5组
+                for (let i = 0; i < 3; i++) { // 每组3个
+                    cardTypes.push(type);
                 }
-                typeCounts[typeToRemove] -= 3;
             }
         }
         
         // 打乱卡牌类型列表
         this.Shuffle(cardTypes);
         
-        // 填充整个网格，但允许叠加
-        let cardIndex = 0;
+        // 生成所有网格位置
+        const positions: {x: number, y: number}[] = [];
         for (let x = 0; x < this.infiniteWid; x++) {
             for (let y = 0; y < this.infiniteHei; y++) {
-                // 保持叠加层数为2-4层
-                const layers = Math.floor(Math.random() * 3) + 2;
-                
-                // 为每一层生成不同类型的卡牌
-                for (let layer = 0; layer < layers && cardIndex < cardTypes.length; layer++) {
-                    // 获取预先生成的类型
-                    const type = cardTypes[cardIndex];
-                    cardIndex++;
-                    
-                    // 更新地图
-                    (gridcreator.map[x + 1][y + 1] as number[]).push(type);
-                    
-                    // 生成卡片
-                    const mapPos = new Vec2(x + 1, y + 1);
-                    this.SpawnLayeredCard(mapPos, type, layer);
-                }
+                positions.push({x, y});
             }
         }
         
+        // 打乱位置
+        this.Shuffle(positions);
+        
+        // 修改实现：将卡牌均匀分布到网格中，每个位置分配两次，layer往上加
+        let cardIndex = 0;
+        // 首先为每个位置放置第一层卡牌
+        for (let i = 0; i < positions.length && cardIndex < cardTypes.length; i++) {
+            const pos = positions[i];
+            const mapPos = new Vec2(pos.x + 1, pos.y + 1);
+            
+            // 放置第一张卡牌
+            (gridcreator.map[mapPos.x][mapPos.y] as number[]).push(cardTypes[cardIndex]);
+            this.SpawnLayeredCard(mapPos, cardTypes[cardIndex], 0);
+            cardIndex++;
+            
+            // 如果还有卡牌，放置第二张卡牌（同一位置，不同layer）
+            if (cardIndex < cardTypes.length) {
+                (gridcreator.map[mapPos.x][mapPos.y] as number[]).push(cardTypes[cardIndex]);
+                this.SpawnLayeredCard(mapPos, cardTypes[cardIndex], 1);
+                cardIndex++;
+            }
+        }
+        
+        // 如果还有剩余卡牌，继续分配到已有位置上（增加layer）
+        while (cardIndex < cardTypes.length) {
+            for (let i = 0; i < positions.length && cardIndex < cardTypes.length; i++) {
+                const pos = positions[i];
+                const mapPos = new Vec2(pos.x + 1, pos.y + 1);
+                
+                // 获取当前该位置已有的卡牌数量作为layer
+                const currentLayer = (gridcreator.map[mapPos.x][mapPos.y] as number[]).length;
+                
+                // 放置卡牌
+                (gridcreator.map[mapPos.x][mapPos.y] as number[]).push(cardTypes[cardIndex]);
+                this.SpawnLayeredCard(mapPos, cardTypes[cardIndex], currentLayer);
+                cardIndex++;
+            }
+        }
+
+        // // 原有实现注释掉
+        // for(let i=0;i<cardTypes.length;i++){
+        //     const mapPos = new Vec2(i%this.infiniteWid+1, Math.floor(i/this.infiniteWid)+1);
+            
+        //     (gridcreator.map[mapPos.x][mapPos.y] as number[]).push(cardTypes[i]);
+        //     this.SpawnLayeredCard(mapPos, cardTypes[i], 0);
+        // }
+
+        // // 在网格中随机填充卡牌
+        // let cardIndex = 0;
+        // for (let i = 0; i < positions.length && cardIndex < cardTypes.length; i++) {
+        //     const pos = positions[i];
+        //     const x = pos.x;
+        //     const y = pos.y;
+            
+        //     // 每个格子放置2-4层卡牌
+        //     const layers = Math.floor(Math.random() * 3) + 2;
+            
+        //     // 为每一层生成卡牌
+        //     for (let layer = 0; layer < layers && cardIndex < cardTypes.length; layer++) {
+        //         // 获取预先生成的类型
+        //         const type = cardTypes[cardIndex];
+        //         cardIndex++;
+                
+        //         // 更新地图
+        //         (gridcreator.map[x + 1][y + 1] as number[]).push(type);
+                
+        //         // 生成卡片
+        //         const mapPos = new Vec2(x + 1, y + 1);
+        //         this.SpawnLayeredCard(mapPos, type, layer);
+        //     }
+        // }
+        
+        console.log(`容器尺寸: ${availableWidth}x${availableHeight}`);
+        console.log(`网格尺寸: ${this.infiniteWid}x${this.infiniteHei}`);
+        console.log(`单元格尺寸: ${cellWidth}x${cellHeight}, 最终尺寸: ${this.gridsize}`);
+        console.log(`所需空间: ${this.infiniteWid * this.gridsize}x${this.infiniteHei * this.gridsize}`);
         console.log(`分层叠加模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
-        console.log('各类型卡牌数量:', typeCounts);
+        console.log(`总共生成卡牌数量: ${cardTypes.length}`);
     }
     
     /**
@@ -2447,18 +2473,39 @@ export class gridcreator extends Component {
         // 基础奖励：三个道具
         let rewards = ['remind', 'brush', 'time'];
         
-        // 随着关卡增加，奖励道具数量也增加
+        // 随着关卡增加，奖励道具数量也增加，但每种道具数量不超过5个
         if (level > 10) {
-            rewards.push('brush'); // 第11关开始多给一个刷子
+            // 检查当前remind数量，不超过5个
+            const currentRemind = tools.num_Remind;
+            if (currentRemind < 5) {
+                rewards.push('brush'); // 第11关开始多给一个刷子
+            }
         }
         if (level > 20) {
-            rewards.push('time'); // 第21关开始多给一个时间道具
+            // 检查当前time数量，不超过5个
+            const currentTime = tools.num_time;
+            if (currentTime < 5) {
+                rewards.push('time'); // 第21关开始多给一个时间道具
+            }
         }
         if (level > 30) {
-            rewards.push('remind'); // 第31关开始多给一个提示道具
+            // 检查当前remind数量，不超过5个
+            const currentRemind = tools.num_Remind;
+            if (currentRemind < 5) {
+                rewards.push('remind'); // 第31关开始多给一个提示道具
+            }
         }
         if (level > 40) {
-            rewards.push('brush'); // 第41关开始再多给一个刷子
+            // 检查当前brush数量，不超过5个
+            const currentBrush = tools.num_brush;
+            if (currentBrush < 5) {
+                rewards.push('brush'); // 第41关开始再多给一个刷子
+            }
+        }
+
+        // 确保奖励道具总数不超过5个
+        if (rewards.length > 5) {
+            rewards = rewards.slice(0, 5);
         }
 
         return rewards;

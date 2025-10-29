@@ -148,6 +148,10 @@ export class TObject extends Component {
                         this.showline(gb, this, poslist);
                     }, this, 0, 0, 0, false);
                 } else {
+                    // 两个卡牌相同但不能消除，触发震动效果
+                    if (TObject.lastobj.type === this.type) {
+                        this.triggerScreenShake();
+                    }
                     TObject.lastobj = this;
                 }
             } else {
@@ -155,6 +159,7 @@ export class TObject extends Component {
             }
         }
     }
+    
     public HasConnect(): boolean {
         // 添加空值检查
         if (!this.creator || !this.creator.node || !gridcreator.map) {
@@ -453,7 +458,13 @@ export class TObject extends Component {
                 // 交换两张卡牌
                 await this.swapCards(TObject.firstCard, TObject.secondCard);
             } else {
-                // 不相邻，重新选择第一张卡牌
+                // 不相邻，检查是否为相同类型
+                if (TObject.firstCard.type === TObject.secondCard.type) {
+                    // 相同类型但不相邻，触发全屏震动特效
+                    this.triggerScreenShake();
+                }
+                
+                // 重新选择第一张卡牌
                 TObject.firstCard.unSel();
                 TObject.firstCard = this;
                 this.Select();
@@ -473,6 +484,7 @@ export class TObject extends Component {
         }, 0.2);
        
     }
+    
     
     /**
      * 检查两张卡牌是否相邻
@@ -589,5 +601,34 @@ export class TObject extends Component {
         // 取消两张卡牌的选中状态
         card1.unSel();
         card2.unSel();
+    }
+    
+    /**
+     * 触发全屏震动特效
+     */
+    private triggerScreenShake(): void {
+        // 获取grid节点
+        const gridNode = this.creator?.node;
+        if (!gridNode) {
+            console.warn("无法找到grid节点，无法触发震动效果");
+            return;
+        }
+        
+        // 保存原始位置
+        const originalPosition = gridNode.position.clone();
+        
+        // 停止之前的动画
+        tween(gridNode).stop();
+        
+        // 创建简单的震动动画
+        tween(gridNode)
+            .by(0.05, { position: new Vec3(-3, 0, 0) }) // 向左偏移
+            .by(0.1, { position: new Vec3(6, 0, 0) })   // 向右偏移
+            .by(0.05, { position: new Vec3(-3, 0, 0) }) // 回到原位
+            .call(() => {
+                // 确保回到原始位置
+                gridNode.setPosition(originalPosition);
+            })
+            .start();
     }
 }
