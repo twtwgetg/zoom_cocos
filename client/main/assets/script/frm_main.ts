@@ -10,17 +10,13 @@ import { ToutiaoEventMgr } from './ToutiaoEventMgr';
 import { PlayerPrefb } from './PlayerPrefb';
 import { TObject } from './TObject';
 import { titem } from './item/titem';
+import { JifenRewardManager } from './JifenRewardManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
 export class frm_main extends frmbase {
     @property(gridcreator)
     public gridcreator: gridcreator = null!;
-    // @property(Button)
-    // btn_refrush: Button = null!;
-
-    @property(Label)
-    lbl_curr: Label = null!;
     @property(Label)
     lbl_jifen: Label = null!;
     @property(Button)
@@ -63,8 +59,6 @@ export class frm_main extends frmbase {
      
     @property(Sprite)   
     spr_bg: Sprite = null!;
-    @property(Sprite)
-    spr_bg2: Sprite = null!;
     // 添加天气管理器引用
     @property(WeatherShaderManager)
     weatherManager: WeatherShaderManager = null!;
@@ -192,6 +186,11 @@ export class frm_main extends frmbase {
         item.getComponent(titem).init({tp:tp},num);
     
     }
+    brushMode(x){
+
+        this.lbl_mode.node.active=this.level_playing>0;
+
+    }
     protected onLoad(): void {
         super.onLoad();
         let that =this;
@@ -254,18 +253,15 @@ export class frm_main extends frmbase {
                 this.showCurrentScoreLabel();
             }
 
-            // 显示时间进度条（普通连连看模式计时）
-            if (this.progress_time && this.progress_time.node) {
-                this.progress_time.node.active = true;
-            }
-
+            // 显示时间进度条（仅在普通连连看模式下显示）
+            this.brushMode(x);
             // 重置本局积分
             this.resetCurrentJifen();
 
             return null;
         });
         // 添加无限模式事件处理
-        Main.RegistEvent("event_play_infinite",()=>{ 
+        Main.RegistEvent("event_play_infinite",(x)=>{ 
             this.show();
             this.fillItems(enum_paly_type.LIANLIANKAN);
             // 上报挑战事件（主动进入游戏）
@@ -327,6 +323,7 @@ export class frm_main extends frmbase {
             // 重置本局积分
             this.resetCurrentJifen();
 
+            this.brushMode(-1);
             return null;
         });
         //添加分层叠加模式
@@ -361,6 +358,7 @@ export class frm_main extends frmbase {
             }, 0);
 
             this.level_playing = -3; // -3表示分层叠加模式
+            this.brushMode(-3);
             this.lbl_guanka.string = "分层叠加模式";
             
             // 显示当前游戏模式
@@ -446,7 +444,7 @@ export class frm_main extends frmbase {
 
             // 重置本局积分
             this.resetCurrentJifen();
-
+            this.brushMode(-2);
             return null;
         });
         Main.RegistEvent("game_begin",()=>{
@@ -503,6 +501,19 @@ export class frm_main extends frmbase {
             this.addJifen(val);
             return null;
         });
+        // 添加获取本局积分的事件
+        Main.RegistEvent("event_get_current_jifen",()=>{ 
+            return this.currentJifen;
+        });
+        // 添加获取剩余时间的事件
+        Main.RegistEvent("event_get_remaining_time",()=>{ 
+            // 只有在计时模式下才返回剩余时间，其他模式返回0
+            if (this.jishi && this.time_all > 0) {
+                const remainingTime = this.time_all - this.time_now;
+                return Math.max(0, remainingTime); // 确保不返回负数
+            }
+            return 0; // 非计时模式返回0
+        });
         // 修复：不应该在event_play事件监听器中再次触发event_play事件
         // 这里应该是处理其他需要在游戏开始时重置的状态
         Main.RegistEvent("event_play_reset",()=>{ 
@@ -510,6 +521,11 @@ export class frm_main extends frmbase {
             this.stopInfiniteModeGenerator = false;
             
             return null;
+        });
+        // 添加获取下一个积分奖励信息的事件处理程序
+        Main.RegistEvent("event_get_next_jifen_reward_info", (data) => {
+            const { currentJifen } = data;
+            return JifenRewardManager.getNextJifenRewardInfo(currentJifen);
         });
 
         this.btn_pause.node.on(Button.EventType.CLICK, () =>
@@ -992,24 +1008,6 @@ export class frm_main extends frmbase {
                 console.log('主背景天气颜色渐变完成');
             })
             .start();
-            
-        // 如果spr_bg2存在，也为它设置颜色
-        if (this.spr_bg2) {
-            // 停止之前的动画
-            tween(this.spr_bg2).stop();
-            
-            // 创建颜色渐变动画
-            tween(this.spr_bg2)
-                .to(duration, { 
-                    color: targetColor
-                }, {
-                    easing: 'smooth'
-                })
-                .call(() => {
-                    console.log('第二个背景天气颜色渐变完成');
-                })
-                .start();
-        }
     }
     
     /**
@@ -1072,9 +1070,9 @@ export class frm_main extends frmbase {
      */
     private resetCurrentJifen() {
         this.currentJifen = 0;
-        if (this.lbl_curr) {
-            this.lbl_curr.string = "0";
-        }
+        // if (this.lbl_curr) {
+        //     this.lbl_curr.string = "0";
+        // }
         // 总积分保持不变
         this.updateJifenLabel();
     }
@@ -1085,30 +1083,30 @@ export class frm_main extends frmbase {
      * @param endValue 结束值
      */
     private animateJifenChange(startValue: number, endValue: number) {
-        if (!this.lbl_curr) return;
+        // if (!this.lbl_curr) return;
         
-        // 根据数值变化大小调整动画持续时间，让每个数值都能看到
-        const valueDiff = endValue - startValue;
-        const duration = Math.min(0.5 + valueDiff * 0.3, 2.0); // 最大不超过2秒
+        // // 根据数值变化大小调整动画持续时间，让每个数值都能看到
+        // const valueDiff = endValue - startValue;
+        // const duration = Math.min(0.5 + valueDiff * 0.3, 2.0); // 最大不超过2秒
         
-        // 停止之前的动画
-        tween(this.lbl_curr.node).stop();
+        // // 停止之前的动画
+        // tween(this.lbl_curr.node).stop();
         
-        // 使用tween实现数值累加动画效果
-        tween({ value: startValue })
-            .to(duration, { value: endValue }, {
-                onUpdate: (target) => {
-                    // 使用Math.floor确保每个整数都能显示，避免跳过中间数值
-                    const currentValue = Math.floor(target.value);
-                    this.lbl_curr.string = currentValue.toString(); 
-                },
-                easing: 'linear' // 使用线性缓动，让数值变化更均匀可见
-            })
-            .call(() => {
-                // 动画结束，确保显示最终值
-                this.lbl_curr.string = endValue.toString();
-            })
-            .start();
+        // // 使用tween实现数值累加动画效果
+        // tween({ value: startValue })
+        //     .to(duration, { value: endValue }, {
+        //         onUpdate: (target) => {
+        //             // 使用Math.floor确保每个整数都能显示，避免跳过中间数值
+        //             const currentValue = Math.floor(target.value);
+        //             this.lbl_curr.string = currentValue.toString(); 
+        //         },
+        //         easing: 'linear' // 使用线性缓动，让数值变化更均匀可见
+        //     })
+        //     .call(() => {
+        //         // 动画结束，确保显示最终值
+        //         this.lbl_curr.string = endValue.toString();
+        //     })
+        //     .start();
     }
     
     /**
@@ -1169,18 +1167,18 @@ export class frm_main extends frmbase {
      * 隐藏本局得分标签（用于连连看模式）
      */
     private hideCurrentScoreLabel() {
-        if (this.lbl_curr && this.lbl_curr.node) {
-            this.lbl_curr.node.active = false;
-        }
+        // if (this.lbl_curr && this.lbl_curr.node) {
+        //     this.lbl_curr.node.active = false;
+        // }
     }
 
     /**
      * 显示本局得分标签（用于三消模式）
      */
     private showCurrentScoreLabel() {
-        if (this.lbl_curr && this.lbl_curr.node) {
-            this.lbl_curr.node.active = true;
-        }
+        // if (this.lbl_curr && this.lbl_curr.node) {
+        //     this.lbl_curr.node.active = true;
+        // }
     }
 
 }

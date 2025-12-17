@@ -1,0 +1,62 @@
+// 基础黑白格子Sprite着色器
+// 最简化的版本用于测试
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: legacy/main-functions/general-vs:vert # builtin header
+      frag: checkerboard-fs:frag
+      properties: &props
+        mainTexture: { value: white }
+        color1: { value: [0, 0, 0, 1], editor: { type: color } }
+        color2: { value: [1, 1, 1, 1], editor: { type: color } }
+        columns: { value: 10.0, editor: { range: [1.0, 100.0] } }
+        rows: { value: 10.0, editor: { range: [1.0, 100.0] } }
+  - name: transparent
+    passes:
+    - vert: legacy/main-functions/general-vs:vert # builtin header
+      frag: checkerboard-fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram checkerboard-fs %{
+  precision highp float;
+  #include <legacy/output>
+
+  in vec2 v_uv;
+
+  uniform sampler2D mainTexture;
+
+  uniform Constant {
+    vec4 color1;
+    vec4 color2;
+    float columns;
+    float rows;
+  };
+
+  vec4 frag () {
+    // 采样原始纹理
+    vec4 texColor = texture(mainTexture, v_uv);
+    
+    // 计算格子坐标
+    vec2 checkerUV = vec2(v_uv.x * columns, v_uv.y * rows);
+    vec2 checker = mod(floor(checkerUV), 2.0);
+    
+    // 创建黑白格子图案
+    float checkerPattern = abs(checker.x - checker.y);
+    
+    // 使用自定义颜色创建格子图案
+    vec3 patternColor = mix(color1.rgb, color2.rgb, checkerPattern);
+    
+    // 直接返回格子颜色（忽略原始纹理）
+    return CCFragOutput(vec4(patternColor, 1.0));
+  }
+}%

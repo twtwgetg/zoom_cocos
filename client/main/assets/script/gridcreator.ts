@@ -2443,21 +2443,17 @@ export class gridcreator extends Component {
             // 获取当前关卡数
             const currentLevel = typeof level === 'number' ? level : LevelMgr.level;
             
-            // 获取关卡奖励
-            const rewards = this.getLevelRewards(currentLevel + 1); // +1因为关卡从0开始计数
+            // 不再发放关卡奖励，而是增加积分
+            // 每个关卡胜利增加10分基础积分
+            const baseScore = 10;
+            // 随着关卡增加，奖励积分也增加
+            const levelBonus = Math.floor(currentLevel / 10); // 每10关额外增加1分
+            const totalScore = baseScore + levelBonus;
             
-            // 统计奖励数量
-            const rewardCounts = this.countRewards(rewards);
+            // 增加积分
+            Main.DispEvent('event_add_jifen', totalScore);
             
-            // 发放奖励到玩家道具栏
-            for (const rewardType in rewardCounts) {
-                if (rewardCounts.hasOwnProperty(rewardType)) {
-                    const count = rewardCounts[rewardType];
-                    this.addItemToPlayer(rewardType, count);
-                }
-            }
-            
-            console.log(`关卡 ${currentLevel + 1} 胜利，发放奖励:`, rewardCounts);
+            console.log(`关卡 ${currentLevel + 1} 胜利，获得积分: ${totalScore}`);
             
         } catch (error) {
             console.error('发放关卡奖励失败:', error);

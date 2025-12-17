@@ -1,0 +1,77 @@
+// 简化版黑白格子Sprite着色器
+// 实现一个黑白格子图案覆盖在Sprite上的效果
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: legacy/main-functions/general-vs:vert # builtin header
+      frag: checkerboard-fs:frag
+      properties: &props
+        mainTexture: { value: white }
+        tintColor: { value: [1, 1, 1, 1], editor: { type: color } }
+        color1: { value: [0, 0, 0, 1], editor: { type: color } }
+        color2: { value: [1, 1, 1, 1], editor: { type: color } }
+        columns: { value: 10.0, editor: { range: [1.0, 100.0] } }
+        rows: { value: 10.0, editor: { range: [1.0, 100.0] } }
+        patternStrength: { value: 1.0, editor: { range: [0.0, 1.0] } }
+  - name: transparent
+    passes:
+    - vert: legacy/main-functions/general-vs:vert # builtin header
+      frag: checkerboard-fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram checkerboard-fs %{
+  precision highp float;
+  #include <legacy/output>
+
+  in vec2 v_uv;
+  in vec3 v_position;
+
+  uniform sampler2D mainTexture;
+
+  uniform Constant {
+    vec4 tintColor;
+    vec4 color1;
+    vec4 color2;
+    float columns;
+    float rows;
+    float patternStrength;
+  };
+
+  vec4 frag () {
+    // 采样原始纹理
+    vec4 texColor = texture(mainTexture, v_uv);
+    
+    // 计算格子坐标
+    vec2 checkerUV = vec2(v_uv.x * columns, v_uv.y * rows);
+    vec2 checker = mod(floor(checkerUV), 2.0);
+    
+    // 创建黑白格子图案
+    float checkerPattern = abs(checker.x - checker.y);
+    
+    // 使用自定义颜色创建格子图案
+    vec3 patternColor = mix(color1.rgb, color2.rgb, checkerPattern);
+    
+    // 将格子图案与原始纹理混合
+    vec3 resultColor = mix(texColor.rgb, patternColor, patternStrength);
+    
+    // 应用色调颜色
+    resultColor *= tintColor.rgb;
+    
+    // 保持原始透明度并应用色调透明度
+    float finalAlpha = texColor.a * tintColor.a;
+    
+    vec4 finalColor = vec4(resultColor, finalAlpha);
+    
+    return CCFragOutput(finalColor);
+  }
+}%
