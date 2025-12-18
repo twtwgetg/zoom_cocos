@@ -143,9 +143,9 @@ export class LevelMgr {
         } else if (t < 0.4) {
             return 6; // 中期关卡适中
         } else if (t < 0.7) {
-            return 8; // 中后期关卡较难，确保至少8列
+            return 6 // 中后期关卡较难，确保至少8列
         } else {
-            return 12; // 后期关卡更难（从10增加到12）
+            return 6; // 后期关卡更难（从10增加到12）
         }
     }
 
@@ -162,9 +162,9 @@ export class LevelMgr {
         } else if (t < 0.4) {
             return 10; // 中期关卡适中
         } else if (t < 0.7) {
-            return 14; // 中后期关卡更难（从12增加到14）
+            return 12; // 中后期关卡更难（从12增加到14）
         } else {
-            return 16; // 后期关卡非常难（从14增加到16）
+            return 14; // 后期关卡非常难（从14增加到16）
         }
     }
 

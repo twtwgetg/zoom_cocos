@@ -286,7 +286,7 @@ export class gridcreator extends Component {
         const cellHeight = availableHeight / this.hei;
 
         this.gridsize = Math.min(cellWidth, cellHeight);
-        this.gridsize = Math.min(150, this.gridsize);
+        this.gridsize = Math.min(180, this.gridsize);
 
         // 计算总格子数和对数
         const totalCells = this.wid * this.hei;

@@ -184,6 +184,9 @@ export class frm_main extends frmbase {
         let item= instantiate(this.item_prefab);
         item.setParent(this.node_list);
         item.getComponent(titem).init({tp:tp},num);
+        
+        // 确保道具节点以正确的尺寸显示
+        item.scale = new Vec3(1, 1, 1);
     
     }
     brushMode(x){

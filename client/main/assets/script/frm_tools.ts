@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, instantiate, Label, Node, Prefab } from 'cc';
+import { _decorator, Button, Component, instantiate, Label, Node, Prefab, Vec3 } from 'cc';
 import { frmbase } from './frmbase';
 import { Main } from './main';
 import { item_tools, ItemType, ToolsType } from './item_tools';
@@ -29,6 +29,9 @@ export class frm_tools extends frmbase {
         this.node_video.setParent(this.node_list);
         this.node_video.getComponent(item_tools).setFunType(ToolsType.video);
 
+        // 设置道具节点的缩放，确保它们以正确的尺寸显示
+        this.node_share.scale = new Vec3(1, 1, 1);
+        this.node_video.scale = new Vec3(1, 1, 1);
 
         this.btn_close.node.on(Button.EventType.CLICK,()=>{
             frm_main.isPause=false; 
@@ -111,5 +114,3 @@ export class frm_tools extends frmbase {
         
     }
 }
-
-

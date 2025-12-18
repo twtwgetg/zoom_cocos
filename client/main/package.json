@@ -5,6 +5,7 @@
     "version": "3.8.6"
   },
   "dependencies": {
+    "canvas": "^3.2.0",
     "miniprogram-api-typings": "^4.1.0"
   },
   "version": "3.8.6"

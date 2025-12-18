@@ -1,4 +1,4 @@
-import { __private, _decorator, Button, Component, Label, Node, Sprite, SpriteFrame } from 'cc';
+import { __private, _decorator, Button, Component, Label, Node, Sprite, SpriteFrame, Vec3 } from 'cc';
 import { ItemType } from '../item_tools';
 import { Main } from '../main';
 import { tools } from '../tools';
@@ -15,6 +15,9 @@ export class titem  extends Component {
         this.node.on(Button.EventType.CLICK,this.onClick,this); 
         Main.RegistEvent("event_itemchanged",(x)=>this.onItemChanged(x));
         Main.RegistEvent("update_tools",(x)=>this.brushTools());
+        
+        // 确保道具节点以正确的尺寸显示
+        this.node.scale = new Vec3(1, 1, 1);
     }
     onItemChanged(x){
         this.brushTools();

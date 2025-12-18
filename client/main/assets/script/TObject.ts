@@ -1,6 +1,6 @@
 
 // 首先修改导入部分，添加tween
-import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween } from 'cc';
+import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween } from 'cc';
 import { gridcreator } from './gridcreator';
 import { Main } from './main';
 import { LevelMgr, GameMode } from './levelmgr';
@@ -12,7 +12,7 @@ export class TObject extends Component {
     @property(Sprite)
     public sel: Sprite = null!; 
     @property(Sprite)
-    src: Sprite = null!;
+    src: Sprite = null!; 
     x: number = 0;
     y: number = 0;
     type: number = 0;
@@ -50,8 +50,9 @@ export class TObject extends Component {
 
     private Select(): void {
         if (this.sel) {
-            this.sel.color = Color.BLUE;
+            this.sel.color = Color.WHITE;
             this.sel.node.active = true;
+            this.node.setSiblingIndex(this.node.parent.children.length - 1);
         }
     }
 
@@ -201,9 +202,9 @@ export class TObject extends Component {
             // 由于网格坐标是从1开始的，需要减1得到0基坐标
             // 然后根据tref计算实际位置，注意要加上gridsize/2来对齐到网格中心
             let startPos = this.creator.tref.add(new Vec2((p.x - 1) * this.creator.gridsize + this.creator.gridsize/2, 
-                                                         (p.y - 1) * this.creator.gridsize + this.creator.gridsize/2));
+                                                         (p.y - 1) * this.creator.gridsize ));
             let endPos = this.creator.tref.add(new Vec2((p2.x - 1) * this.creator.gridsize + this.creator.gridsize/2, 
-                                                       (p2.y - 1) * this.creator.gridsize + this.creator.gridsize/2));
+                                                       (p2.y - 1) * this.creator.gridsize ));
 
             // 计算线段的中点作为节点位置
             let midPos = new Vec2((startPos.x + endPos.x) / 2, (startPos.y + endPos.y) / 2);
@@ -240,11 +241,14 @@ export class TObject extends Component {
             (this.creator as any).showScorePopup(gb.node.position.clone());
         }
 
+        self.PlayEffect(()=>{
+            Main.DispEvent('event_zhengli'); 
+        });
+        gb.PlayEffect(()=>{
+            Main.DispEvent('event_zhengli'); 
+        });
+
         // 销毁对象
-        self.node.removeFromParent();
-        self.node.destroy();
-        gb.node.removeFromParent();
-        gb.node.destroy();
 
         for (const line of lines) {
             line.destroy();
@@ -275,7 +279,24 @@ export class TObject extends Component {
             gridcreator.map[self.x + 1][self.y + 1] = 0;
         }
         
-        Main.DispEvent('event_zhengli'); 
+
+    }
+    
+
+    PlayEffect(cb) {
+
+  
+// 播放动画
+        let anim = this.node.getComponent(Animation);
+
+        var node = this.node;
+        // 监听动画结束，自动隐藏节点
+        anim.on(Animation.EventType.FINISHED, () => {
+            node.removeFromParent();
+            node.destroy();
+            cb(); 
+        }, this);
+        anim.play();
     }
     /**
      * 检查是否可以连接
@@ -382,7 +403,7 @@ export class TObject extends Component {
     }
     private ShowTiXing()
     {
-        this.sel.color = Color.RED;
+        this.sel.color = Color.GREEN;
         this.sel.node.active = true; 
     }
     start() {

@@ -1,4 +1,4 @@
-import { __private, _decorator, Button, Component, Label, Node, Sprite, SpriteFrame } from 'cc';
+import { __private, _decorator, Button, Component, Label, Node, Sprite, SpriteFrame, Vec3 } from 'cc';
 import { Main } from './main'; 
 import { tools } from './tools';
 import { titem } from './item/titem';
@@ -40,6 +40,17 @@ export class item_tools extends titem {
     image_icon_video: Sprite = null!;
     @property(Label)
     lbl_txt: Label = null!;
+
+    init(arg0: { tp: ItemType; }, num: number) {
+        this.setItemType(arg0);
+        this.setNum(num);
+        this.node.on(Button.EventType.CLICK,this.onClick,this); 
+        Main.RegistEvent("event_itemchanged",(x)=>this.onItemChanged(x));
+        Main.RegistEvent("update_tools",(x)=>this.brushTools());
+        
+        // 确保道具节点以正确的尺寸显示
+        this.node.scale = new Vec3(1, 1, 1);
+    }
 
     wechatShare(callBack?:any) {
         this.initativeShare(callBack); // 主动分享 
