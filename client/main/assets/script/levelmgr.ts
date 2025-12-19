@@ -14,7 +14,8 @@ export enum GameType {
     NORMAL = "normal",           // 普通连连看模式
     INFINITE = "infinite",       // 无限模式
     SANXIAO = "sanxiao",         // 三消模式
-    LAYER_SPLIT = "layer_split"  // 分层叠加模式
+    LAYER_SPLIT = "layer_split", // 分层叠加模式
+    MEM = "mem"                  // 记忆模式
 }
 
 export class LevelMgr {

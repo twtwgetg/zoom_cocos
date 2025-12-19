@@ -263,9 +263,9 @@ export class frm_main extends frmbase {
             this.show();
             this.fillItems(enum_paly_type.Mem);
             TObject.resetStaticVariables();
-                       // 确保游戏类型被正确设置为无限模式
+            // 确保游戏类型被正确设置为记忆模式
             if (this.gridcreator) {
-                (this.gridcreator as any).gameType = GameType.MEM;
+                (this.gridcreator as any).gameType = 'mem';
             }
             
             this.scheduleOnce(() => {
@@ -273,7 +273,7 @@ export class frm_main extends frmbase {
             }, 0);
 
             this.level_playing = -4; // 无限模式使用特殊关卡编号
-            this.lbl_guanka.string = "无限模式";
+            this.lbl_guanka.string = "记忆模式";
         });
         // 添加无限模式事件处理
         Main.RegistEvent("event_play_infinite",(x)=>{ 

@@ -8,14 +8,52 @@ const { ccclass, property } = _decorator;
 
 @ccclass('TObject')
 export class TObject extends Component {
+    /**
+     * 隐藏模式
+     * @param arg0 
+     */
+    private mode: boolean = false;
+    SetHideMode(arg0: boolean) {
+        this.mode = arg0;
+        
+        if (this.mode) {
+            // 启用隐藏模式
+            if (this.back) {
+                // 一直保持back节点开启状态
+                this.back.active = true;
+                this.backNodeVisible = true;
+                
+                // 不设置自动关闭的定时器
+                // 只有在Select方法中才会临时关闭
+            }
+        } else {
+            // 禁用隐藏模式
+            if (this.hideModeTimer) {
+                clearTimeout(this.hideModeTimer);
+                this.hideModeTimer = null;
+            }
+            
+            // 显示back节点
+            if (this.back) {
+                this.back.active = true;
+                this.backNodeVisible = true;
+            }
+        }
+    }
 
     @property(Sprite)
     public sel: Sprite = null!; 
     @property(Sprite)
     src: Sprite = null!; 
+    @property(Node)
+    back: Node = null!; // 添加back节点属性
     x: number = 0;
     y: number = 0;
     type: number = 0;
+    
+    // 添加隐藏模式相关属性
+    private hideModeTimer: any = null;
+    private backNodeVisible: boolean = true;
     
     private static obj: TObject | null = null;
     private static firstClickReported: boolean = false;
@@ -48,11 +86,35 @@ export class TObject extends Component {
         }
     }
 
+    // 修改Select方法以支持隐藏模式
     private Select(): void {
-        if (this.sel) {
-            this.sel.color = Color.WHITE;
-            this.sel.node.active = true;
-            this.node.setSiblingIndex(this.node.parent.children.length - 1);
+
+        // 如果处于隐藏模式，选中时隐藏back节点
+        if (this.mode && this.back) {
+            // 清除之前的定时器
+            if (this.hideModeTimer) {
+                clearTimeout(this.hideModeTimer);
+                this.hideModeTimer = null;
+            }
+            
+            // 隐藏back节点
+            this.back.active = false;
+            this.backNodeVisible = false;
+            
+            // 1秒后重新显示back节点
+            this.hideModeTimer = setTimeout(() => {
+                if (this.back && this.mode) {
+                    this.back.active = true;
+                    this.backNodeVisible = true;
+                }
+            }, 1000);
+        }
+        else{
+            if (this.sel) {
+                this.sel.color = Color.WHITE;
+                this.sel.node.active = true;
+                this.node.setSiblingIndex(this.node.parent.children.length - 1);
+            } 
         }
     }
 
@@ -85,8 +147,13 @@ export class TObject extends Component {
             return;
         }
         
+        // 检查是否为记忆模式
+        if (this.creator && (this.creator as any).gameType === 'mem') {
+            // 记忆模式逻辑
+            this.handleMemoryMode();
+        } 
         // 检查是否为三消模式
-        if (this.creator && (this.creator as any).isSanxiaoMode) {
+        else if (this.creator && (this.creator as any).isSanxiaoMode) {
             // 三消模式逻辑
             this.handleSanxiaoMode();
         } else if (this.creator && (this.creator as any).isLayerSplitMode) {
@@ -158,6 +225,85 @@ export class TObject extends Component {
             } else {
                 TObject.lastobj = this;
             }
+        }
+    }
+    ForceShow(): void {
+        if (this.hideModeTimer) {
+                clearTimeout(this.hideModeTimer);
+                this.hideModeTimer = null;
+        }
+        if (this.back) {
+            this.back.active = false;
+            this.backNodeVisible = true;
+        }
+    }
+    /**
+     * 处理记忆模式点击事件
+     */
+    private handleMemoryMode(): void {
+        // 如果这张卡牌已经被消除，不处理点击事件
+        if (this.released) {
+            return;
+        }
+        
+        // 如果还没有选中任何卡牌，选中这张卡牌作为第一张
+        if (TObject.firstCard === null) {
+            TObject.firstCard = this;
+            this.Select();
+            return;
+        }
+        
+        // 如果点击的是已经选中的第一张卡牌，取消选中
+        if (TObject.firstCard === this) {
+            TObject.firstCard = null;
+            this.unSel();
+            return;
+        }
+        
+        // 检查两张卡牌的类型是否相同
+        if (TObject.firstCard.type === this.type) {
+            // 类型相同，执行消除逻辑
+            const firstCard = TObject.firstCard;
+            const secondCard = this;
+            
+            // 先选中第二张卡牌
+            //secondCard.Select();
+            
+            // 关闭两张卡牌的back节点
+            firstCard.ForceShow();
+            secondCard.ForceShow();
+      
+            
+            // 1秒钟后执行PlayEffect方法
+            setTimeout(() => {
+                // 标记两张卡牌为已释放
+                firstCard.released = true;
+                secondCard.released = true;
+                
+                // 更新地图数据
+                gridcreator.map[firstCard.x + 1][firstCard.y + 1] = 0;
+                gridcreator.map[secondCard.x + 1][secondCard.y + 1] = 0;
+                
+                // 重置选中状态
+                TObject.firstCard = null;
+                TObject.obj = null;
+                
+                // 执行动画效果
+                firstCard.PlayEffect(() => {
+                    Main.DispEvent('event_zhengli');
+                });
+                secondCard.PlayEffect(() => {
+                    Main.DispEvent('event_zhengli');
+                });
+                
+                // 触发积分增加事件（记忆模式每次消除一对卡牌加1分）
+                Main.DispEvent('event_add_jifen', 1);
+            }, 1000);
+        } else {
+            // 类型不同，重新选择第一张卡牌
+            TObject.firstCard.unSel();
+            TObject.firstCard = this;
+            this.Select();
         }
     }
     
@@ -410,7 +556,21 @@ export class TObject extends Component {
         //响应鼠标点击事件
         this.getComponent(Button)!.node.on('click',this.onButtonClick, this);
     }
- 
+    
+    onLoad() {
+        // 初始化隐藏模式相关属性
+        this.hideModeTimer = null;
+        this.backNodeVisible = true;
+    }
+    
+    onDestroy() {
+        // 清理隐藏模式定时器
+        if (this.hideModeTimer) {
+            clearTimeout(this.hideModeTimer);
+            this.hideModeTimer = null;
+        }
+    }
+    
     SetSprite(i: number, j: number, _tp: number, xx: SpriteFrame, _creator: gridcreator): void {
         this.type = _tp;
         this.creator = _creator;
@@ -422,6 +582,18 @@ export class TObject extends Component {
         if (_creator && (_creator as any).isLayerSplitMode) {
             // 可以在这里添加分层模式的特殊效果
             // 例如添加边框或特殊颜色来表示可点击状态
+        }
+        
+        // 如果启用了隐藏模式，初始化back节点为开启状态
+        if (this.mode && this.back) {
+            this.back.active = true;
+            this.backNodeVisible = true;
+            
+            // 清除之前的定时器
+            if (this.hideModeTimer) {
+                clearTimeout(this.hideModeTimer);
+                this.hideModeTimer = null;
+            }
         }
     }
     update(deltaTime: number) {

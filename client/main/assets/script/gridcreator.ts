@@ -253,8 +253,100 @@ export class gridcreator extends Component {
         this.node.removeAllChildren();
     }
     CreateMem(wid: number, hei: number) {
+        this.gameOver = false;
+        // 确保设置游戏类型为记忆模式
+        this.gameType = GameType.MEM;
         
+        // 设置网格尺寸
+        this.wid = wid;
+        this.hei = hei;
         
+        // 清空节点
+        this.clear();
+        
+        // 初始化地图
+        gridcreator.map = [];
+        for (let i = 0; i < this.wid + 2; i++) {
+            gridcreator.map[i] = [];
+            for (let j = 0; j < this.hei + 2; j++) {
+                gridcreator.map[i][j] = 0;
+            }
+        }
+        
+        // 计算网格大小
+        const parentRect = this.node.getComponent(UITransform)!;
+        const availableWidth = parentRect.width;
+        const availableHeight = parentRect.height;
+        
+        const cellWidth = availableWidth / this.wid;
+        const cellHeight = availableHeight / this.hei;
+        
+        this.gridsize = Math.min(cellWidth, cellHeight);
+        this.gridsize = Math.min(180, this.gridsize);
+        
+        // 计算总格子数和对数
+        const totalCells = this.wid * this.hei;
+        const totalPairs = Math.floor(totalCells / 2);
+        
+        // 获取可用类型数量
+        this.pl = this.plSprites;
+        const availableTypes = this.pl.length - 1;
+        if (availableTypes < 2) {
+            console.error('图片类型不足，至少需要2个');
+            return;
+        }
+        
+        // 生成所有位置
+        const positions: Vec2[] = [];
+        for (let i = 0; i < this.wid; i++) {
+            for (let j = 0; j < this.hei; j++) {
+                positions.push(new Vec2(i + 1, j + 1));
+            }
+        }
+        
+        // 打乱位置
+        this.Shuffle(positions);
+        
+        // 生成卡片对 - 使用固定的卡牌类型以降低记忆难度
+        const cardTypes: number[] = [];
+        
+        // 使用较少的卡牌类型以降低记忆难度
+        const memoryTypes = Math.min(6, availableTypes); // 最多使用6种类型
+        
+        // 生成卡片对
+        for (let p = 0; p < totalPairs; p++) {
+            // 循环使用类型以确保有足够的配对
+            const type = (p % memoryTypes) + 1;
+            cardTypes.push(type);
+            cardTypes.push(type); // 成对添加
+        }
+        
+        // 打乱卡牌类型数组
+        this.Shuffle(cardTypes);
+        
+        // 生成卡片对
+        for (let p = 0; p < totalPairs; p++) {
+            const type = cardTypes[p * 2]; // 获取卡牌类型
+            
+            // 获取两个位置
+            const pos1 = positions[p * 2];
+            const pos2 = positions[p * 2 + 1];
+            
+            // 更新地图
+            gridcreator.map[pos1.x][pos1.y] = type;
+            gridcreator.map[pos2.x][pos2.y] = type;
+            
+            // 生成卡片
+            let card1 = this.SpawnCard(pos1, type);
+            let card1Obj = card1.getComponent('TObject') as TObject;
+            card1Obj.SetHideMode(true);
+            let card2 = this.SpawnCard(pos2, type);
+            let card2Obj = card2.getComponent('TObject') as TObject;
+            card2Obj.SetHideMode(true);
+
+        }
+        
+        this.PlayEffect();
     }
     Create(level_playing: number) {
         this.gameOver = false;
@@ -745,12 +837,13 @@ export class gridcreator extends Component {
         this.addCardEntranceAnimation(cx, mapPos, type);
         
         // 在困难模式下，为某些卡牌添加视觉干扰效果
-        // if (LevelMgr.gameMode === GameMode.HARD) {
-        //     // 30%的概率添加视觉干扰效果
-        //     if (Math.random() < 0.3) {
-        //         this.addVisualInterference(cx, type);
-        //     }
-        // }
+        if (LevelMgr.gameMode === GameMode.HARD) {
+            // 30%的概率添加视觉干扰效果
+            if (Math.random() < 0.3) {
+                this.addVisualInterference(cx, type);
+            }
+        }
+        return cx;
     }
     
     /**
