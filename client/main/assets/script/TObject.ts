@@ -273,21 +273,23 @@ export class TObject extends Component {
             firstCard.ForceShow();
             secondCard.ForceShow();
       
+             // 标记两张卡牌为已释放
+            firstCard.released = true;
+            secondCard.released = true;
+
+            // 更新地图数据
+            gridcreator.map[firstCard.x + 1][firstCard.y + 1] = 0;
+            gridcreator.map[secondCard.x + 1][secondCard.y + 1] = 0;
+            
+                          
+            // 重置选中状态
+            TObject.firstCard = null;
+            TObject.obj = null;
             
             // 1秒钟后执行PlayEffect方法
             setTimeout(() => {
-                // 标记两张卡牌为已释放
-                firstCard.released = true;
-                secondCard.released = true;
-                
-                // 更新地图数据
-                gridcreator.map[firstCard.x + 1][firstCard.y + 1] = 0;
-                gridcreator.map[secondCard.x + 1][secondCard.y + 1] = 0;
-                
-                // 重置选中状态
-                TObject.firstCard = null;
-                TObject.obj = null;
-                
+               
+
                 // 执行动画效果
                 firstCard.PlayEffect(() => {
                     Main.DispEvent('event_zhengli');
