@@ -9,6 +9,14 @@ export enum GameMode {
     HARD = "hard"
 }
 
+// 添加游戏类型枚举
+export enum GameType {
+    NORMAL = "normal",           // 普通连连看模式
+    INFINITE = "infinite",       // 无限模式
+    SANXIAO = "sanxiao",         // 三消模式
+    LAYER_SPLIT = "layer_split"  // 分层叠加模式
+}
+
 export class LevelMgr {
     private static _maxlevel: number = 50;
     private static _maxcount: number = 30;

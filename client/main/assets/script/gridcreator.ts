@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button } from 'cc';
 import { Main } from './main';
-import { LevelMgr, GameMode } from './levelmgr';
+import { LevelMgr, GameMode, GameType } from './levelmgr';
 import { frm_main } from './frm_main';
 import { item_tools } from './item_tools';
 import { tools } from './tools';
@@ -28,11 +28,21 @@ export class gridcreator extends Component {
 
     private gameOver: boolean = false; // 游戏结束标志
 
-    // 添加三消模式相关变量
-    private isSanxiaoMode: boolean = false;
+    // 添加游戏类型变量
+    private gameType: GameType = GameType.NORMAL;
     
-    // 添加分层叠加模式相关变量
-    private isLayerSplitMode: boolean = false;
+    // 添加兼容性getter方法
+    public get isSanxiaoMode(): boolean {
+        return this.gameType === GameType.SANXIAO;
+    }
+    
+    public get isLayerSplitMode(): boolean {
+        return this.gameType === GameType.LAYER_SPLIT;
+    }
+    
+    public get isInfiniteMode(): boolean {
+        return this.gameType === GameType.INFINITE;
+    }
     
     onLoad() {
         // 注册事件
@@ -244,12 +254,8 @@ export class gridcreator extends Component {
 
     Create(level_playing: number) {
         this.gameOver = false;
-        // 确保重置无限模式标志，这是修复卡牌布局偏左问题的关键
-        this.isInfiniteMode = false;
-        // 重置三消模式标志
-        this.isSanxiaoMode = false;
-        // 重置分层叠加模式标志
-        this.isLayerSplitMode = false;
+        // 确保重置游戏类型为普通模式
+        this.gameType = GameType.NORMAL;
         
         // 重置TObject中的静态变量
         // 通过反射获取TObject类并重置静态变量
@@ -1478,7 +1484,6 @@ export class gridcreator extends Component {
     }
 
     // 添加无限模式相关变量
-    private isInfiniteMode: boolean = false;
     private infiniteWid: number = 10;
     private infiniteHei: number = 10;
     
@@ -1487,10 +1492,8 @@ export class gridcreator extends Component {
         this.infiniteWid = width;
         this.infiniteHei = height;
         this.gameOver = false;
-        // 确保设置无限模式标志
-        this.isInfiniteMode = true;
-        // 重置三消模式标志
-        this.isSanxiaoMode = false;
+        // 确保设置游戏类型为无限模式
+        this.gameType = GameType.INFINITE;
 
         // 清空TObject
         // TObject.clear();
@@ -1620,10 +1623,8 @@ export class gridcreator extends Component {
     // 创建三消模式关卡
     CreateSanxiaoMode(width: number, height: number) {
         this.gameOver = false;
-        // 确保设置三消模式标志
-        this.isSanxiaoMode = true;
-        // 重置无限模式标志
-        this.isInfiniteMode = false;
+        // 确保设置游戏类型为三消模式
+        this.gameType = GameType.SANXIAO;
         // 使用传入的参数设置网格尺寸
         this.infiniteWid = width;
         this.infiniteHei = height;
@@ -1686,12 +1687,8 @@ export class gridcreator extends Component {
      */
     CreateLayerSplitMode(width: number, height: number) {
         this.gameOver = false;
-        // 确保设置分层叠加模式标志
-        this.isLayerSplitMode = true;
-        // 重置无限模式标志
-        this.isInfiniteMode = false;
-        // 重置三消模式标志
-        this.isSanxiaoMode = false;
+        // 确保设置游戏类型为分层叠加模式
+        this.gameType = GameType.LAYER_SPLIT;
         // 使用传入的参数设置网格尺寸
         this.infiniteWid = width;
         this.infiniteHei = height;

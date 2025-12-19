@@ -211,11 +211,9 @@ export class frm_main extends frmbase {
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
-            // 确保所有模式标志都被正确重置
+            // 确保游戏类型被正确设置为普通模式
             if (this.gridcreator) {
-                (this.gridcreator as any).isInfiniteMode = false;
-                (this.gridcreator as any).isSanxiaoMode = false;
-                (this.gridcreator as any).isLayerSplitMode = false;
+                (this.gridcreator as any).gameType = 'normal';
             }
             
             this.scheduleOnce(() => {
@@ -280,11 +278,9 @@ export class frm_main extends frmbase {
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
-            // 确保所有模式标志都被正确重置
+            // 确保游戏类型被正确设置为无限模式
             if (this.gridcreator) {
-                (this.gridcreator as any).isInfiniteMode = true;
-                (this.gridcreator as any).isSanxiaoMode = false;
-                (this.gridcreator as any).isLayerSplitMode = false;
+                (this.gridcreator as any).gameType = 'infinite';
             }
             
             this.scheduleOnce(() => {
@@ -343,11 +339,9 @@ export class frm_main extends frmbase {
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
-            // 确保所有模式标志都被正确重置
+            // 确保游戏类型被正确设置为分层叠加模式
             if (this.gridcreator) {
-                (this.gridcreator as any).isInfiniteMode = false;
-                (this.gridcreator as any).isSanxiaoMode = false;
-                (this.gridcreator as any).isLayerSplitMode = true;
+                (this.gridcreator as any).gameType = 'layer_split';
             }
             
             this.scheduleOnce(() => {
@@ -494,11 +488,9 @@ export class frm_main extends frmbase {
             // 重置所有状态
             TObject.resetStaticVariables();
             
-            // 确保所有模式标志都被正确重置
+            // 确保游戏类型被正确设置为普通模式
             if (this.gridcreator) {
-                (this.gridcreator as any).isInfiniteMode = false;
-                (this.gridcreator as any).isSanxiaoMode = false;
-                (this.gridcreator as any).isLayerSplitMode = false;
+                (this.gridcreator as any).gameType = 'normal';
             }
             
             // 重新创建当前关卡
