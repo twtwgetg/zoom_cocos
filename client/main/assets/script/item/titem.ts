@@ -57,8 +57,7 @@ export class titem  extends Component {
                     tools.num_time--;
                     this.setNum(tools.num_time);
                     Main.DispEvent("event_resettime");     
-                    Main.DispEvent("event_msg_top",{msg:"使用时间道具..."});
-                    
+                 
                     // 在无限模式下，使用时间道具可以停止生成新卡牌
                     if (frm_main.isInfinityMode) {
                         frm_main.stopInfiniteModeGenerator = true;

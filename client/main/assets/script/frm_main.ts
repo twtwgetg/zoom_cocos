@@ -282,7 +282,7 @@ export class frm_main extends frmbase {
             
             this.scheduleOnce(() => {
                 // 创建无限模式关卡（8x10网格）
-                this.gridcreator.CreateInfiniteMode(8, 10);
+                this.gridcreator.CreateInfiniteMode(6, 8);
                 // 无限模式不计时
                 this.time_all = 0;
                 this.time_now = 0;

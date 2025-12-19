@@ -176,13 +176,13 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 0,
-      "g": 67,
-      "b": 80,
-      "a": 255
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "a": 224
     },
     "_spriteFrame": {
-      "__uuid__": "d37cce01-d192-4940-9aa1-ab4d3549f93d@f9941",
+      "__uuid__": "6213624b-c1fc-4af3-bb9b-27ffb9c8777a@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 1,
@@ -460,8 +460,8 @@
     },
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": -0.2895000000000607,
-      "y": 0.2880000000000109,
+      "x": -1.2235000000000866,
+      "y": -2.515500000000003,
       "z": 0
     },
     "_lrot": {
@@ -501,8 +501,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 344.409,
-      "height": 345.562
+      "width": 322.913,
+      "height": 321.263
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -577,10 +577,10 @@
     },
     "_alignFlags": 45,
     "_target": null,
-    "_left": -67.49400000000006,
-    "_right": -66.91499999999995,
-    "_top": -68.069,
-    "_bottom": -67.49300000000001,
+    "_left": -57.68000000000009,
+    "_right": -55.2329999999999,
+    "_top": -53.11599999999998,
+    "_bottom": -58.146999999999984,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
     "_isAbsLeft": true,
@@ -968,6 +968,7 @@
       "__id__": 0
     },
     "fileId": "4cywO6AmVG9YVop4TxJdU2",
+    "instance": null,
     "targetOverrides": null
   }
 ]

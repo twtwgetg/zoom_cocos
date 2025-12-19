@@ -158,13 +158,13 @@ export class LevelMgr {
         const t = level_playing / LevelMgr.realmaxlevel;
         // 增加网格高度难度
         if (t < 0.15) {
-            return 8; // 早期关卡保持简单
+            return 6; // 早期关卡保持简单
         } else if (t < 0.4) {
-            return 10; // 中期关卡适中
+            return 8; // 中期关卡适中
         } else if (t < 0.7) {
-            return 12; // 中后期关卡更难（从12增加到14）
+            return 9; // 中后期关卡更难（从12增加到14）
         } else {
-            return 14; // 后期关卡非常难（从14增加到16）
+            return 10; // 后期关卡非常难（从14增加到16）
         }
     }
 

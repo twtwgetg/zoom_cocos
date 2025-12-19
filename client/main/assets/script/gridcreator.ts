@@ -4,6 +4,7 @@ import { LevelMgr, GameMode } from './levelmgr';
 import { frm_main } from './frm_main';
 import { item_tools } from './item_tools';
 import { tools } from './tools';
+import { TObject } from './TObject';
 const { ccclass, property } = _decorator;
 
  
@@ -402,8 +403,88 @@ export class gridcreator extends Component {
             this.SpawnCard(pos1, type);
             this.SpawnCard(pos2, type);
         }
-    }
 
+        this.PlayEffect();
+    }
+    PlayEffect() {
+        // 计算中心点位置
+        const uiTransform = this.node.getComponent(UITransform);
+        const centerX = 0;
+        const centerY = 0;
+        
+        // 创建一个数组来存储所有的卡片动画Promise
+        const cardPromises: Promise<void>[] = [];
+        
+        // 为每个卡片创建动画
+        for(let i = 0; i < this.node.children.length; i++) {
+            const child = this.node.children[i];
+            const card = child.getComponent('TObject') as TObject;
+            if (card) {
+                // 保存原始位置
+                const originalPosition = child.position.clone();
+                
+                // 生成随机的聚集位置（在中心点附近）
+                const randomOffsetX = (Math.random() - 0.5) * 200;
+                const randomOffsetY = (Math.random() - 0.5) * 200;
+                const gatherPos = new Vec3(
+                    centerX + randomOffsetX,
+                    centerY + randomOffsetY,
+                    originalPosition.z
+                );
+                
+                // 先将所有卡片移动到随机聚集位置
+                child.setPosition(gatherPos); 
+            }
+        }
+        
+        // 延迟0.5秒后播放tUpdateCardPositions动画
+        setTimeout(() => {
+            this.tUpdateCardPositions(1.0);
+        }, 500);
+    }
+    
+    private tUpdateCardPositions(time=0.3) {
+        const children = this.node.children;
+        
+        // 计算中心点位置
+        const centerX = 0;
+        const centerY = 0;
+        
+        for (const child of children) {
+            const tobj = child.getComponent('TObject') as any;
+            // 添加空值检查，防止tobj为null时出现错误
+            if (!tobj || tobj.x === undefined || tobj.y === undefined) {
+                continue;
+            }
+            
+            let pos = this.tref.add(new Vec2((tobj.x) * this.gridsize, (tobj.y) * this.gridsize)); 
+            const targetPos = new Vec3(pos.x, pos.y, 0);
+            
+            // 设置初始位置为中心点，实现爆炸效果
+            child.setPosition(new Vec3(centerX, centerY, 0));
+            
+            // 添加随机缩放和旋转初始值，增强爆炸效果
+            const randomScale = 0.1 + Math.random() * 0.3;
+            const randomRotation = (Math.random() - 0.5) * 60;
+            child.setScale(new Vec3(randomScale, randomScale, 1));
+            child.angle = randomRotation;
+            
+            // 使用tween动画实现爆炸式展开效果
+            tween(child)
+                .to(time, { 
+                    position: targetPos,
+                    scale: new Vec3(1, 1, 1),
+                    angle: 0
+                }, { 
+                    easing: 'backOut', // 使用回弹缓动，增强爆炸感
+                    onComplete: () => {
+                        // 动画完成后确保最终位置正确
+                        child.setPosition(targetPos);
+                    }
+                })
+                .start();
+        }
+    }
     // 整理剩余卡片位置
     public zhengli():void {
         // 在无限模式下不需要整理功能
@@ -590,7 +671,7 @@ export class gridcreator extends Component {
         return null;
     }
 
-    private UpdateCardPositions() {
+    private UpdateCardPositions(time=0.3) {
         const children = this.node.children;
         for (const child of children) {
             const tobj = child.getComponent('TObject') as any;
@@ -606,7 +687,7 @@ export class gridcreator extends Component {
             if (child.position.x != targetPos.x || child.position.y != targetPos.y) {
                 // 使用tween动画实现平滑位移效果
                 tween(child)
-                    .to(0.3, { position: targetPos }, { 
+                    .to(time, { position: targetPos }, { 
                         easing: 'sineOut',
                         onComplete: () => {
                             // 动画完成后确保最终位置正确
@@ -654,12 +735,12 @@ export class gridcreator extends Component {
         this.addCardEntranceAnimation(cx, mapPos, type);
         
         // 在困难模式下，为某些卡牌添加视觉干扰效果
-        if (LevelMgr.gameMode === GameMode.HARD) {
-            // 30%的概率添加视觉干扰效果
-            if (Math.random() < 0.3) {
-                this.addVisualInterference(cx, type);
-            }
-        }
+        // if (LevelMgr.gameMode === GameMode.HARD) {
+        //     // 30%的概率添加视觉干扰效果
+        //     if (Math.random() < 0.3) {
+        //         this.addVisualInterference(cx, type);
+        //     }
+        // }
     }
     
     /**
@@ -702,21 +783,32 @@ export class gridcreator extends Component {
         const targetPos2D = this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize, (mapPos.y - 1) * this.gridsize));
         const targetPos = new Vec3(targetPos2D.x, targetPos2D.y, 0);
         
-        // 设置初始状态
-        cardNode.setScale(new Vec3(0.1, 0.1, 1));
-        cardNode.setPosition(targetPos);
+ 
         
+
         // 根据游戏模式选择不同的动画效果
         // 修复：添加对分层叠加模式的支持
         if (this.isSanxiaoMode) {
             // 三消模式：快速简洁的动画
+            cardNode.setPosition(targetPos);
+            cardNode.setScale(new Vec3(0.1, 0.1, 0.1));
             this.addSanxiaoEntranceAnimation(cardNode, targetPos, cardType);
         } else if (this.isLayerSplitMode) {
             // 分层叠加模式：使用特定的动画效果
+                           // 设置初始状态
+            cardNode.setScale(new Vec3(0.1, 0.1, 0.1));
+            cardNode.setPosition(targetPos);
             this.addLayerSplitEntranceAnimation(cardNode, targetPos, cardType);
-        } else {
+        } else if(this.isInfiniteMode  )
+        {
+            cardNode.setScale(new Vec3(0.1, 0.1, 0.1));
+            cardNode.setPosition(targetPos);
+            this.addLayerSplitEntranceAnimation(cardNode, targetPos, cardType);
+        }
+        else {
+            cardNode.setScale(new Vec3(1, 1, 1));
             // 连连看模式：丰富多样的动画
-            this.addLianlianEntranceAnimation(cardNode, targetPos, cardType);
+            //this.addLianlianEntranceAnimation(cardNode, targetPos, cardType);
         }
         
         // 设置最终位置和大小
@@ -1392,6 +1484,8 @@ export class gridcreator extends Component {
     
     // 创建无限模式关卡
     CreateInfiniteMode(width: number, height: number) {
+        this.infiniteWid = width;
+        this.infiniteHei = height;
         this.gameOver = false;
         // 确保设置无限模式标志
         this.isInfiniteMode = true;

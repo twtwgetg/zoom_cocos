@@ -73,8 +73,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 150.384765625,
-      "height": 132
+      "width": 92.630859375,
+      "height": 81.6
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -112,10 +112,10 @@
     "_string": "twt",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 100,
-    "_fontSize": 100,
+    "_actualFontSize": 60,
+    "_fontSize": 60,
     "_fontFamily": "Arial",
-    "_lineHeight": 100,
+    "_lineHeight": 60,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,
