@@ -20,7 +20,7 @@
       166,
       255
     ],
-    "transformToolName": "position",
+    "transformToolName": "rect",
     "pivot": "pivot",
     "coordinate": "local",
     "toolsVisibility3d": true

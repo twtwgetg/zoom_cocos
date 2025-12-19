@@ -10,6 +10,7 @@ const { ccclass, property } = _decorator;
  
 @ccclass('gridcreator')
 export class gridcreator extends Component {
+
     @property
     wid: number = 5;
     @property
@@ -251,7 +252,10 @@ export class gridcreator extends Component {
     clear(){
         this.node.removeAllChildren();
     }
-
+    CreateMem(wid: number, hei: number) {
+        
+        
+    }
     Create(level_playing: number) {
         this.gameOver = false;
         // 确保重置游戏类型为普通模式

@@ -11,6 +11,7 @@ import { PlayerPrefb } from './PlayerPrefb';
 import { TObject } from './TObject';
 import { titem } from './item/titem';
 import { JifenRewardManager } from './JifenRewardManager';
+import { GameType } from './enums/GameType';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -249,13 +250,7 @@ export class frm_main extends frmbase {
             this.lastCardRemovedTime = 0;
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
-
-            // 在连连看模式下隐藏本局得分显示
-            if (x !== -2) { // 如果不是三消模式
-                this.hideCurrentScoreLabel();
-            } else {
-                this.showCurrentScoreLabel();
-            }
+ 
 
             // 显示时间进度条（仅在普通连连看模式下显示）
             this.brushMode(x);
@@ -267,6 +262,18 @@ export class frm_main extends frmbase {
         Main.RegistEvent("event_play_mem",(x)=>{ 
             this.show();
             this.fillItems(enum_paly_type.Mem);
+            TObject.resetStaticVariables();
+                       // 确保游戏类型被正确设置为无限模式
+            if (this.gridcreator) {
+                (this.gridcreator as any).gameType = GameType.MEM;
+            }
+            
+            this.scheduleOnce(() => {
+                this.gridcreator.CreateMem(6,8);
+            }, 0);
+
+            this.level_playing = -4; // 无限模式使用特殊关卡编号
+            this.lbl_guanka.string = "无限模式";
         });
         // 添加无限模式事件处理
         Main.RegistEvent("event_play_infinite",(x)=>{ 
@@ -317,10 +324,7 @@ export class frm_main extends frmbase {
             this.lastCardRemovedTime = 0;
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
-
-            // 在无限模式下隐藏本局得分显示
-            this.hideCurrentScoreLabel();
-
+ 
             // 隐藏时间进度条（无限模式不计时）
             if (this.progress_time && this.progress_time.node) {
                 this.progress_time.node.active = false;
@@ -434,13 +438,7 @@ export class frm_main extends frmbase {
             this.lastCardRemovedTime = 0;
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
-            
-            // 在三消模式下隐藏道具按钮
-            this.hideToolButtonsInSanxiaoMode();
-
-            // 在三消模式下显示本局得分
-            this.showCurrentScoreLabel();
-
+             
             // 隐藏时间进度条（三消模式不计时）
             if (this.progress_time && this.progress_time.node) {
                 this.progress_time.node.active = false;
@@ -1144,43 +1142,6 @@ export class frm_main extends frmbase {
         this.updateJifenLabel();
         this.saveJifen();
     }
-    
-    /**
-     * 在三消模式下隐藏道具按钮
-     */
-    private hideToolButtonsInSanxiaoMode() {
-        // // 隐藏刷新道具按钮
-        // if (this.btn_refrush && this.btn_refrush.node) {
-        //     this.btn_refrush.node.active = false;
-        // }
-        
-        // // 隐藏提醒道具按钮
-        // if (this.btn_remind && this.btn_remind.node) {
-        //     this.btn_remind.node.active = false;
-        // }
-        
-        // // 隐藏时间道具按钮
-        // if (this.btn_time && this.btn_time.node) {
-        //     this.btn_time.node.active = false;
-        // }
-    }
-
-    /**
-     * 隐藏本局得分标签（用于连连看模式）
-     */
-    private hideCurrentScoreLabel() {
-        // if (this.lbl_curr && this.lbl_curr.node) {
-        //     this.lbl_curr.node.active = false;
-        // }
-    }
-
-    /**
-     * 显示本局得分标签（用于三消模式）
-     */
-    private showCurrentScoreLabel() {
-        // if (this.lbl_curr && this.lbl_curr.node) {
-        //     this.lbl_curr.node.active = true;
-        // }
-    }
+     
 
 }
