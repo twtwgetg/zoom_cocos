@@ -169,6 +169,9 @@ export class frm_main extends frmbase {
             this.fillItem(ItemType.remind, remindCount);
             this.fillItem(ItemType.time, timeCount);
         }
+        else if(type==enum_paly_type.Mem){
+            this.fillItem(ItemType.ShowFront,tools.num_ShowFront);
+        }
         else if(type==enum_paly_type.SANXIAO){
             
         }
@@ -262,6 +265,10 @@ export class frm_main extends frmbase {
             this.resetCurrentJifen();
 
             return null;
+        });
+        Main.RegistEvent("event_play_mem",(x)=>{ 
+            this.show();
+            this.fillItems(enum_paly_type.Mem);
         });
         // 添加无限模式事件处理
         Main.RegistEvent("event_play_infinite",(x)=>{ 

@@ -14,7 +14,8 @@ declare const tt: any;
 export enum enum_paly_type {
     LIANLIANKAN = 0,
     SANXIAO = 1,
-    LAYERSPLIT, // 分层
+    LAYERSPLIT=2, // 分层
+    Mem=3,//记忆模式
 }
 export enum ToolsType{ 
     video = 0,
@@ -25,6 +26,7 @@ export enum ItemType{
     time = 1,
     remind = 2,  
     layer = 3,//层级叠加找齐道具
+    ShowFront = 4,//记忆模式,翻开卡牌3秒钟
 }
 @ccclass('item_tools')
 export class item_tools extends titem {

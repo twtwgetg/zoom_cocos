@@ -34,6 +34,9 @@ export class frm_guanka extends frmbase {
     @property(Button)
     public btn_wuxian: Button = null!; 
     @property(Button)
+    public btn_mem: Button = null!; 
+    
+    @property(Button)
     public btn_layersplit: Button = null!;
     @property(Button)
     public btn_libao: Button = null!;
@@ -93,6 +96,10 @@ export class frm_guanka extends frmbase {
         this.btn_wuxian.node.on(Button.EventType.CLICK, ()=>{
             // 进入无限模式
             Main.DispEvent('event_play_infinite');
+        }, this);
+        this.btn_mem.node.on(Button.EventType.CLICK, ()=>{
+            // 进入会员模式
+            Main.DispEvent('event_play_mem');
         }, this);
         // 添加三消模式按钮点击事件
         this.btn_sanxiao.node.on(Button.EventType.CLICK, ()=>{
@@ -227,6 +234,10 @@ export class frm_guanka extends frmbase {
             return null;
         });
         Main.RegistEvent("event_play_infinite",(x)=>{
+            this.hide();
+            return null;
+        })
+        Main.RegistEvent("event_play_mem",(x)=>{
             this.hide();
             return null;
         })

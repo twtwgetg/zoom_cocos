@@ -62,5 +62,15 @@ export class tools {
         PlayerPrefb.setInt("num_layer", value);
         Main.DispEvent("event_itemchanged", value);
     }
-
+    static get num_ShowFront()
+    {
+        return PlayerPrefb.getInt("num_ShowFront", 3);
+    }
+    static set num_ShowFront(value)
+    {
+        if (value < 0)
+            value = 0;
+        PlayerPrefb.setInt("num_ShowFront", value);
+        Main.DispEvent("event_itemchanged", value);
+    }
 }

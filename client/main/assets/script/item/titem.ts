@@ -40,6 +40,10 @@ export class titem  extends Component {
             case ItemType.layer: 
                 this.setNum(tools.num_layer);
                 break;
+            case ItemType.ShowFront: 
+                this.setNum(tools.num_ShowFront);
+                break;
+                
             default:
                 break;
         }
@@ -139,6 +143,24 @@ export class titem  extends Component {
                 }});
             }
         }
+        else if(this.itemtype == ItemType.ShowFront){
+            if(tools.num_ShowFront>0)
+            {
+                tools.num_ShowFront--;
+                this.brushTools();
+                Main.DispEvent("event_msg_top",{msg:"使用记忆道具"});
+                Main.DispEvent("event_showfront");
+                // 上报使用道具事件
+                ToutiaoEventMgr.reportUseItem(ItemType.ShowFront); // 4表示记忆道具
+            }
+            else{
+                Main.DispEvent("event_tools",{tp:ItemType.ShowFront,autouse:()=>{ 
+                    that.brushTools();
+                    // 上报使用道具事件
+                    ToutiaoEventMgr.reportUseItem(ItemType.ShowFront); // 4表示记忆道具
+                }});
+            }
+        }
         else{
             console.log("no item");
         }
@@ -156,6 +178,8 @@ export class titem  extends Component {
     sprite_remind: SpriteFrame = null!;
     @property(SpriteFrame)
     sprite_refrush: SpriteFrame = null!;
+    @property(SpriteFrame)
+    sprite_ShowFront: SpriteFrame = null!;
     @property(Sprite)
     image_icon: Sprite = null!;
 
@@ -176,6 +200,9 @@ export class titem  extends Component {
                 break;
             case ItemType.layer:
                 this.image_icon.spriteFrame = this.sprite_layer;
+                break;
+            case ItemType.ShowFront:
+                this.image_icon.spriteFrame = this.sprite_ShowFront;
                 break;
             default:
                 console.error("no item"+this.itemtype);
