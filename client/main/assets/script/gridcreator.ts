@@ -30,7 +30,7 @@ export class gridcreator extends Component {
     private gameOver: boolean = false; // 游戏结束标志
 
     // 添加游戏类型变量
-    private gameType: GameType = GameType.NORMAL;
+    public gameType: GameType = GameType.NORMAL;
     
     // 添加兼容性getter方法
     public get isSanxiaoMode(): boolean {
@@ -91,7 +91,7 @@ export class gridcreator extends Component {
             for (const child of this.node.children) {
                 const p = child.getComponent('TObject') as any;
                 if (!p) continue;
-                p.Select();
+                p.Select(3000);
             }
             return null;
         })
@@ -266,6 +266,12 @@ export class gridcreator extends Component {
     clear(){
         this.node.removeAllChildren();
     }
+    /**
+     * 记忆模式
+     * @param wid 
+     * @param hei 
+     * @returns 
+     */
     CreateMem(wid: number, hei: number) {
         this.gameOver = false;
         // 确保设置游戏类型为记忆模式
@@ -304,11 +310,27 @@ export class gridcreator extends Component {
         
         // 获取可用类型数量
         this.pl = this.plSprites;
-        const availableTypes = this.pl.length - 1;
+        // 设置卡牌种类为15种以增加难度
+        const availableTypes = Math.min(15, this.pl.length - 1);
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
         }
+
+        // 生成卡牌：3（成3个才能消除）* 15（卡牌种类）* 5（每种卡牌数量5组）= 225个卡牌
+        const cardTypes: number[] = [];
+        
+        // 为每种类型生成5组，每组3个相同的卡牌
+        for (let type = 1; type <= availableTypes; type++) {
+            for (let group = 0; group < 5; group++) { // 5组
+                for (let i = 0; i < 3; i++) { // 每组3个
+                    cardTypes.push(type);
+                }
+            }
+        }
+        
+        // 打乱卡牌类型数组
+        this.Shuffle(cardTypes);
         
         // 生成所有位置
         const positions: Vec2[] = [];
@@ -320,23 +342,6 @@ export class gridcreator extends Component {
         
         // 打乱位置
         this.Shuffle(positions);
-        
-        // 生成卡片对 - 使用固定的卡牌类型以降低记忆难度
-        const cardTypes: number[] = [];
-        
-        // 使用较少的卡牌类型以降低记忆难度
-        const memoryTypes = Math.min(6, availableTypes); // 最多使用6种类型
-        
-        // 生成卡片对
-        for (let p = 0; p < totalPairs; p++) {
-            // 循环使用类型以确保有足够的配对
-            const type = (p % memoryTypes) + 1;
-            cardTypes.push(type);
-            cardTypes.push(type); // 成对添加
-        }
-        
-        // 打乱卡牌类型数组
-        this.Shuffle(cardTypes);
         
         // 生成卡片对
         for (let p = 0; p < totalPairs; p++) {
@@ -1829,14 +1834,14 @@ export class gridcreator extends Component {
 
         // 获取可用类型数量
         this.pl = this.plSprites;
-        // 设置卡牌种类为12种
-        const availableTypes = Math.min(12, this.pl.length - 1);
+        // 设置卡牌种类为20种以增加难度
+        const availableTypes = Math.min(20, this.pl.length - 1);
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
         }
 
-        // 生成卡牌：3（成3个才能消除）* 12（卡牌种类）* 5（每种卡牌数量5组）= 180个卡牌
+        // 生成卡牌：3（成3个才能消除）* 20（卡牌种类）* 5（每种卡牌数量5组）= 300个卡牌
         const cardTypes: number[] = [];
         
         // 为每种类型生成5组，每组3个相同的卡牌
@@ -1951,14 +1956,15 @@ export class gridcreator extends Component {
         const tobj = cx.getComponent('TObject') as any;
         // 注意：mapPos是基于1的索引，而卡牌的x,y属性是基于0的索引
         tobj?.SetSprite(mapPos.x - 1, mapPos.y - 1, type, xx, this);
-        
+        tobj?.UseMaJiangBg();
         // 为分层卡牌添加特殊标识
         cx.name = `${mapPos.x - 1},${mapPos.y - 1}_layer${layer}`;
         
         // 添加位移效果以显示叠加
-        const offset = layer * 5; // 每层偏移5个像素
+        const offset = layer * 7; // 每层偏移5个像素
+        // 修改偏移方向为相反方向
         // 修复：使用tref确保居中对齐
-        const targetPos2D = this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize + offset, (mapPos.y - 1) * this.gridsize - offset));
+        const targetPos2D = this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize - offset, (mapPos.y - 1) * this.gridsize + offset));
         const targetPos = new Vec3(targetPos2D.x, targetPos2D.y, layer); // 使用z轴表示层级
         cx.setPosition(targetPos);
         

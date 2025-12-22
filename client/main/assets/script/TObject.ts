@@ -50,6 +50,10 @@ export class TObject extends Component {
     x: number = 0;
     y: number = 0;
     type: number = 0;
+    @property(SpriteFrame)
+    public plane: SpriteFrame = null!;
+    @property(SpriteFrame)
+    public majiang: SpriteFrame = null!;
     
     // 添加隐藏模式相关属性
     private hideModeTimer: any = null;
@@ -85,9 +89,11 @@ export class TObject extends Component {
             this.obj?.Select();
         }
     }
-
+    UseMaJiangBg(){
+        this.node.getChildByName("bg").getComponent(Sprite)!.spriteFrame = this.majiang;
+    }
     // 修改Select方法以支持隐藏模式
-    private Select(): void {
+    private Select(showtime: number=1000): void {
 
         // 如果处于隐藏模式，选中时隐藏back节点
         if (this.mode && this.back) {
@@ -107,7 +113,7 @@ export class TObject extends Component {
                     this.back.active = true;
                     this.backNodeVisible = true;
                 }
-            }, 1000);
+            }, showtime);
         }
         else{
             if (this.sel) {

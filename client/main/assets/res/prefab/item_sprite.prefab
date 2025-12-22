@@ -83,7 +83,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Sprite-001",
+    "_name": "bg",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": {
@@ -179,13 +179,13 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
-      "a": 224
+      "r": 252,
+      "g": 252,
+      "b": 252,
+      "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "8294e253-70ae-45fc-92e3-e850c94e95fc@f9941",
+      "__uuid__": "6213624b-c1fc-4af3-bb9b-27ffb9c8777a@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 1,
@@ -1048,6 +1048,14 @@
     },
     "back": {
       "__id__": 36
+    },
+    "plane": {
+      "__uuid__": "6213624b-c1fc-4af3-bb9b-27ffb9c8777a@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "majiang": {
+      "__uuid__": "8294e253-70ae-45fc-92e3-e850c94e95fc@f9941",
+      "__expectedType__": "cc.SpriteFrame"
     },
     "_id": ""
   },

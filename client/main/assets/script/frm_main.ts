@@ -2,7 +2,7 @@ import { _decorator, Button, Color, Component, instantiate, Label, Node, Prefab,
 import { gridcreator } from './gridcreator';
 import { Main } from './main';
 import { frmbase } from './frmbase';
-import { LevelMgr, GameMode } from './levelmgr';
+import { LevelMgr, GameMode, GameType } from './levelmgr';
 import { tools } from './tools';
 import { enum_paly_type, item_tools, ItemType } from './item_tools'; 
 import { WeatherShaderManager } from './WeatherShaderManager';
@@ -10,8 +10,7 @@ import { ToutiaoEventMgr } from './ToutiaoEventMgr';
 import { PlayerPrefb } from './PlayerPrefb';
 import { TObject } from './TObject';
 import { titem } from './item/titem';
-import { JifenRewardManager } from './JifenRewardManager';
-import { GameType } from './enums/GameType';
+import { JifenRewardManager } from './JifenRewardManager'; 
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -196,6 +195,15 @@ export class frm_main extends frmbase {
         this.lbl_mode.node.active=this.level_playing>0;
 
     }
+    /**
+     * 刷新有限类型
+     * @param 
+     */
+    brushType(gametyp:GameType){
+        this.gridcreator.gameType = gametyp;
+        this.node_c.active = gametyp === GameType.LAYER_SPLIT;//只有分层叠加模式显示node_c
+
+    }
     protected onLoad(): void {
         super.onLoad();
         let that =this;
@@ -210,10 +218,7 @@ export class frm_main extends frmbase {
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
-            // 确保游戏类型被正确设置为普通模式
-            if (this.gridcreator) {
-                (this.gridcreator as any).gameType = 'normal';
-            }
+            this.brushType(GameType.NORMAL);
             
             this.scheduleOnce(() => {
                 this.gridcreator.Create(x);
@@ -261,11 +266,7 @@ export class frm_main extends frmbase {
             this.show();
             this.fillItems(enum_paly_type.Mem);
             TObject.resetStaticVariables();
-            // 确保游戏类型被正确设置为记忆模式
-            if (this.gridcreator) {
-                (this.gridcreator as any).gameType = 'mem';
-            }
-            
+            this.brushType(GameType.MEM);
             this.scheduleOnce(() => {
                 this.gridcreator.CreateMem(6,8);
             }, 0);
@@ -283,10 +284,7 @@ export class frm_main extends frmbase {
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
-            // 确保游戏类型被正确设置为无限模式
-            if (this.gridcreator) {
-                (this.gridcreator as any).gameType = 'infinite';
-            }
+            this.brushType(GameType.INFINITE);
             
             this.scheduleOnce(() => {
                 // 创建无限模式关卡（8x10网格）
@@ -341,10 +339,7 @@ export class frm_main extends frmbase {
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
-            // 确保游戏类型被正确设置为分层叠加模式
-            if (this.gridcreator) {
-                (this.gridcreator as any).gameType = 'layer_split';
-            }
+            this.brushType(GameType.LAYER_SPLIT);
             
             this.scheduleOnce(() => {
                 // 添加保护性检查，确保gridcreator对象已正确初始化
@@ -403,7 +398,7 @@ export class frm_main extends frmbase {
             
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
-            
+            this.brushType(GameType.SANXIAO);
             this.scheduleOnce(() => {
                 // 创建三消模式关卡（5x8网格）
                 this.gridcreator.CreateSanxiaoMode(5, 8);
