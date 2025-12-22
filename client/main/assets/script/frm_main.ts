@@ -113,9 +113,7 @@ export class frm_main extends frmbase {
     
     fruzonBar(f:boolean){
         if(!f){
-            this.spr_bar.color=new Color(255,173,0,255);
-            //this.ice_node.active=false;
-            // 只有在非无限模式下才恢复计时
+            this.spr_bar.color=new Color(255,173,0,255); 
             if (!this.isInfinityMode) {
                 this.jishi=true;
             } else {
@@ -505,6 +503,7 @@ export class frm_main extends frmbase {
         Main.RegistEvent("event_get_current_jifen",()=>{ 
             return this.currentJifen;
         });
+        
         // 添加获取剩余时间的事件
         Main.RegistEvent("event_get_remaining_time",()=>{ 
             // 只有在计时模式下才返回剩余时间，其他模式返回0
@@ -514,6 +513,7 @@ export class frm_main extends frmbase {
             }
             return 0; // 非计时模式返回0
         });
+        
         // 修复：不应该在event_play事件监听器中再次触发event_play事件
         // 这里应该是处理其他需要在游戏开始时重置的状态
         Main.RegistEvent("event_play_reset",()=>{ 
@@ -522,6 +522,15 @@ export class frm_main extends frmbase {
             
             return null;
         });
+        
+        // 添加获取当前游戏类型的事件
+        Main.RegistEvent("event_get_game_type",()=>{ 
+            if (this.gridcreator) {
+                return (this.gridcreator as any).gameType;
+            }
+            return 'normal';
+        });
+        
         // 添加获取下一个积分奖励信息的事件处理程序
         Main.RegistEvent("event_get_next_jifen_reward_info", (data) => {
             const { currentJifen } = data;
@@ -540,7 +549,6 @@ export class frm_main extends frmbase {
         this.fruzonBar(false);
  
     }
- 
     
     /**
      * 更新模式标签显示
@@ -573,10 +581,14 @@ export class frm_main extends frmbase {
     
     update(deltaTime: number) {
 
+
         if(frm_main.isPause) 
             return;
 
         if(!this.jishi) 
+            return;
+
+        if(!this.gridcreator.NeedJiShi) 
             return;
 
         this.time_now += deltaTime; 

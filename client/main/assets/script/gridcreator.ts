@@ -44,7 +44,12 @@ export class gridcreator extends Component {
     public get isInfiniteMode(): boolean {
         return this.gameType === GameType.INFINITE;
     }
-    
+    public get isMemMode(): boolean {
+        return this.gameType === GameType.MEM;
+    }
+    public get NeedJiShi(): boolean {
+        return this.gameType === GameType.NORMAL;
+    }
     onLoad() {
         // 注册事件
         this.registEvents();
@@ -79,6 +84,15 @@ export class gridcreator extends Component {
             // 游戏胜利时发放关卡奖励
             this.distributeLevelRewards(x);
             
+            return null;
+        })
+        Main.RegistEvent('event_showfront', (x)=>{
+            
+            for (const child of this.node.children) {
+                const p = child.getComponent('TObject') as any;
+                if (!p) continue;
+                p.Select();
+            }
             return null;
         })
 

@@ -185,8 +185,17 @@ export class frm_result extends frmbase {
 
             //this.lbl_source_suc.string =this.formatNumber(source);
             this.brushStar(this.level_played);
-            // 确保下一关按钮可见
-            this.btn_nextlevel.node.active = true;
+            
+            // 检查是否为记忆模式，如果是则隐藏下一关按钮
+            const currentGameType = Main.DispEvent("event_get_game_type");
+            if (currentGameType === 'mem') {
+                // 记忆模式下隐藏下一关按钮
+                this.btn_nextlevel.node.active = false;
+            } else {
+                // 其他模式下显示下一关按钮
+                this.btn_nextlevel.node.active = true;
+            }
+            
             // StartCoroutine(showsource(source_suc, source));
             this.show();
             // 上报游戏胜利事件

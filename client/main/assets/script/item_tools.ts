@@ -134,6 +134,9 @@ export class item_tools extends titem {
                     else if(this.itemtype==ItemType.layer){
                         tools.num_layer++;
                     }
+                    else if(this.itemtype==ItemType.ShowFront){
+                        tools.num_ShowFront++;
+                    }
                     else{
                         console.error("itemtype error"+this.itemtype);
                     } 
