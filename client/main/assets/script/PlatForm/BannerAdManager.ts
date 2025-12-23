@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, UITransform, view } from 'cc';
-import { tools } from './tools';
-import { Main } from './main'; 
+import { tools } from '../tools';
+import { Main } from '../main'; 
 const { ccclass, property } = _decorator;
 
 // 声明tt全局对象（若已配置类型文件可省略）

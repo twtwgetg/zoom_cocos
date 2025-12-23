@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Vec3, tween, SpriteFrame, Sprite, UITransform, Button } from 'cc';
 import { Main } from './main';
-import { TObject } from './TObject';
+import { TObject } from './Card/TObject';
 import { gridcreator } from './gridcreator';
 
 const { ccclass, property } = _decorator;

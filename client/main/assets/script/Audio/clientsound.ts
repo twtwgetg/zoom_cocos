@@ -1,6 +1,6 @@
 import { _decorator, Button, Component, Node } from 'cc';
 const { ccclass, property } = _decorator;
-import { Main } from './main';
+import { Main } from '../main';
 @ccclass('clientsound')
 export class clientsound extends Component {
     @property(String)

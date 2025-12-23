@@ -1,5 +1,6 @@
 import { _decorator, Component, Node, Button, EditBox, Label } from 'cc';
-import { Main } from './main';
+import { Main } from '../main';
+
 import { frmbase } from './frmbase';
 
 const { ccclass, property } = _decorator;

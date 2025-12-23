@@ -1,16 +1,16 @@
 import { _decorator, Button, Color, Component, instantiate, Label, Node, Prefab, ProgressBar, Sprite, tween, Vec3 } from 'cc';
-import { gridcreator } from './gridcreator';
-import { Main } from './main';
+import { gridcreator } from '../gridcreator';
+import { Main } from '../main';
 import { frmbase } from './frmbase';
-import { LevelMgr, GameMode, GameType } from './levelmgr';
-import { tools } from './tools';
-import { enum_paly_type, item_tools, ItemType } from './item_tools'; 
-import { WeatherShaderManager } from './WeatherShaderManager';
-import { ToutiaoEventMgr } from './ToutiaoEventMgr';
-import { PlayerPrefb } from './PlayerPrefb';
-import { TObject } from './TObject';
-import { titem } from './item/titem';
-import { JifenRewardManager } from './JifenRewardManager'; 
+import { LevelMgr, GameMode, GameType } from '../levelmgr';
+import { tools } from '../tools';
+import { enum_paly_type, item_tools, ItemType } from '../item/item_tools';
+import { WeatherShaderManager } from '../WeatherShaderManager';
+import { ToutiaoEventMgr } from '../ToutiaoEventMgr';
+import { PlayerPrefb } from '../PlayerPrefb';
+import { TObject } from '../Card/TObject';
+import { titem } from '../item/titem';
+import { JifenRewardManager } from '../JifenRewardManager'; 
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -203,18 +203,40 @@ export class frm_main extends frmbase {
         this.gridcreator.gameType = gametyp;
         this.node_c.active = gametyp === GameType.LAYER_SPLIT;//只有分层叠加模式显示node_c
 
+        // 根据游戏模式填充道具
+        if(gametyp===GameType.NORMAL){
+            this.fillItems(enum_paly_type.LIANLIANKAN);
+            this.spr_bg.node.active = true;
+        }else if(gametyp===GameType.LAYER_SPLIT){
+            this.fillItems(enum_paly_type.LAYERSPLIT);
+            this.spr_bg.node.active = false;
+        }else if(gametyp===GameType.INFINITE){
+            this.fillItems(enum_paly_type.LIANLIANKAN);
+            this.spr_bg.node.active = false;
+        }
+        else if(gametyp=== GameType.MEM){
+            this.fillItems(enum_paly_type.Mem);
+            this.spr_bg.node.active = false;
+        }
+        else if(gametyp=== GameType.SANXIAO){
+            this.fillItems(enum_paly_type.SANXIAO);
+            this.spr_bg.node.active = false;
+        }
+        else{
+            console.error("未知的游戏模式"+gametyp);
+        }
     }
     protected onLoad(): void {
         super.onLoad();
         let that =this;
         Main.RegistEvent("event_play",(x)=>{ 
+
             this.show();
-            this.fillItems(enum_paly_type.LIANLIANKAN);
+
             // 上报进入关卡事件
             ToutiaoEventMgr.reportLevel(x);
             // 上报挑战事件（主动进入游戏）
-            ToutiaoEventMgr.reportCharge();
-            
+            ToutiaoEventMgr.reportCharge(); 
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             
@@ -227,10 +249,7 @@ export class frm_main extends frmbase {
                 this.jishi=true;
                 frm_main.isPause = false;
                 // 播放道具按钮入场动画，但不显示三消模式的道具按钮
-                if (x !== -2) { // 如果不是三消模式，才播放道具按钮动画
-                    this.playToolButtonsEntranceAnimation();
-                }
-                // 执行你的拦截逻辑
+                this.playToolButtonsEntranceAnimation();
             }, 0);
 
             this.level_playing = x;

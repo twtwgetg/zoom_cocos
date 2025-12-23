@@ -1,11 +1,11 @@
 import { _decorator, Button, Component, EditBox, Node, Prefab, Sprite } from 'cc';
 import { frmbase } from './frmbase';
-import { Main } from './main';
+import { Main } from '../main';
 import { frm_main } from './frm_main';
-import { soundmgr } from './soundmgr';
-import { musicmgr } from './musicmgr';
-import { LevelMgr } from './levelmgr';
-import { gridcreator } from './gridcreator';
+import { soundmgr } from '../Audio/soundmgr';
+import { musicmgr } from '../Audio/musicmgr';
+import { LevelMgr } from '../levelmgr';
+import { gridcreator } from '../gridcreator';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_pause')

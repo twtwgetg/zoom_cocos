@@ -1,7 +1,7 @@
 import { _decorator, Component, Node } from 'cc'; 
 const { ccclass, property } = _decorator;
 // 声明tt类型（若已配置类型文件可省略）
-import { Main } from './main';
+import { Main } from '../main';
 declare const tt: any;
 @ccclass('PlatMgr')
 export class PlatMgr extends Component {

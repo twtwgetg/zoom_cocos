@@ -1,7 +1,6 @@
 import { _decorator, Button, Component, instantiate, Label, Node, Prefab, Sprite, UITransform } from 'cc';
-import { LevelMgr } from './levelmgr';
-import { LoadTwtAtlas } from './LoadTwtAtlas';
-import { Main } from './main';
+import { LevelMgr } from "../levelmgr"
+import { Main } from '../main';
 const { ccclass, property } = _decorator;
 
 @ccclass('item_guank')

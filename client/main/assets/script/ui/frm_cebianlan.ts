@@ -1,8 +1,8 @@
 import { _decorator, Button, Component, Node } from 'cc';
 import { frmbase } from './frmbase';
-import { Main, platform } from './main';
-import { EntrySceneChecker } from './EntrySceneChecker';
-import { tools } from './tools';
+import { Main, platform } from '../main';
+import { EntrySceneChecker } from '../EntrySceneChecker';
+import { tools } from '../tools';
 const { ccclass, property } = _decorator;
 declare const tt: any;
 @ccclass('frm_cebianlan')

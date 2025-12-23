@@ -1,5 +1,5 @@
 import { _decorator, Component, Node } from 'cc';
-import { Main } from './main';
+import { Main } from '../main';
 const { ccclass, property } = _decorator;
 
 @ccclass('playsound')

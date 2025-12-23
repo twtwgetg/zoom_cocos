@@ -1,10 +1,6 @@
 import { _decorator, Button, Color, Component, instantiate, Label, Node, Prefab, tween, Vec3 } from 'cc';
 import { frmbase } from './frmbase';
-import { Main } from './main';
-import { frm_main } from './frm_main';
-import { soundmgr } from './soundmgr';
-import { musicmgr } from './musicmgr';
-import { LevelMgr } from './levelmgr';
+import { Main } from '../main'; 
 const { ccclass, property } = _decorator;
 declare const tt: any;
 @ccclass('frm_msg')

@@ -1,9 +1,9 @@
 import { __private, _decorator, Button, Component, Label, Node, Sprite, SpriteFrame, Vec3 } from 'cc';
-import { ItemType } from '../item_tools';
+import { ItemType } from './item_tools';
 import { Main } from '../main';
 import { tools } from '../tools';
 import { ToutiaoEventMgr } from '../ToutiaoEventMgr';
-import { frm_main } from '../frm_main';
+import { frm_main } from '../ui/frm_main';
 
 const { ccclass, property } = _decorator;
 

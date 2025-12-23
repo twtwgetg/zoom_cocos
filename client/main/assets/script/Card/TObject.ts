@@ -1,9 +1,9 @@
 
 // 首先修改导入部分，添加tween
 import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween, error } from 'cc';
-import { gridcreator } from './gridcreator';
-import { Main } from './main';
-import { LevelMgr, GameMode } from './levelmgr';
+import { gridcreator } from '../gridcreator';
+import { Main } from '../main';
+import { LevelMgr, GameMode } from '../levelmgr';
 const { ccclass, property } = _decorator;
 
 @ccclass('TObject')

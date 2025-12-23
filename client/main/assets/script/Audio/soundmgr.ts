@@ -1,6 +1,6 @@
 import { _decorator, Component,sys, Node, AudioSource } from 'cc';
-import { Main } from './main';
-import { PlayerPrefb } from './PlayerPrefb';
+import { Main } from '../main';
+import { PlayerPrefb } from '../PlayerPrefb';
 const { ccclass, property } = _decorator;
 
 @ccclass('soundmgr')

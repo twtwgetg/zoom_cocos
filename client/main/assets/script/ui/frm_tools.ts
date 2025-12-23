@@ -1,10 +1,10 @@
 import { _decorator, Button, Component, instantiate, Label, Node, Prefab, Vec3 } from 'cc';
 import { frmbase } from './frmbase';
-import { Main } from './main';
-import { item_tools, ItemType, ToolsType } from './item_tools';
+import { Main } from '../main';
+import { item_tools, ItemType, ToolsType } from '../item/item_tools';
 import { frm_main } from './frm_main';
-import { tools } from './tools';
-import { musicmgr } from './musicmgr';
+import { tools } from '../tools';
+import { musicmgr } from '../Audio/musicmgr';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_tools')

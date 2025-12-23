@@ -1,12 +1,12 @@
 import { _decorator, Button, Component, instantiate, Label, Node, Prefab, Sprite, UITransform, Color, RichText } from 'cc';
 import { frmbase } from './frmbase';
-import { Main,platform } from './main';
-import { LevelMgr, GameMode } from './levelmgr';
-import { item_guank } from './item_guank';
-import { EntrySceneChecker } from './EntrySceneChecker';
-import { PlayerPrefb } from './PlayerPrefb';
-import { tools } from './tools';
-import { JifenRewardManager } from './JifenRewardManager';
+import { Main,platform } from '../main';
+import { LevelMgr, GameMode } from '../levelmgr';
+import { item_guank } from '../item/item_guank';
+import { EntrySceneChecker } from '../EntrySceneChecker';
+import { PlayerPrefb } from '../PlayerPrefb';
+import { tools } from '../tools';
+import { JifenRewardManager } from '../JifenRewardManager';
 const { ccclass, property } = _decorator;
 //declare const tt: any;
 @ccclass('frm_guanka')

@@ -1,10 +1,10 @@
 import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button, SpriteFrame } from 'cc';
 import { Main } from './main';
 import { LevelMgr, GameMode, GameType } from './levelmgr';
-import { frm_main } from './frm_main';
-import { item_tools } from './item_tools';
+import { frm_main } from './ui/frm_main';
+import { item_tools } from './item/item_tools';
 import { tools } from './tools';
-import { TObject } from './TObject';
+import { TObject } from './Card/TObject';
 const { ccclass, property } = _decorator;
 
  

@@ -1,12 +1,12 @@
 import { _decorator, Button, Component, EditBox, Input, Label, Node, Color, RichText, Prefab, instantiate, SpriteFrame, Sprite } from 'cc';
-import { Main } from './main';
-import { LevelMgr, GameMode } from './levelmgr';
+import { Main } from '../main';
+import { LevelMgr, GameMode } from '../levelmgr';
 import { frmbase } from './frmbase';
-import { PlayerPrefb } from './PlayerPrefb';
+import { PlayerPrefb } from '../PlayerPrefb';
 import { frm_main } from './frm_main';
-import { ToutiaoEventMgr } from './ToutiaoEventMgr';
-import { tools } from './tools';
-import { JifenRewardManager } from './JifenRewardManager';
+import { ToutiaoEventMgr } from '../ToutiaoEventMgr';
+import { tools } from '../tools';
+import { JifenRewardManager } from '../JifenRewardManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_result')

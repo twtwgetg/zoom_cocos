@@ -1,7 +1,8 @@
 import { __private, _decorator, Button, Component, Label, Node, Sprite, SpriteFrame, Vec3 } from 'cc';
-import { Main } from './main'; 
-import { tools } from './tools';
-import { titem } from './item/titem';
+ 
+import { tools } from '../tools';
+import { titem } from '../item/titem';
+import { Main } from '../main';
 const { ccclass, property } = _decorator;
 declare global {
     interface Wx {
