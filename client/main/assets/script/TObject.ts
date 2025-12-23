@@ -1,6 +1,6 @@
 
 // 首先修改导入部分，添加tween
-import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween } from 'cc';
+import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween, error } from 'cc';
 import { gridcreator } from './gridcreator';
 import { Main } from './main';
 import { LevelMgr, GameMode } from './levelmgr';
@@ -54,7 +54,7 @@ export class TObject extends Component {
     public plane: SpriteFrame = null!;
     @property(SpriteFrame)
     public majiang: SpriteFrame = null!;
-    
+    public oldpos: Vec3 = new Vec3(); // 添加oldpos属性
     // 添加隐藏模式相关属性
     private hideModeTimer: any = null;
     private backNodeVisible: boolean = true;
@@ -162,12 +162,38 @@ export class TObject extends Component {
         else if (this.creator && (this.creator as any).isSanxiaoMode) {
             // 三消模式逻辑
             this.handleSanxiaoMode();
-        } else if (this.creator && (this.creator as any).isLayerSplitMode) {
+        }
+        // 检查是否为分层叠加模式
+        else if (this.creator && (this.creator as any).isLayerSplitMode) {
             // 分层叠加模式逻辑
             // 检查卡牌是否已经被移动到容器中
             if (this.released) {
                 console.log('卡牌已经被移动到容器中，无法再次点击');
                 return;
+            }
+            
+            // 检查当前位置是否有上层卡牌（即当前卡牌是否为顶层卡牌）
+            const cell = gridcreator.map[this.x + 1][this.y + 1];
+            if (Array.isArray(cell) && cell.length > 0) {
+                // 获取该位置的卡牌数量，判断当前卡牌是否为顶层
+                const totalLayers = cell.length;
+                // 在分层叠加模式中，TObject的layer属性应该表示当前卡牌在该位置的层级
+                // 但TObject类中没有直接的layer属性，我们需要通过节点名称或其他方式判断
+                // 从SpawnLayeredCard方法中可以看到，节点名称格式为 "x,y_layerN"
+                const nodeName = this.node.name;
+                const layerMatch = nodeName.match(/_layer(\d+)$/);
+                let currentCardLayer = 0;
+                if (layerMatch) {
+                    currentCardLayer = parseInt(layerMatch[1]);
+                }
+                
+                // 如果当前卡牌不是顶层卡牌（即当前层级不等于总层数-1），则不允许点击
+                if (currentCardLayer !== totalLayers - 1) {
+                    console.log(`位置(${this.x}, ${this.y})有上层卡牌，当前卡牌层级${currentCardLayer}，总层数${totalLayers}，无法点击`);
+                    // 触发震动反馈，提示玩家不能选择被覆盖的卡牌
+                    this.triggerScreenShake();
+                    return;
+                }
             }
             
             // 添加保护性检查，确保节点仍然有效
@@ -186,7 +212,9 @@ export class TObject extends Component {
             } else {
                 console.warn("试图移动无效的卡牌节点到容器中");
             }
-        } else {
+        }
+        // 检查是否为连连看模式
+        else if (this.creator && (this.creator as any).isLianliankanMode) {
             // 连连看模式逻辑
             if (TObject.lastobj !== null) {
                 const poslist: Vec2[] = [];
@@ -231,6 +259,9 @@ export class TObject extends Component {
             } else {
                 TObject.lastobj = this;
             }
+        }
+        else{
+            console.error("No valid game mode found", this.creator);
         }
     }
     ForceShow(): void {

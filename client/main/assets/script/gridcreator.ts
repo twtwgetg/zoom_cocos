@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button } from 'cc';
+import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button, SpriteFrame } from 'cc';
 import { Main } from './main';
 import { LevelMgr, GameMode, GameType } from './levelmgr';
 import { frm_main } from './frm_main';
@@ -25,7 +25,7 @@ export class gridcreator extends Component {
     public static map: (number | number[])[][] = [];
     public gridsize: number = 100;
     private level_cur: number = 0;
-    private pl: Sprite[] = [];
+    private pl: SpriteFrame[] = [];
 
     private gameOver: boolean = false; // 游戏结束标志
 
@@ -40,7 +40,9 @@ export class gridcreator extends Component {
     public get isLayerSplitMode(): boolean {
         return this.gameType === GameType.LAYER_SPLIT;
     }
-    
+    public get isLianliankanMode(): boolean {
+        return this.gameType === GameType.NORMAL;
+    }
     public get isInfiniteMode(): boolean {
         return this.gameType === GameType.INFINITE;
     }
@@ -257,7 +259,7 @@ export class gridcreator extends Component {
         }
     }
  
-    get plSprites(): Sprite[] {
+    get plSprites(): SpriteFrame[] {
         // 这里需要适配Cocos的资源获取方式
         // 假设Main.DispEvent是一个全局事件分发函数
         return Main.DispEvent('EVENT_GETPLSPRITES');// (director.emit('EVENT_GETRES') as unknown) as Sprite[];
@@ -367,6 +369,7 @@ export class gridcreator extends Component {
         
         this.PlayEffect();
     }
+    
     Create(level_playing: number) {
         this.gameOver = false;
         // 确保重置游戏类型为普通模式
@@ -527,6 +530,9 @@ export class gridcreator extends Component {
 
         this.PlayEffect();
     }
+    /**
+     * 播放出场效果
+     */
     PlayEffect() {
         // 计算中心点位置
         const uiTransform = this.node.getComponent(UITransform);
@@ -552,7 +558,7 @@ export class gridcreator extends Component {
                     centerY + randomOffsetY,
                     originalPosition.z
                 );
-                
+                card.oldpos = child.position.clone(); // 保存原始位置
                 // 先将所有卡片移动到随机聚集位置
                 child.setPosition(gatherPos); 
             }
@@ -572,14 +578,14 @@ export class gridcreator extends Component {
         const centerY = 0;
         
         for (const child of children) {
-            const tobj = child.getComponent('TObject') as any;
+            const tobj = child.getComponent('TObject') as TObject;
             // 添加空值检查，防止tobj为null时出现错误
             if (!tobj || tobj.x === undefined || tobj.y === undefined) {
                 continue;
             }
             
-            let pos = this.tref.add(new Vec2((tobj.x) * this.gridsize, (tobj.y) * this.gridsize)); 
-            const targetPos = new Vec3(pos.x, pos.y, 0);
+            //let pos = this.tref.add(new Vec2((tobj.x) * this.gridsize, (tobj.y) * this.gridsize)); 
+            const targetPos = tobj.oldpos;
             
             // 设置初始位置为中心点，实现爆炸效果
             child.setPosition(new Vec3(centerX, centerY, 0));
@@ -847,8 +853,8 @@ export class gridcreator extends Component {
         this.node.addChild(cx);
 
         // 设置精灵
-        const xx = this.pl[type];
-        const tobj = cx.getComponent('TObject') as any;
+        const xx = this.pl[type] as SpriteFrame;
+        const tobj = cx.getComponent('TObject') as TObject;
         // 注意：mapPos是基于1的索引，而卡牌的x,y属性是基于0的索引
         tobj?.SetSprite(mapPos.x - 1, mapPos.y - 1, type, xx, this);
 
@@ -875,8 +881,8 @@ export class gridcreator extends Component {
         
         const maskSprite = mask.addComponent(Sprite);
         // 修复：正确设置spriteFrame，从Sprite数组中获取spriteFrame
-        if (this.pl[cardType] && this.pl[cardType].spriteFrame) {
-            maskSprite.spriteFrame = this.pl[cardType].spriteFrame; // 使用相同类型的精灵帧
+        if (this.pl[cardType] && this.pl[cardType]) {
+            maskSprite.spriteFrame = this.pl[cardType]; // 使用相同类型的精灵帧
         }
         maskSprite.color = new Color(255, 255, 255, 100); // 半透明白色
         
@@ -905,26 +911,22 @@ export class gridcreator extends Component {
         const targetPos2D = this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize, (mapPos.y - 1) * this.gridsize));
         const targetPos = new Vec3(targetPos2D.x, targetPos2D.y, 0);
         
- 
-        
-
+        cardNode.setPosition(targetPos);
         // 根据游戏模式选择不同的动画效果
         // 修复：添加对分层叠加模式的支持
         if (this.isSanxiaoMode) {
             // 三消模式：快速简洁的动画
-            cardNode.setPosition(targetPos);
             cardNode.setScale(new Vec3(0.1, 0.1, 0.1));
             this.addSanxiaoEntranceAnimation(cardNode, targetPos, cardType);
         } else if (this.isLayerSplitMode) {
             // 分层叠加模式：使用特定的动画效果
                            // 设置初始状态
             cardNode.setScale(new Vec3(0.1, 0.1, 0.1));
-            cardNode.setPosition(targetPos);
             this.addLayerSplitEntranceAnimation(cardNode, targetPos, cardType);
         } else if(this.isInfiniteMode  )
         {
             cardNode.setScale(new Vec3(0.1, 0.1, 0.1));
-            cardNode.setPosition(targetPos);
+
             this.addLayerSplitEntranceAnimation(cardNode, targetPos, cardType);
         }
         else {
@@ -1902,46 +1904,9 @@ export class gridcreator extends Component {
                 cardIndex++;
             }
         }
-
-        // // 原有实现注释掉
-        // for(let i=0;i<cardTypes.length;i++){
-        //     const mapPos = new Vec2(i%this.infiniteWid+1, Math.floor(i/this.infiniteWid)+1);
-            
-        //     (gridcreator.map[mapPos.x][mapPos.y] as number[]).push(cardTypes[i]);
-        //     this.SpawnLayeredCard(mapPos, cardTypes[i], 0);
-        // }
-
-        // // 在网格中随机填充卡牌
-        // let cardIndex = 0;
-        // for (let i = 0; i < positions.length && cardIndex < cardTypes.length; i++) {
-        //     const pos = positions[i];
-        //     const x = pos.x;
-        //     const y = pos.y;
-            
-        //     // 每个格子放置2-4层卡牌
-        //     const layers = Math.floor(Math.random() * 3) + 2;
-            
-        //     // 为每一层生成卡牌
-        //     for (let layer = 0; layer < layers && cardIndex < cardTypes.length; layer++) {
-        //         // 获取预先生成的类型
-        //         const type = cardTypes[cardIndex];
-        //         cardIndex++;
-                
-        //         // 更新地图
-        //         (gridcreator.map[x + 1][y + 1] as number[]).push(type);
-                
-        //         // 生成卡片
-        //         const mapPos = new Vec2(x + 1, y + 1);
-        //         this.SpawnLayeredCard(mapPos, type, layer);
-        //     }
-        // }
         
-        console.log(`容器尺寸: ${availableWidth}x${availableHeight}`);
-        console.log(`网格尺寸: ${this.infiniteWid}x${this.infiniteHei}`);
-        console.log(`单元格尺寸: ${cellWidth}x${cellHeight}, 最终尺寸: ${this.gridsize}`);
-        console.log(`所需空间: ${this.infiniteWid * this.gridsize}x${this.infiniteHei * this.gridsize}`);
-        console.log(`分层叠加模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
-        console.log(`总共生成卡牌数量: ${cardTypes.length}`);
+        //
+        this.PlayEffect();
     }
     
     /**

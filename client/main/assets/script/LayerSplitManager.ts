@@ -601,7 +601,9 @@ export class LayerSplitManager extends Component {
             // 添加保护性检查，确保卡牌节点仍然有效
             if (card && card.isValid) {
                 try {
-                    card.destroy();
+                    card.getComponent(TObject).PlayEffect(()=>{
+
+                    });
                 } catch (error) {
                     console.warn('销毁卡牌时出错:', error);
                 }
