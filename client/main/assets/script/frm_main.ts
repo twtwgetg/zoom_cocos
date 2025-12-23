@@ -867,11 +867,11 @@ export class frm_main extends frmbase {
      */
     private playToolButtonsEntranceAnimation() {
         // 如果是三消模式，不显示道具按钮
-        // if (this.level_playing === -2) {
-        //     return;
-        // }
+        if (this.level_playing === -2) {
+            return;
+        }
         
-        // // 先确保所有道具按钮都显示
+        // 先确保所有道具按钮都显示
         // this.showToolButtons();
         
         // const toolButtons = [this.btn_remind, this.btn_time, this.btn_refrush];

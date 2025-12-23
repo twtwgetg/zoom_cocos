@@ -1961,7 +1961,7 @@ export class gridcreator extends Component {
         cx.name = `${mapPos.x - 1},${mapPos.y - 1}_layer${layer}`;
         
         // 添加位移效果以显示叠加
-        const offset = layer * 7; // 每层偏移5个像素
+        const offset = layer * 5; // 每层偏移5个像素
         // 修改偏移方向为相反方向
         // 修复：使用tref确保居中对齐
         const targetPos2D = this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize - offset, (mapPos.y - 1) * this.gridsize + offset));
