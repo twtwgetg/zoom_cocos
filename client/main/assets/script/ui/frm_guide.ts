@@ -3,6 +3,8 @@ import { frmbase } from './frmbase';
 import { Main } from '../main';
 import { TObject } from '../Card/TObject';
 import { PlayerPrefb } from '../PlayerPrefb';
+import { ItemType } from '../item/item_tools';
+import { titem } from '../item/titem';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_guide')
@@ -17,6 +19,7 @@ export class frm_guide extends frmbase {
     mask: Node = null!;
     static isShow: any;
     static currCard: TObject | null = null;
+    static remind: titem | null = null;
     start() {
         Main.RegistEvent('GUIDE_SHOW', this.show_guide.bind(this));
     }
@@ -26,17 +29,27 @@ export class frm_guide extends frmbase {
     protected OnHide(): void {
         frm_guide.isShow = false;
     }
-    
+    static data: any;
     show_guide(data: any) { 
         this.show(); 
-        this.scheduleOnce(() => {
-            this.bg.setParent(this.gb);
-            // bg填充整个面板
-            var uit = this.gb.getComponent(UITransform)!;
-            this.bg.getComponent(UITransform)!.width = uit.width;
-            this.bg.getComponent(UITransform)!.height = uit.height; 
-            this.bg.setParent(this.mask);  
-        }, 0);
+        frm_guide.data = data;
+        if(data=="normal"){
+            this.scheduleOnce(() => {
+                this.bg.setParent(this.gb);
+                // bg填充整个面板
+                var uit = this.gb.getComponent(UITransform)!;
+                this.bg.getComponent(UITransform)!.width = uit.width;
+                this.bg.getComponent(UITransform)!.height = uit.height; 
+                this.bg.setParent(this.mask);  
+            }, 0);
+        }
+        else if(data=="remind")
+        {
+
+        }
+        else{
+            console.error("Unknown guide type: " + data);
+        }
         return null;
     }
     card: TObject[] = [];
@@ -45,6 +58,30 @@ export class frm_guide extends frmbase {
         if(!this.isShow){
             return ;
         }
+        if(frm_guide.data=="normal"){
+            this.ProcNormalGuide();
+        }
+        else if(frm_guide.data=="remind")
+        {
+            this.ProcRemindGuide();
+        }
+    }
+    ProcRemindGuide() {
+        if(frm_guide.state==0){
+            frm_guide.remind= Main.DispEvent('GET_REMIND_CTRL',ItemType.remind);
+            frm_guide.state = 1;
+        }
+        else if(frm_guide.state==1){
+            this.setGuidePos(frm_guide.remind.node);
+            
+        }
+        else if(frm_guide.state==2){
+            frm_guide.state = 0;
+            PlayerPrefb.setInt('GuideStep',5);
+            this.hide();
+        }
+    }
+    ProcNormalGuide() {
         if(frm_guide.state==0)
         {
             // 指引开始
@@ -80,13 +117,17 @@ export class frm_guide extends frmbase {
         }
     }
     async setGuidePos(node: Node) { 
+        let uit = node.getComponent(UITransform)!;
         // // 设置mask的位置
-        this.mask.setWorldPosition(node.worldPosition);
-        this.mask.getComponent(UITransform).width = node.getComponent(UITransform).width;
-        this.mask.getComponent(UITransform).height = node.getComponent(UITransform).height; 
+        let refx = uit.anchorX * uit.width;
+        let refy = uit.anchorY * uit.height;
+        this.mask.setWorldPosition(new Vec3(node.worldPosition.x - refx, node.worldPosition.y - refy, node.worldPosition.z));
+        this.mask.getComponent(UITransform).width = uit.width;
+        this.mask.getComponent(UITransform).height = uit.height; 
+
+
         this.bg.setPosition(new Vec3(-this.mask.position.x, -this.mask.position.y, 0.0));     
- 
-             await Promise.all([
+            await Promise.all([
             new Promise<void>((resolve) => {
                 tween(this.guide_arrow)
                     .to(0.1, { position: new Vec3(this.mask.position.x, this.mask.position.y) }, { easing: 'quadInOut' })

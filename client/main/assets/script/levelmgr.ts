@@ -131,7 +131,7 @@ export class LevelMgr {
     public static getCount(level: number): number {
         // 第一关只用更少的碎片种类
         if (level === 0) {
-            return 6; // 第一关只用6种不同的碎片（比之前更少）
+            return 3; // 第一关只用3种不同的碎片（比之前更少）
         }
         
         const t = level / LevelMgr._maxlevel;
@@ -142,7 +142,7 @@ export class LevelMgr {
     public static getWid(level_playing: number): number {
         // 第一关使用更小的网格
         if (level_playing === 0) {
-            return 3; // 第一关只有3列
+            return 2; // 第一关只有3列
         }
         
         const t = level_playing / LevelMgr.realmaxlevel;
@@ -161,7 +161,7 @@ export class LevelMgr {
     public static getHei(level_playing: number): number {
         // 第一关使用更小的网格
         if (level_playing === 0) {
-            return 6; // 第一关只有6行
+            return 3; // 第一关只有3行
         }
         
         const t = level_playing / LevelMgr.realmaxlevel;

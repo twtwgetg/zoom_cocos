@@ -36,7 +36,7 @@ export class TObject extends Component {
                             if (node1) {
                                 const tobj1 = node1.getComponent(TObject); 
                                 ret.push(tobj1);
-                                tobj1.ShowTiXing();
+                                //tobj1.ShowTiXing();
                             }
                         }
                     }
@@ -50,7 +50,7 @@ export class TObject extends Component {
                             if (node2) {
                                 const tobj2 = node2.getComponent(TObject); 
                                 ret.push(tobj2);
-                                tobj2.ShowTiXing();
+                                //tobj2.ShowTiXing();
                             }
                         }
                     }
@@ -520,7 +520,7 @@ export class TObject extends Component {
             if(frm_guide.currCard != this){
                 return;
             }
-            frm_guide.state++;
+            frm_guide.state++; 
         }
         
 

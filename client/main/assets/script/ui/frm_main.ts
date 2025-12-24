@@ -231,8 +231,23 @@ export class frm_main extends frmbase {
         Main.RegistEvent("CARD_ANIMATIONS_COMPLETE",(x)=>{ 
           
             if(PlayerPrefb.getInt("GuideStep",1)==1){
-                Main.DispEvent("GUIDE_SHOW",x);
+                Main.DispEvent("GUIDE_SHOW","normal");
             }
+            // 指引提醒道具
+            if(PlayerPrefb.getInt("GuideStep",1)==4){
+                Main.DispEvent("GUIDE_SHOW","remind");
+            }
+        });
+        Main.RegistEvent("GET_REMIND_CTRL",(x)=>{
+            for(let i=0;i<this.node_list.children.length;i++)
+            {
+                let item = this.node_list.children[i].getComponent(titem);
+                if(item.itemtype === x)
+                {
+                    return item;
+                }
+            }
+            return null;
         });
         Main.RegistEvent("event_play",(x)=>{ 
 
