@@ -23,7 +23,9 @@ export class frmbase extends Component {
     protected get gb(): Node | null {
         return this.node.getChildByName('gb');
     }
-
+    protected get isShow(): boolean {
+        return this.gb?.active || false;
+    }
     // 显示界面
     public show(): void {
         const gbNode = this.gb;

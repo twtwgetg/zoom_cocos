@@ -2,12 +2,64 @@
 // 首先修改导入部分，添加tween
 import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween, error } from 'cc';
 import { gridcreator } from '../gridcreator';
+        // 监听遮罩的触摸事件
+import { EventTouch } from 'cc';
 import { Main } from '../main';
 import { LevelMgr, GameMode } from '../levelmgr';
+import { frm_guide } from '../ui/frm_guide';
 const { ccclass, property } = _decorator;
 
 @ccclass('TObject')
 export class TObject extends Component {
+    GetTixing():TObject[] {
+         if (!this.creator || !this.creator.node) {
+            console.error("Tixing: creator or creator.node is null");
+            return [];
+        }
+        
+        let ret: TObject[] = [];
+        // 遍历 creator 节点的所有子节点
+        for (let i = 0; i < this.creator!.node.children.length; i++) {
+            const tx = this.creator!.node.children[i];
+            const _sel = tx.getComponent(TObject);
+            if (_sel != null) {
+                let pres: Vec2[] = [];
+                // 调用连连看连接检查方法
+                let c = gridcreator.CanConnect(this.x + 1, this.y + 1, _sel.x + 1, _sel.y + 1, pres);
+                if (c) {
+                     
+                    if (pres.length > 0) {
+                        const p = pres[pres.length - 1];
+                        // 添加边界检查
+                        if (p.x - 1 >= 0 && p.y - 1 >= 0) {
+                            const node1 = this.creator!.node.getChildByName(`${p.x - 1},${p.y - 1}`);
+                            if (node1) {
+                                const tobj1 = node1.getComponent(TObject); 
+                                ret.push(tobj1);
+                                tobj1.ShowTiXing();
+                            }
+                        }
+                    }
+                    
+                    // 获取路径第一个点并高亮显示
+                    if (pres.length > 0) {
+                        const p2 = pres[0];
+                        // 添加边界检查
+                        if (p2.x - 1 >= 0 && p2.y - 1 >= 0) {
+                            const node2 = this.creator!.node.getChildByName(`${p2.x - 1},${p2.y - 1}`);
+                            if (node2) {
+                                const tobj2 = node2.getComponent(TObject); 
+                                ret.push(tobj2);
+                                tobj2.ShowTiXing();
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
     /**
      * 隐藏模式
      * @param arg0 
@@ -129,141 +181,7 @@ export class TObject extends Component {
             return;
         }
         this.sel.node.active = false;
-    }
-    onButtonClick():void { 
-        // 上报第一次碰撞事件（玩家开始玩了）
-        if (!TObject.firstClickReported) {
-            TObject.firstClickReported = true;
-            // 使用Main.DispEvent触发埋点事件
-            Main.DispEvent("event_peng");
-        }
-        
-        // 在困难模式下增加点击误判率
-        if (LevelMgr.gameMode === GameMode.HARD) {
-            // 10%的概率忽略点击
-            if (Math.random() < 0.1) {
-                console.log("困难模式下点击被忽略");
-                return;
-            }
-        }
-        
-        // 检查creator是否存在
-        if (!this.creator) {
-            console.error("TObject creator is null");
-            return;
-        }
-        
-        // 检查是否为记忆模式
-        if (this.creator && (this.creator as any).gameType === 'mem') {
-            // 记忆模式逻辑
-            this.handleMemoryMode();
-        } 
-        // 检查是否为三消模式
-        else if (this.creator && (this.creator as any).isSanxiaoMode) {
-            // 三消模式逻辑
-            this.handleSanxiaoMode();
-        }
-        // 检查是否为分层叠加模式
-        else if (this.creator && (this.creator as any).isLayerSplitMode) {
-            // 分层叠加模式逻辑
-            // 检查卡牌是否已经被移动到容器中
-            if (this.released) {
-                console.log('卡牌已经被移动到容器中，无法再次点击');
-                return;
-            }
-            
-            // 检查当前位置是否有上层卡牌（即当前卡牌是否为顶层卡牌）
-            const cell = gridcreator.map[this.x + 1][this.y + 1];
-            if (Array.isArray(cell) && cell.length > 0) {
-                // 获取该位置的卡牌数量，判断当前卡牌是否为顶层
-                const totalLayers = cell.length;
-                // 在分层叠加模式中，TObject的layer属性应该表示当前卡牌在该位置的层级
-                // 但TObject类中没有直接的layer属性，我们需要通过节点名称或其他方式判断
-                // 从SpawnLayeredCard方法中可以看到，节点名称格式为 "x,y_layerN"
-                const nodeName = this.node.name;
-                const layerMatch = nodeName.match(/_layer(\d+)$/);
-                let currentCardLayer = 0;
-                if (layerMatch) {
-                    currentCardLayer = parseInt(layerMatch[1]);
-                }
-                
-                // 如果当前卡牌不是顶层卡牌（即当前层级不等于总层数-1），则不允许点击
-                if (currentCardLayer !== totalLayers - 1) {
-                    console.log(`位置(${this.x}, ${this.y})有上层卡牌，当前卡牌层级${currentCardLayer}，总层数${totalLayers}，无法点击`);
-                    // 触发震动反馈，提示玩家不能选择被覆盖的卡牌
-                    this.triggerScreenShake();
-                    return;
-                }
-            }
-            
-            // 添加保护性检查，确保节点仍然有效
-            if (this.node && this.node.isValid) {
-                // 在移动卡牌之前，从地图中移除顶层卡牌
-                const cell = gridcreator.map[this.x + 1][this.y + 1];
-                if (Array.isArray(cell) && cell.length > 0) {
-                    cell.pop(); // 移除顶层卡牌
-                }
-                
-                // 标记卡牌为已释放（已移动到容器中）
-                this.released = true;
-                
-                // 直接将卡牌移动到容器中
-                Main.DispEvent("event_move_to_container", this.node);
-            } else {
-                console.warn("试图移动无效的卡牌节点到容器中");
-            }
-        }
-        // 检查是否为连连看模式
-        else if (this.creator && (this.creator as any).isLianliankanMode) {
-            // 连连看模式逻辑
-            if (TObject.lastobj !== null) {
-                const poslist: Vec2[] = [];
-                if (this.Check(TObject.lastobj, this, poslist)) {
-                    this.released = true;
-                    const gb = TObject.lastobj;
-                    gb.released = true;
-
-                    // 更新地图数据
-                    // 修复：在分层叠加模式下，需要正确更新地图数据
-                    if (this.creator && (this.creator as any).isLayerSplitMode) {
-                        // 在分层叠加模式下，需要移除顶层卡牌而不是整个位置
-                        const lastCell = gridcreator.map[gb.x + 1][gb.y + 1];
-                        const selfCell = gridcreator.map[this.x + 1][this.y + 1];
-                        
-                        if (Array.isArray(lastCell) && lastCell.length > 0) {
-                            lastCell.pop(); // 移除顶层卡牌
-                        }
-                        
-                        if (Array.isArray(selfCell) && selfCell.length > 0) {
-                            selfCell.pop(); // 移除顶层卡牌
-                        }
-                    } else {
-                        // 在普通模式下，清空整个位置
-                        gridcreator.map[gb.x + 1][gb.y + 1] = 0;
-                        gridcreator.map[this.x + 1][this.y + 1] = 0;
-                    }
-
-                    TObject.obj = null;
-
-                    // 开始显示连线动画
-                    Director.instance.getScheduler().schedule(() => {
-                        this.showline(gb, this, poslist);
-                    }, this, 0, 0, 0, false);
-                } else {
-                    // 两个卡牌相同但不能消除，触发震动效果
-                    if (TObject.lastobj.type === this.type) {
-                        this.triggerScreenShake();
-                    }
-                    TObject.lastobj = this;
-                }
-            } else {
-                TObject.lastobj = this;
-            }
-        }
-        else{
-            console.error("No valid game mode found", this.creator);
-        }
-    }
+    } 
     ForceShow(): void {
         if (this.hideModeTimer) {
                 clearTimeout(this.hideModeTimer);
@@ -593,7 +511,151 @@ export class TObject extends Component {
     }
     start() {
         //响应鼠标点击事件
-        this.getComponent(Button)!.node.on('click',this.onButtonClick, this);
+        this.getComponent(Button)!.node.on('click',this.onMaskTouch, this);
+
+        //this.node.on('touchstart', this.onMaskTouch, this);
+    }
+    onMaskTouch() {
+        if(frm_guide.isShow ){
+            if(frm_guide.currCard != this){
+                return;
+            }
+            frm_guide.state++;
+        }
+        
+
+        // 上报第一次碰撞事件（玩家开始玩了）
+        if (!TObject.firstClickReported) {
+            TObject.firstClickReported = true;
+            // 使用Main.DispEvent触发埋点事件
+            Main.DispEvent("event_peng");
+        }
+        
+        // 在困难模式下增加点击误判率
+        if (LevelMgr.gameMode === GameMode.HARD) {
+            // 10%的概率忽略点击
+            if (Math.random() < 0.1) {
+                console.log("困难模式下点击被忽略");
+                return;
+            }
+        }
+        
+        // 检查creator是否存在
+        if (!this.creator) {
+            console.error("TObject creator is null");
+            return;
+        }
+        
+        // 检查是否为记忆模式
+        if (this.creator && (this.creator as any).gameType === 'mem') {
+            // 记忆模式逻辑
+            this.handleMemoryMode();
+        } 
+        // 检查是否为三消模式
+        else if (this.creator && (this.creator as any).isSanxiaoMode) {
+            // 三消模式逻辑
+            this.handleSanxiaoMode();
+        }
+        // 检查是否为分层叠加模式
+        else if (this.creator && (this.creator as any).isLayerSplitMode) {
+            // 分层叠加模式逻辑
+            // 检查卡牌是否已经被移动到容器中
+            if (this.released) {
+                console.log('卡牌已经被移动到容器中，无法再次点击');
+                return;
+            }
+            
+            // 检查当前位置是否有上层卡牌（即当前卡牌是否为顶层卡牌）
+            const cell = gridcreator.map[this.x + 1][this.y + 1];
+            if (Array.isArray(cell) && cell.length > 0) {
+                // 获取该位置的卡牌数量，判断当前卡牌是否为顶层
+                const totalLayers = cell.length;
+                // 在分层叠加模式中，TObject的layer属性应该表示当前卡牌在该位置的层级
+                // 但TObject类中没有直接的layer属性，我们需要通过节点名称或其他方式判断
+                // 从SpawnLayeredCard方法中可以看到，节点名称格式为 "x,y_layerN"
+                const nodeName = this.node.name;
+                const layerMatch = nodeName.match(/_layer(\d+)$/);
+                let currentCardLayer = 0;
+                if (layerMatch) {
+                    currentCardLayer = parseInt(layerMatch[1]);
+                }
+                
+                // 如果当前卡牌不是顶层卡牌（即当前层级不等于总层数-1），则不允许点击
+                if (currentCardLayer !== totalLayers - 1) {
+                    console.log(`位置(${this.x}, ${this.y})有上层卡牌，当前卡牌层级${currentCardLayer}，总层数${totalLayers}，无法点击`);
+                    // 触发震动反馈，提示玩家不能选择被覆盖的卡牌
+                    this.triggerScreenShake();
+                    return;
+                }
+            }
+            
+            // 添加保护性检查，确保节点仍然有效
+            if (this.node && this.node.isValid) {
+                // 在移动卡牌之前，从地图中移除顶层卡牌
+                const cell = gridcreator.map[this.x + 1][this.y + 1];
+                if (Array.isArray(cell) && cell.length > 0) {
+                    cell.pop(); // 移除顶层卡牌
+                }
+                
+                // 标记卡牌为已释放（已移动到容器中）
+                this.released = true;
+                
+                // 直接将卡牌移动到容器中
+                Main.DispEvent("event_move_to_container", this.node);
+            } else {
+                console.warn("试图移动无效的卡牌节点到容器中");
+            }
+        }
+        // 检查是否为连连看模式
+        else if (this.creator && (this.creator as any).isLianliankanMode) {
+            // 连连看模式逻辑
+            if (TObject.lastobj !== null) {
+                const poslist: Vec2[] = [];
+                if (this.Check(TObject.lastobj, this, poslist)) {
+                    this.released = true;
+                    const gb = TObject.lastobj;
+                    gb.released = true;
+
+                    // 更新地图数据
+                    // 修复：在分层叠加模式下，需要正确更新地图数据
+                    if (this.creator && (this.creator as any).isLayerSplitMode) {
+                        // 在分层叠加模式下，需要移除顶层卡牌而不是整个位置
+                        const lastCell = gridcreator.map[gb.x + 1][gb.y + 1];
+                        const selfCell = gridcreator.map[this.x + 1][this.y + 1];
+                        
+                        if (Array.isArray(lastCell) && lastCell.length > 0) {
+                            lastCell.pop(); // 移除顶层卡牌
+                        }
+                        
+                        if (Array.isArray(selfCell) && selfCell.length > 0) {
+                            selfCell.pop(); // 移除顶层卡牌
+                        }
+                    } else {
+                        // 在普通模式下，清空整个位置
+                        gridcreator.map[gb.x + 1][gb.y + 1] = 0;
+                        gridcreator.map[this.x + 1][this.y + 1] = 0;
+                    }
+
+                    TObject.obj = null;
+
+                    // 开始显示连线动画
+                    Director.instance.getScheduler().schedule(() => {
+                        this.showline(gb, this, poslist);
+                    }, this, 0, 0, 0, false);
+                } else {
+                    // 两个卡牌相同但不能消除，触发震动效果
+                    if (TObject.lastobj.type === this.type) {
+                        this.triggerScreenShake();
+                    }
+                    TObject.lastobj = this;
+                }
+            } else {
+                TObject.lastobj = this;
+            }
+        }
+        else{
+            console.error("No valid game mode found", this.creator);
+        }
     }
     
     onLoad() {

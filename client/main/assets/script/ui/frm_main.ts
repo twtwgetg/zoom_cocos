@@ -11,6 +11,7 @@ import { PlayerPrefb } from '../PlayerPrefb';
 import { TObject } from '../Card/TObject';
 import { titem } from '../item/titem';
 import { JifenRewardManager } from '../JifenRewardManager'; 
+import { frm_guide } from './frm_guide';
 const { ccclass, property } = _decorator;
 
 @ccclass('frm_main')
@@ -190,10 +191,8 @@ export class frm_main extends frmbase {
         item.scale = new Vec3(1, 1, 1);
     
     }
-    brushMode(x){
-
-        this.lbl_mode.node.active=this.level_playing>0;
-
+    brushMode(x){ 
+        this.lbl_mode.node.active=this.level_playing>0; 
     }
     /**
      * 刷新有限类型
@@ -229,10 +228,16 @@ export class frm_main extends frmbase {
     protected onLoad(): void {
         super.onLoad();
         let that =this;
+        Main.RegistEvent("CARD_ANIMATIONS_COMPLETE",(x)=>{ 
+          
+            if(PlayerPrefb.getInt("GuideStep",1)==1){
+                Main.DispEvent("GUIDE_SHOW",x);
+            }
+        });
         Main.RegistEvent("event_play",(x)=>{ 
 
             this.show();
-
+          
             // 上报进入关卡事件
             ToutiaoEventMgr.reportLevel(x);
             // 上报挑战事件（主动进入游戏）
@@ -598,6 +603,11 @@ export class frm_main extends frmbase {
 
         if(frm_main.isPause) 
             return;
+
+        if(frm_guide.isShow){
+            //指引暂停倒计时
+            return;
+        }
 
         if(!this.jishi) 
             return;

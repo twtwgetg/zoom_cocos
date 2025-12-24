@@ -63,7 +63,7 @@ export class gridcreator extends Component {
         Main.RegistEvent('event_tixing',(x)=>{
             const children = this.node.children;
             for (const child of children) {
-                const p = child.getComponent('TObject') as any;
+                const p = child.getComponent('TObject') as TObject;
                 if (!p) continue;
 
                 if (p.Tixing()) {
@@ -72,6 +72,18 @@ export class gridcreator extends Component {
             }
         });
 
+        Main.RegistEvent('GET_CARD_GUIDE', (x)=>{
+            const children = this.node.children;
+            for (const child of children) {
+                const p = child.getComponent('TObject') as TObject;
+                if (!p) continue;
+
+                let tx = p.GetTixing(); 
+                if(tx.length>0){
+                    return tx;
+                }
+            }
+        });
         Main.RegistEvent('game_lose', (x)=>{
             this.clear();
             this.gameOver = true;
@@ -566,16 +578,37 @@ export class gridcreator extends Component {
         
         // 延迟0.5秒后播放tUpdateCardPositions动画
         setTimeout(() => {
-            this.tUpdateCardPositions(1.0);
+            this.tUpdateCardPositions(1.0, () => {
+                Main.DispEvent('CARD_ANIMATIONS_COMPLETE');
+            });
         }, 500);
     }
     
-    private tUpdateCardPositions(time=0.3) {
+    private tUpdateCardPositions(time=0.3, onComplete?: () => void) {
         const children = this.node.children;
         
         // 计算中心点位置
         const centerX = 0;
         const centerY = 0;
+        
+        // 计算需要执行动画的子节点数量
+        let totalAnimatedChildren = 0;
+        for (const child of children) {
+            const tobj = child.getComponent('TObject') as TObject;
+            if (tobj && tobj.x !== undefined && tobj.y !== undefined) {
+                totalAnimatedChildren++;
+            }
+        }
+        
+        // 如果没有需要动画的子节点，直接执行完成回调
+        if (totalAnimatedChildren === 0) {
+            if (onComplete) {
+                onComplete();
+            }
+            return;
+        }
+        
+        let completedAnimations = 0;
         
         for (const child of children) {
             const tobj = child.getComponent('TObject') as TObject;
@@ -607,6 +640,14 @@ export class gridcreator extends Component {
                     onComplete: () => {
                         // 动画完成后确保最终位置正确
                         child.setPosition(targetPos);
+                        
+                        // 增加完成计数
+                        completedAnimations++;
+                        
+                        // 检查是否所有动画都已完成
+                        if (completedAnimations >= totalAnimatedChildren && onComplete) {
+                            onComplete();
+                        }
                     }
                 })
                 .start();
