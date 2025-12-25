@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, tween, UITransform, Vec2, Vec3 } from 'cc';
+import { _decorator, Button, Component, Node, tween, UITransform, Vec2, Vec3 } from 'cc';
 import { frmbase } from './frmbase';
 import { Main } from '../main';
 import { TObject } from '../Card/TObject';
@@ -20,8 +20,15 @@ export class frm_guide extends frmbase {
     static isShow: any;
     static currCard: TObject | null = null;
     static remind: titem | null = null;
+    static getreward: Button | null = null;
     start() {
         Main.RegistEvent('GUIDE_SHOW', this.show_guide.bind(this));
+        Main.RegistEvent('event_claim_jifen_reward',(x)=>{
+            frm_guide.state=2;
+        });
+        Main.RegistEvent('event_result_next',(x)=>{
+            frm_guide.state=4;
+        });
     }
     protected OnShow(): void {
         frm_guide.isShow = true;
@@ -29,23 +36,31 @@ export class frm_guide extends frmbase {
     protected OnHide(): void {
         frm_guide.isShow = false;
     }
-    static data: any;
-    show_guide(data: any) { 
-        this.show(); 
-        frm_guide.data = data;
-        if(data=="normal"){
-            this.scheduleOnce(() => {
+    protected onLoad(): void {
+        super.onLoad();
+        this.scheduleOnce(() => {
                 this.bg.setParent(this.gb);
                 // bg填充整个面板
                 var uit = this.gb.getComponent(UITransform)!;
                 this.bg.getComponent(UITransform)!.width = uit.width;
                 this.bg.getComponent(UITransform)!.height = uit.height; 
                 this.bg.setParent(this.mask);  
-            }, 0);
+        }, 0);
+    }
+    static data: any;
+    show_guide(data: any) { 
+        this.show(); 
+        frm_guide.data = data;
+        frm_guide.state = 0;
+        if(data=="normal"){
+            
         }
         else if(data=="remind")
         {
-
+           
+        }
+        else if(data=="getreward"){
+           
         }
         else{
             console.error("Unknown guide type: " + data);
@@ -64,6 +79,34 @@ export class frm_guide extends frmbase {
         else if(frm_guide.data=="remind")
         {
             this.ProcRemindGuide();
+        }
+        else if(frm_guide.data=="getreward"){
+            this.ProcGetRewardGuide();
+        }
+    }
+    ProcGetRewardGuide() {
+        if(frm_guide.state==0){
+            frm_guide.getreward = Main.DispEvent('GET_GETREWARD_CTRL');
+            this.setGuidePos(frm_guide.getreward.node);
+            frm_guide.state = 1;
+        }
+        else if(frm_guide.state==1){
+            
+        }
+        else if(frm_guide.state==2)
+        {
+            frm_guide.getreward = Main.DispEvent('GET_GETREWARD_NEXT');
+            this.setGuidePos(frm_guide.getreward.node);
+            frm_guide.state = 3;
+        }
+        else if(frm_guide.state==3)
+        {
+            
+        }
+        else if(frm_guide.state==4)
+        {
+            frm_guide.state = 0;
+            this.hide();
         }
     }
     ProcRemindGuide() {

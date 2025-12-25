@@ -237,6 +237,8 @@ export class frm_main extends frmbase {
             if(PlayerPrefb.getInt("GuideStep",1)==4){
                 Main.DispEvent("GUIDE_SHOW","remind");
             }
+
+            
         });
         Main.RegistEvent("GET_REMIND_CTRL",(x)=>{
             for(let i=0;i<this.node_list.children.length;i++)

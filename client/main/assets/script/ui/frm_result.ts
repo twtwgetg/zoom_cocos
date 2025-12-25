@@ -115,8 +115,16 @@ export class frm_result extends frmbase {
             this.btn_again_win.node.active = true;
             this.btn_menu_win.node.active = true;
             this.btn_nextlevel.node.active = true;
+            this.checkGuide();
         }
     }
+    checkGuide() {
+        if (PlayerPrefb.getInt("GuideStep_GetReward", 1) == 1) {
+            Main.DispEvent("GUIDE_SHOW", "getreward");
+            PlayerPrefb.setInt("GuideStep_GetReward", 2);
+        }
+    }
+    
     protected onLoad(): void {
 
         
@@ -181,6 +189,7 @@ export class frm_result extends frmbase {
 
         this.btn_nextlevel.node.on(Button.EventType.CLICK, () =>
         { 
+            Main.DispEvent("event_result_next");
             if(this.level_played<LevelMgr.realmaxlevel)
             {
                 LevelMgr.level = Math.max(LevelMgr.level, this.level_played + 1);
@@ -194,8 +203,14 @@ export class frm_result extends frmbase {
             this.btn_again_win.node.active = true;
             this.btn_menu_win.node.active = true;
             this.btn_nextlevel.node.active = true;
+            this.checkGuide();
         });
-
+        Main.RegistEvent("GET_GETREWARD_CTRL", (x) => {
+            return this.btn_get_jifen_reward;
+        });
+        Main.RegistEvent("GET_GETREWARD_NEXT", (x) => {
+            return this.btn_nextlevel;
+        });
         Main.RegistEvent("game_win", (x) =>
         {
             this.level_played = x;
@@ -659,6 +674,7 @@ export class frm_result extends frmbase {
      * 领取积分奖励
      */
     private claimJifenReward() {
+        Main.DispEvent('event_claim_jifen_reward');
         // 获取当前积分
         const currentJifen = PlayerPrefb.getInt("jifen", 0);
         

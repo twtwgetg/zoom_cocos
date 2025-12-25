@@ -19,7 +19,11 @@ export enum GameType {
 }
 
 export class LevelMgr {
+    //最大关卡数量
     private static _maxlevel: number = 50;
+
+
+    //最大动物种类数
     private static _maxcount: number = 30;
 
     /**
@@ -64,9 +68,9 @@ export class LevelMgr {
         let oldrefrush = tools.num_brush;
         let oldtime = tools.num_time;
         PlayerPrefb.Init(); // 初始化本地存储
-        tools.num_Remind = oldremind;
-        tools.num_brush = oldrefrush;
-        tools.num_time = oldtime;
+        // tools.num_Remind = oldremind;
+        // tools.num_brush = oldrefrush;
+        // tools.num_time = oldtime;
         Main.DispEvent("event_begin");
     }
 
@@ -145,14 +149,14 @@ export class LevelMgr {
             return 2; // 第一关只有3列
         }
         
-        const t = level_playing / LevelMgr.realmaxlevel;
+        const t = level_playing / LevelMgr._maxlevel;
         // 增加网格宽度难度
         if (t < 0.15) {
-            return 4; // 早期关卡保持简单
+            return 3; // 早期关卡保持简单
         } else if (t < 0.4) {
-            return 6; // 中期关卡适中
+            return 4; // 中期关卡适中
         } else if (t < 0.7) {
-            return 6 // 中后期关卡较难，确保至少8列
+            return 5 // 中后期关卡较难，确保至少8列
         } else {
             return 6; // 后期关卡更难（从10增加到12）
         }
@@ -164,7 +168,7 @@ export class LevelMgr {
             return 3; // 第一关只有3行
         }
         
-        const t = level_playing / LevelMgr.realmaxlevel;
+        const t = level_playing / LevelMgr._maxlevel;
         // 增加网格高度难度
         if (t < 0.15) {
             return 6; // 早期关卡保持简单
@@ -178,7 +182,7 @@ export class LevelMgr {
     }
 
     public static getSource(level_playing: number): number {
-        const t = level_playing / LevelMgr.realmaxlevel;
+        const t = level_playing / LevelMgr._maxlevel;
         // 改进的得分系统：
         // 1. 基础得分：每关有基础得分，从100分开始
         // 2. 难度加成：随着关卡推进，难度增加，得分也增加

@@ -9410,7 +9410,7 @@
         "__id__": 394
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 398
@@ -12544,7 +12544,7 @@
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": true,
+    "_enableOutline": false,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -14012,7 +14012,7 @@
         "__id__": 498
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 552
@@ -16937,7 +16937,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Button",
+    "_name": "lingqu",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": {
