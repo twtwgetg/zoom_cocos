@@ -240,6 +240,7 @@ export class frm_main extends frmbase {
 
             
         });
+ 
         Main.RegistEvent("GET_REMIND_CTRL",(x)=>{
             for(let i=0;i<this.node_list.children.length;i++)
             {
@@ -643,6 +644,12 @@ export class frm_main extends frmbase {
     
         // 检查是否需要提醒玩家（剩余时间小于15秒）
         if (remainingTime <= 15 && !this.timeWarningShown) {
+
+            if(PlayerPrefb.getInt("GuideStep_Timer",1)==1){
+                PlayerPrefb.setInt("GuideStep_Timer",2);
+                Main.DispEvent("GUIDE_SHOW","item_timer");
+            }
+
             // 无论是否有时间道具都显示提醒
             if (tools.num_time > 0) {
                 // 有时间道具的情况

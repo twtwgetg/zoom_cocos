@@ -219,7 +219,7 @@ export class gridcreator extends Component {
             // 根据关卡难度调整冷却时间
             const cooldownTime = LevelMgr.getToolCooldown(LevelMgr.level);
             console.log(`当前关卡: ${LevelMgr.level + 1}, 冷却时间: ${cooldownTime / 1000}秒`);
-            
+            Main.DispEvent("event_msg_top",{msg: `时间冷却: ${cooldownTime / 1000}秒`});
             this.resetTimeoutId = setTimeout(()=>{
                 console.log('时间冷却结束');
                 Main.DispEvent('event_fruszon',false);

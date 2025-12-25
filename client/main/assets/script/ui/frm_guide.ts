@@ -52,19 +52,19 @@ export class frm_guide extends frmbase {
         this.show(); 
         frm_guide.data = data;
         frm_guide.state = 0;
-        if(data=="normal"){
+        // if(data=="normal"){
             
-        }
-        else if(data=="remind")
-        {
+        // }
+        // else if(data=="remind")
+        // {
            
-        }
-        else if(data=="getreward"){
+        // }
+        // else if(data=="getreward"){
            
-        }
-        else{
-            console.error("Unknown guide type: " + data);
-        }
+        // }
+        // else{
+        //     console.error("Unknown guide type: " + data);
+        // }
         return null;
     }
     card: TObject[] = [];
@@ -83,7 +83,29 @@ export class frm_guide extends frmbase {
         else if(frm_guide.data=="getreward"){
             this.ProcGetRewardGuide();
         }
+        else if(frm_guide.data=="item_timer"){
+            this.ProcItemTimerGuide();
+        }
+        else{
+            console.error("Unknown guide type: " + frm_guide.data);
+        }
     }
+    ProcItemTimerGuide() {
+        if(frm_guide.state==0){
+            frm_guide.remind = Main.DispEvent('GET_REMIND_CTRL',ItemType.time) as titem;
+            frm_guide.state = 1;
+            this.setGuidePos(frm_guide.remind.node);
+        }
+        else if(frm_guide.state==1){
+
+            
+        }
+        else if(frm_guide.state==2){
+            frm_guide.state = 0;
+            this.hide();
+        }
+    }
+    
     ProcGetRewardGuide() {
         if(frm_guide.state==0){
             frm_guide.getreward = Main.DispEvent('GET_GETREWARD_CTRL');
