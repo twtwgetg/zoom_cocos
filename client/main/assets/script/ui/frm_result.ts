@@ -94,6 +94,29 @@ export class frm_result extends frmbase {
         
         return result;
     }
+
+    /**
+     * 显示时处理逻辑
+     */
+    protected OnShow(): void {
+        //先隐藏按钮，待广告播放完毕或关闭广告后显示
+        
+        let ret = Main.DispEvent("event_play_interstitialAd", this);
+        if (ret) {
+            this.btn_again_faild.node.active = false;
+            this.btn_menu_faild.node.active = false;
+            this.btn_again_win.node.active = false;
+            this.btn_menu_win.node.active = false;
+            this.btn_nextlevel.node.active = false;
+        } else {
+            console.log("插屏广告未加载完毕，不显示");
+            this.btn_again_faild.node.active = true;
+            this.btn_menu_faild.node.active = true;
+            this.btn_again_win.node.active = true;
+            this.btn_menu_win.node.active = true;
+            this.btn_nextlevel.node.active = true;
+        }
+    }
     protected onLoad(): void {
 
         
@@ -165,7 +188,13 @@ export class frm_result extends frmbase {
             Main.DispEvent("event_play", this.level_played+1);
         }, this);
 
- 
+        Main.RegistEvent("event_interstitialAd_close", (x)=>{
+            this.btn_again_faild.node.active = true;
+            this.btn_menu_faild.node.active = true;
+            this.btn_again_win.node.active = true;
+            this.btn_menu_win.node.active = true;
+            this.btn_nextlevel.node.active = true;
+        });
 
         Main.RegistEvent("game_win", (x) =>
         {

@@ -20,28 +20,28 @@ export class InterstitialAdManager extends Component {
 
     protected onLoad(): void {
         // 监听游戏结束事件，显示插屏广告
-        Main.RegistEvent("game_win", (x) => {
-            console.log("游戏胜利，准备显示插屏广告");
-            this.showInterstitialAd();
-            return null;
-        });
-
-        Main.RegistEvent("game_lose", (x) => {
-            console.log("游戏失败，准备显示插屏广告");
-            this.showInterstitialAd();
-            return null;
+        Main.RegistEvent("event_play_interstitialAd", (x) => {
+            if(this.isAvailable){
+                this.showInterstitialAd();
+                return true;
+            }
+            else{
+                console.log("插屏广告不可用");
+                return false;
+            }
         });
     }
-
+    private isAvailable: boolean = false;
     /**
      * 初始化插屏广告
      */
     private initInterstitialAd() {
         if (typeof wx === 'undefined') {
             console.log("非字节跳动环境，不加载插屏广告");
+            this.isAvailable = false;
             return;
         }
-
+        this.isAvailable = true;
         // 创建插屏广告实例
         this.interstitialAd = wx.createInterstitialAd({
             adUnitId: this.adUnitId
@@ -68,7 +68,7 @@ export class InterstitialAdManager extends Component {
         this.interstitialAd.onClose(() => {
             this.isAdShowing = false;
             console.log("插屏广告已关闭");
-            
+            Main.DispEvent("event_interstitialAd_close", this);
             // 广告关闭后重新加载，为下次显示做准备
             this.loadAd();
         });
@@ -101,8 +101,7 @@ export class InterstitialAdManager extends Component {
         if (this.isAdLoaded && this.interstitialAd) {
             console.log("显示插屏广告");
             this.interstitialAd.show().catch((err: any) => {
-                console.error("插屏广告显示失败:", err);
-                
+                console.error("插屏广告显示失败:", err); 
                 // 显示失败后重新加载
                 this.loadAd();
             });
