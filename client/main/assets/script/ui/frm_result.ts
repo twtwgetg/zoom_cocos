@@ -103,6 +103,13 @@ export class frm_result extends frmbase {
         
         let ret = Main.DispEvent("event_play_interstitialAd", this);
         if (ret) {
+            this.scheduleOnce(() => {
+                this.btn_again_faild.node.active = true;
+                this.btn_menu_faild.node.active = true;
+                this.btn_again_win.node.active = true;
+                this.btn_menu_win.node.active = true;
+                this.btn_nextlevel.node.active = true;
+            }, 3.5);
             this.btn_again_faild.node.active = false;
             this.btn_menu_faild.node.active = false;
             this.btn_again_win.node.active = false;

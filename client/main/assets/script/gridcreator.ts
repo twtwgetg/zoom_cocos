@@ -324,14 +324,14 @@ export class gridcreator extends Component {
         
         // 获取可用类型数量
         this.pl = this.plSprites;
-        // 设置卡牌种类为15种以增加难度
-        const availableTypes = Math.min(15, this.pl.length - 1);
+        // 根据格子数量设置卡牌种类数量为格子数量/4
+        const availableTypes = Math.min(Math.max(4, Math.floor(totalCells / 4)), this.pl.length - 1); // 至少4种卡牌，最多不超过可用类型
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
         }
 
-        // 生成卡牌：3（成3个才能消除）* 15（卡牌种类）* 5（每种卡牌数量5组）= 225个卡牌
+        // 生成卡牌：3（成3个才能消除）* 20（卡牌种类）* 5（每种卡牌数量5组）= 300个卡牌
         const cardTypes: number[] = [];
         
         // 为每种类型生成5组，每组3个相同的卡牌
@@ -436,7 +436,7 @@ export class gridcreator extends Component {
             console.error('图片类型不足，至少需要2个');
             return;
         }
-
+ 
         // 生成所有位置
         const positions: Vec2[] = [];
         for (let i = 0; i < this.wid; i++) {
@@ -449,75 +449,12 @@ export class gridcreator extends Component {
         this.Shuffle(positions);
 
         // 获取关卡计数（需要实现levelmgr）
-        const count = LevelMgr.getCount(level_playing);
-        
+        const cardTypesCount = Math.min(Math.max(4, Math.floor(totalCells / 4)), availableTypes);
         // 生成卡片对 - 根据当前等级和游戏模式智能选择卡牌
         const cardTypes: number[] = [];
-        
-        // 根据关卡难度和游戏模式调整新旧卡牌比例
-        let newCardRatio: number;
-        if (level_playing === 0) {
-            // 第一关：100%新卡牌，让玩家熟悉基础卡牌
-            newCardRatio = 1.0;
-        } else if (level_playing < 5) {
-            // 前5关：简单模式90%新卡牌，困难模式80%新卡牌
-            newCardRatio = LevelMgr.gameMode === GameMode.EASY ? 0.90 : 0.80;
-        } else if (level_playing < 10) {
-            // 5-10关：简单模式75%新卡牌，困难模式65%新卡牌
-            newCardRatio = LevelMgr.gameMode === GameMode.EASY ? 0.75 : 0.65;
-        } else if (level_playing < 20) {
-            // 10-20关：简单模式60%新卡牌，困难模式50%新卡牌
-            newCardRatio = LevelMgr.gameMode === GameMode.EASY ? 0.60 : 0.50;
-        } else {
-            // 20关以上：简单模式50%新卡牌，困难模式40%新卡牌（增加难度）
-            newCardRatio = LevelMgr.gameMode === GameMode.EASY ? 0.50 : 0.40;
-        }
-        
-        const newCardPairs = Math.ceil(totalPairs * newCardRatio);
-        const reviewCardPairs = totalPairs - newCardPairs;
-        
-        // 生成当前关卡的卡牌类型
-        for (let i = 0; i < newCardPairs; i++) {
-            const type = Math.floor(Math.random() * count) + (level_playing + 1);
-            cardTypes.push(type);
-            cardTypes.push(type); // 成对添加
-        }
-        
-        // 生成复习卡牌类型（从之前关卡选择）
-        for (let i = 0; i < reviewCardPairs; i++) {
-            let type: number;
-            
-            // 根据关卡数和游戏模式智能选择复习范围
-            if (level_playing <= 1) {
-                // 第2关：只复习第1关的卡牌
-                type = Math.floor(Math.random() * LevelMgr.getCount(0)) + 1;
-            } else if (level_playing <= 3) {
-                // 第3-4关：简单模式复习前2关的卡牌，困难模式复习前3关的卡牌
-                const maxReviewLevels = LevelMgr.gameMode === GameMode.EASY ? 2 : 3;
-                const reviewLevel = Math.floor(Math.random() * maxReviewLevels); // 0或1或2
-                type = Math.floor(Math.random() * LevelMgr.getCount(reviewLevel)) + (reviewLevel + 1);
-            } else if (level_playing <= 10) {
-                // 第5-10关：简单模式复习前4关的卡牌，困难模式复习前6关的卡牌
-                const maxReviewLevels = LevelMgr.gameMode === GameMode.EASY ? 4 : 6;
-                const reviewLevel = Math.floor(Math.random() * Math.min(maxReviewLevels, level_playing));
-                type = Math.floor(Math.random() * LevelMgr.getCount(reviewLevel)) + (reviewLevel + 1);
-            } else {
-                // 10关以上：复习前10关的卡牌，但更倾向于近期关卡
-                // 简单模式：70%概率复习最近5关，30%概率复习更早的关卡
-                // 困难模式：50%概率复习最近5关，50%概率复习更早的关卡
-                const recentProbability = LevelMgr.gameMode === GameMode.EASY ? 0.7 : 0.5;
-                let reviewLevel: number;
-                if (Math.random() < recentProbability) {
-                    // 复习最近5关
-                    reviewLevel = level_playing - 1 - Math.floor(Math.random() * Math.min(5, level_playing));
-                } else {
-                    // 复习更早的关卡
-                    reviewLevel = Math.floor(Math.random() * Math.min(10, level_playing - 5));
-                }
-                type = Math.floor(Math.random() * LevelMgr.getCount(reviewLevel)) + (reviewLevel + 1);
-            }
-            cardTypes.push(type);
-            cardTypes.push(type); // 成对添加
+        for (let i = 0; i < cardTypesCount*4; i++) {
+            cardTypes.push(i + 1);
+            cardTypes.push(i + 1); // 成对添加
         }
         
         // 打乱卡牌类型数组
@@ -1298,7 +1235,7 @@ export class gridcreator extends Component {
             }
             
             // 生成新的类型列表，确保每种类型数量是3的倍数
-            const availableTypes = Math.min(10, this.pl.length - 1); // 控制在10种类型以内
+            const availableTypes = Math.min(15, this.pl.length - 1); // 控制在15种类型以内，增加难度
             const typesToUse: number[] = [];
             
             // 先添加现有的类型
@@ -1756,8 +1693,8 @@ export class gridcreator extends Component {
         const pos1 = emptyPositions[0];
         const pos2 = emptyPositions[1];
         
-        // 随机选择卡牌类型
-        const availableTypes = this.pl.length - 1;
+        // 随机选择卡牌类型（增加类型数量以提高难度）
+        const availableTypes = Math.min(10, this.pl.length - 1); // 最多使用10种类型
         if (availableTypes < 1) {
             console.error('没有可用的卡牌类型');
             return false;
@@ -1814,10 +1751,11 @@ export class gridcreator extends Component {
         this.gridsize = Math.min(cellWidth, cellHeight);
         this.gridsize = Math.min(150, this.gridsize);
 
-        // 获取可用类型数量（减少类型数量以降低难度）
+        // 获取可用类型数量（基于格子数量/4）
         this.pl = this.plSprites;
-        // 只使用较少的卡牌类型以降低难度
-        const availableTypes = Math.min(4, this.pl.length - 1); // 最多使用4种类型
+        // 根据格子数量设置卡牌种类数量为格子数量/4
+        const totalSanXiaoCells = this.infiniteWid * this.infiniteHei; // 计算总格子数
+        const availableTypes = Math.min(Math.max(4, Math.floor(totalSanXiaoCells / 4)), this.pl.length - 1); // 至少4种卡牌，最多不超过可用类型
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
@@ -1877,19 +1815,20 @@ export class gridcreator extends Component {
 
         // 获取可用类型数量
         this.pl = this.plSprites;
-        // 设置卡牌种类为20种以增加难度
-        const availableTypes = Math.min(20, this.pl.length - 1);
+        // 根据格子数量设置卡牌种类数量为格子数量/4
+        const totalLayerCells = this.infiniteWid * this.infiniteHei; // 计算总格子数
+        const availableTypes = Math.min(Math.max(4, Math.floor(totalLayerCells / 4)), this.pl.length - 1); // 至少4种卡牌，最多不超过可用类型
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
         }
 
-        // 生成卡牌：3（成3个才能消除）* 20（卡牌种类）* 5（每种卡牌数量5组）= 300个卡牌
+        // 生成卡牌：3（成3个才能消除）* 可用类型数（根据格子数量/4）* 3（每种卡牌数量3组）
         const cardTypes: number[] = [];
         
-        // 为每种类型生成5组，每组3个相同的卡牌
+        // 为每种类型生成3组，每组3个相同的卡牌
         for (let type = 1; type <= availableTypes; type++) {
-            for (let group = 0; group < 5; group++) { // 5组
+            for (let group = 0; group < 3; group++) { // 3组
                 for (let i = 0; i < 3; i++) { // 每组3个
                     cardTypes.push(type);
                 }
@@ -2483,8 +2422,8 @@ export class gridcreator extends Component {
                     const y = pos.y;
                     const x = pos.x;
                     
-                    // 随机生成卡牌类型（使用较少的类型以降低难度）
-                    const availableTypes = Math.min(4, this.pl.length - 1);
+                    // 随机生成卡牌类型（使用更多的类型以进一步提高难度）
+                    const availableTypes = Math.min(6, this.pl.length - 1);
                     if (availableTypes >= 1) {
                         const type = Math.floor(Math.random() * availableTypes) + 1;
                         

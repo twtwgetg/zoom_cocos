@@ -85,6 +85,7 @@ export class InterstitialAdManager extends Component {
             console.log("正在加载插屏广告...");
             this.interstitialAd.load().catch((err: any) => {
                 console.error("插屏广告加载失败：", err);
+                Main.DispEvent("event_interstitialAd_close", this);
             });
         }
     }
@@ -103,7 +104,7 @@ export class InterstitialAdManager extends Component {
             this.interstitialAd.show().catch((err: any) => {
                 console.error("插屏广告显示失败:", err); 
                 // 显示失败后重新加载
-                this.loadAd();
+                Main.DispEvent("event_interstitialAd_close", this);
             });
         } else {
             console.log("插屏广告未就绪，无法显示");

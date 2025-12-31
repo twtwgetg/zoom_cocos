@@ -82,7 +82,6 @@
   },
   "builder-options": {
     "configID": "896bad",
-    "services": [],
-    "__version__": "3.0.9"
+    "services": []
   }
 }
