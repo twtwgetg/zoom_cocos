@@ -1822,79 +1822,35 @@ export class gridcreator extends Component {
             console.error('图片类型不足，至少需要2个');
             return;
         }
-
-        // 生成卡牌：3（成3个才能消除）* 可用类型数（根据格子数量/4）* 3（每种卡牌数量3组）
-        const cardTypes: number[] = [];
-        
-        // 为每种类型生成3组，每组3个相同的卡牌
-        for (let type = 1; type <= availableTypes; type++) {
-            for (let group = 0; group < 3; group++) { // 3组
-                for (let i = 0; i < 3; i++) { // 每组3个
-                    cardTypes.push(type);
+ 
+        for(let layer = 1; layer <= 3; layer++){
+            let layerx = new Node("layer" + layer);
+            this.node.addChild(layerx);
+            layerx.setPosition(Math.random() * this.gridsize - this.gridsize/2, Math.random() * this.gridsize - this.gridsize/2, layer)
+       
+            //let layerxpos = new Vec3(x * this.gridsize, y * this.gridsize, layer);
+            //layerx.setPosition(layerxpos);
+            
+            for (let x = 0; x < this.infiniteWid; x++) {
+                for (let y = 0; y < this.infiniteHei; y++) {
+                    // 随机类型（使用较少的类型以降低难度）
+                    const type = Math.floor(Math.random() * availableTypes) + 1;
+    
+ 
+                    // 生成卡片
+                    const mapPos = new Vec2(x + 1, y + 1);
+                    this.SpawnLayeredCard(layerx, mapPos, type, layer);
                 }
             }
         }
-        
-        // 打乱卡牌类型列表
-        this.Shuffle(cardTypes);
-        
-        // 生成所有网格位置
-        const positions: {x: number, y: number}[] = [];
-        for (let x = 0; x < this.infiniteWid; x++) {
-            for (let y = 0; y < this.infiniteHei; y++) {
-                positions.push({x, y});
-            }
-        }
-        
-        // 打乱位置
-        this.Shuffle(positions);
-        
-        // 修改实现：将卡牌均匀分布到网格中，每个位置分配两次，layer往上加
-        let cardIndex = 0;
-        // 首先为每个位置放置第一层卡牌
-        for (let i = 0; i < positions.length && cardIndex < cardTypes.length; i++) {
-            const pos = positions[i];
-            const mapPos = new Vec2(pos.x + 1, pos.y + 1);
-            
-            // 放置第一张卡牌
-            (gridcreator.map[mapPos.x][mapPos.y] as number[]).push(cardTypes[cardIndex]);
-            this.SpawnLayeredCard(mapPos, cardTypes[cardIndex], 0);
-            cardIndex++;
-            
-            // 如果还有卡牌，放置第二张卡牌（同一位置，不同layer）
-            if (cardIndex < cardTypes.length) {
-                (gridcreator.map[mapPos.x][mapPos.y] as number[]).push(cardTypes[cardIndex]);
-                this.SpawnLayeredCard(mapPos, cardTypes[cardIndex], 1);
-                cardIndex++;
-            }
-        }
-        
-        // 如果还有剩余卡牌，继续分配到已有位置上（增加layer）
-        while (cardIndex < cardTypes.length) {
-            for (let i = 0; i < positions.length && cardIndex < cardTypes.length; i++) {
-                const pos = positions[i];
-                const mapPos = new Vec2(pos.x + 1, pos.y + 1);
-                
-                // 获取当前该位置已有的卡牌数量作为layer
-                const currentLayer = (gridcreator.map[mapPos.x][mapPos.y] as number[]).length;
-                
-                // 放置卡牌
-                (gridcreator.map[mapPos.x][mapPos.y] as number[]).push(cardTypes[cardIndex]);
-                this.SpawnLayeredCard(mapPos, cardTypes[cardIndex], currentLayer);
-                cardIndex++;
-            }
-        }
-        
-        //
-        this.PlayEffect();
     }
     
     /**
      * 生成分层卡牌
      */
-    private SpawnLayeredCard(mapPos: Vec2, type: number, layer: number) {
+    private SpawnLayeredCard(layerx: Node, mapPos: Vec2, type: number, layer: number) {
         const cx = instantiate(this.item);
-        this.node.addChild(cx);
+        layerx.addChild(cx);    
         
         // 设置精灵
         const xx = this.pl[type];
