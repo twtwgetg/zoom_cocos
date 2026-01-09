@@ -72,6 +72,17 @@ export class gridcreator extends Component {
             }
         });
 
+        Main.RegistEvent('event_move_to_container', (x)=>{
+            const children = this.node.children;
+            for (const child of children) {
+                for(let i=0;i<child.children.length;i++){
+                    const p = child.children[i].getComponent('TObject') as TObject;
+                    if (!p) continue;
+                    p.updateMaskStatus();
+                } 
+            }
+        });
+
         Main.RegistEvent('GET_CARD_GUIDE', (x)=>{
             const children = this.node.children;
             for (const child of children) {
@@ -1787,8 +1798,8 @@ export class gridcreator extends Component {
         // 确保设置游戏类型为分层叠加模式
         this.gameType = GameType.LAYER_SPLIT;
         // 使用传入的参数设置网格尺寸
-        this.infiniteWid = width;
-        this.infiniteHei = height;
+        this.infiniteWid = 5;
+        this.infiniteHei = 7;
 
 
         this.clear();
@@ -1823,10 +1834,13 @@ export class gridcreator extends Component {
             return;
         }
  
-        for(let layer = 1; layer <= 3; layer++){
+        for(let layer = 1; layer <= 2; layer++){
             let layerx = new Node("layer" + layer);
             this.node.addChild(layerx);
-            layerx.setPosition(Math.random() * this.gridsize - this.gridsize/2, Math.random() * this.gridsize - this.gridsize/2, layer)
+            if(layer==2){
+                layerx.setPosition(this.gridsize/4, this.gridsize/4, layer)
+            }
+
        
             //let layerxpos = new Vec3(x * this.gridsize, y * this.gridsize, layer);
             //layerx.setPosition(layerxpos);
@@ -1843,6 +1857,17 @@ export class gridcreator extends Component {
                 }
             }
         }
+
+        for (let layer = 1; layer <= 2; layer++) {
+            let layerx = this.node.getChildByName("layer" + layer);
+            for(let c = 0; c < layerx.children.length; c++){
+                let cx = layerx.children[c];
+                let tobj = cx.getComponent('TObject') as any;
+                if(tobj){
+                    tobj.updateMaskStatus();
+                }
+            }
+        }
     }
     
     /**
@@ -1855,6 +1880,9 @@ export class gridcreator extends Component {
         // 设置精灵
         const xx = this.pl[type];
         const tobj = cx.getComponent('TObject') as any;
+        if(tobj){
+            tobj.layer = layer;
+        }
         // 注意：mapPos是基于1的索引，而卡牌的x,y属性是基于0的索引
         tobj?.SetSprite(mapPos.x - 1, mapPos.y - 1, type, xx, this);
         tobj?.UseMaJiangBg();
@@ -1862,10 +1890,17 @@ export class gridcreator extends Component {
         cx.name = `${mapPos.x - 1},${mapPos.y - 1}_layer${layer}`;
         
         // 添加位移效果以显示叠加
-        const offset = layer * 5; // 每层偏移5个像素
-        // 修改偏移方向为相反方向
-        // 修复：使用tref确保居中对齐
-        const targetPos2D = this.tref.add(new Vec2((mapPos.x - 1) * this.gridsize - offset, (mapPos.y - 1) * this.gridsize + offset));
+        // 计算基础位置
+        let baseX = (mapPos.x - 1) * this.gridsize;
+        let baseY = (mapPos.y - 1) * this.gridsize;
+        
+        // // 奇数层朝左下方偏移半个格子
+        // if (layer % 2 === 1) {
+        //     baseX -= this.gridsize / 2; // 向左偏移半个格子
+        //     baseY -= this.gridsize / 2; // 向下偏移半个格子
+        // }
+        
+        const targetPos2D = this.tref.add(new Vec2(baseX, baseY));
         const targetPos = new Vec3(targetPos2D.x, targetPos2D.y, layer); // 使用z轴表示层级
         cx.setPosition(targetPos);
         

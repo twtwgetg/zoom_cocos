@@ -60,6 +60,60 @@ export class TObject extends Component {
         }
         return ret;
     }
+    public layer: number = 0;
+    @property(Sprite)
+    public mask: Sprite = null!;
+    
+    /**
+     * 检查当前卡牌是否被盖住，并更新mask显示状态
+     * 改进：检测上层卡牌四个角的位置，如果在当前卡牌矩形框内，则认为被遮挡
+     */
+    public updateMaskStatus(): void {
+        // 检查是否为分层叠加模式
+        if (!this.creator || !(this.creator as any).isLayerSplitMode) {
+            return;
+        }
+        
+        // 获取当前卡牌的世界坐标矩形
+        const currentWorldRect = this.node.getComponent(UITransform)!.getBoundingBoxToWorld();
+        
+        // 默认不被遮挡
+        let isCovered = false;
+        
+        // 遍历所有卡牌，检查是否有上层卡牌遮挡当前卡牌
+        for (let i = 0; i < this.creator!.node.children.length; i++) {
+            const child = this.creator!.node.children[i];
+            for(let j=0;j<child.children.length;j++){
+                const cchild = child.children[j];
+                const tobj = cchild.getComponent(TObject);
+                if (tobj && !tobj.released && tobj !== this) {
+                    // 检查是否为同一层或下层
+                    if(tobj.layer <= this.layer){
+                        continue;
+                    }
+                    
+                    // 获取其他卡牌的世界坐标矩形
+                    const otherWorldRect = tobj.node.getComponent(UITransform)!.getBoundingBoxToWorld();
+                    
+                    // 检查两个矩形是否相交
+                    if (currentWorldRect.intersects(otherWorldRect)) {
+                        // 存在重叠，当前卡牌被遮挡
+                        isCovered = true;
+                        break;
+                    }
+                }
+            }
+            if (isCovered) {
+                break;
+            }
+        }
+        
+        // 更新mask显示状态
+        if (this.mask) {
+            this.mask.node.active = isCovered;
+        }
+    }
+    
     /**
      * 隐藏模式
      * @param arg0 
