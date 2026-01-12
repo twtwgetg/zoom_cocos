@@ -1,10 +1,11 @@
-import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button, SpriteFrame } from 'cc';
+import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button, SpriteFrame, input, Input } from 'cc';
 import { Main } from './main';
 import { LevelMgr, GameMode, GameType } from './levelmgr';
 import { frm_main } from './ui/frm_main';
 import { item_tools } from './item/item_tools';
 import { tools } from './tools';
 import { TObject } from './Card/TObject';
+import { TBlock } from './Card/TBlock';
 const { ccclass, property } = _decorator;
 
  
@@ -133,6 +134,15 @@ export class gridcreator extends Component {
         
         // 添加事件：获取网格中的子节点
         Main.RegistEvent('event_get_grid_children', () => {
+            if(this.isLayerSplitMode){
+                for(let i=0;i<this.node.children.length;i++){
+                    const layerx = this.node.children[i];
+                    if(layerx.children.length>0){
+                        return layerx.children;
+                    }
+                }
+                return [];
+            }
             return this.node.children;
         });
         
@@ -140,20 +150,10 @@ export class gridcreator extends Component {
         Main.RegistEvent('event_has_cards_in_grid', () => {
             // 修复：在分层叠加模式下，需要检查地图数据
             if (this.isLayerSplitMode) {
-                // 在分层叠加模式下，检查地图中是否还有卡牌
-                for (let i = 0; i < gridcreator.map.length; i++) {
-                    for (let j = 0; j < gridcreator.map[i].length; j++) {
-                        const cell = gridcreator.map[i][j];
-                        // 检查是否为数组类型（分层模式）
-                        if (Array.isArray(cell)) {
-                            // 如果数组不为空，说明还有卡牌
-                            if (cell.length > 0) {
-                                return true;
-                            }
-                        } else if (typeof cell === 'number' && cell > 0) {
-                            // 如果是数字类型且大于0，说明还有卡牌
-                            return true;
-                        }
+                for(let layer = 0; layer < this.node.children.length;layer++){
+                    const layerx = this.node.children[layer];
+                    if(layerx.children.length>0){
+                        return true;
                     }
                 }
                 // 如果所有位置都为空，说明没有卡牌了
@@ -1799,19 +1799,10 @@ export class gridcreator extends Component {
         this.gameType = GameType.LAYER_SPLIT;
         // 使用传入的参数设置网格尺寸
         this.infiniteWid = 5;
-        this.infiniteHei = 7;
-
+        this.infiniteHei = 8;
+        let totallayer = 3;
 
         this.clear();
-
-        // 初始化地图
-        gridcreator.map = [];
-        for (let i = 0; i < this.infiniteWid + 2; i++) {
-            gridcreator.map[i] = [];
-            for (let j = 0; j < this.infiniteHei + 2; j++) {
-                gridcreator.map[i][j] = []; // 初始化为空数组以支持分层
-            }
-        }
 
         // 计算网格大小
         const parentRect = this.node.getComponent(UITransform)!;
@@ -1824,40 +1815,79 @@ export class gridcreator extends Component {
         this.gridsize = Math.min(cellWidth, cellHeight);
         this.gridsize = Math.min(150, this.gridsize);
 
+
+
+        //先计算一共多少实体卡牌，然后随机往格子里面塞
+        
         // 获取可用类型数量
         this.pl = this.plSprites;
         // 根据格子数量设置卡牌种类数量为格子数量/4
-        const totalLayerCells = this.infiniteWid * this.infiniteHei; // 计算总格子数
-        const availableTypes = Math.min(Math.max(4, Math.floor(totalLayerCells / 4)), this.pl.length - 1); // 至少4种卡牌，最多不超过可用类型
+        const totalLayerCells = this.infiniteWid * this.infiniteHei * totallayer; // 计算总格子数
+
+        
+        let number =  Math.floor(totalLayerCells/3)*3;
+        
+        const availableTypes = Math.min(Math.max(4, Math.floor(totalLayerCells / 12)), this.pl.length - 1); // 至少4种卡牌，最多不超过可用类型
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
         }
  
-        for(let layer = 1; layer <= 2; layer++){
+        //准备层节点
+        for(let layer = 1; layer <= totallayer; layer++){
             let layerx = new Node("layer" + layer);
-            this.node.addChild(layerx);
-            if(layer==2){
-                layerx.setPosition(this.gridsize/4, this.gridsize/4, layer)
-            }
-
-       
-            //let layerxpos = new Vec3(x * this.gridsize, y * this.gridsize, layer);
-            //layerx.setPosition(layerxpos);
-            
-            for (let x = 0; x < this.infiniteWid; x++) {
-                for (let y = 0; y < this.infiniteHei; y++) {
-                    // 随机类型（使用较少的类型以降低难度）
-                    const type = Math.floor(Math.random() * availableTypes) + 1;
-    
- 
-                    // 生成卡片
-                    const mapPos = new Vec2(x + 1, y + 1);
-                    this.SpawnLayeredCard(layerx, mapPos, type, layer);
-                }
-            }
+            this.node.addChild(layerx); 
+            layerx.setPosition(Math.random() * this.gridsize- this.gridsize/2, Math.random() * this.gridsize- this.gridsize/2, layer); 
         }
 
+        let arr=new Array<TBlock>();
+        for(let layer = 1; layer <= totallayer; layer++){
+            for(let x = 0; x < this.infiniteWid; x++){
+                for(let y = 0; y < this.infiniteHei; y++){
+                    let block = new TBlock();
+                    block.x = x;
+                    block.y = y;
+                    block.layer = layer;
+                    arr.push(block);        
+                }
+            }   
+        }
+        this.Shuffle(arr);
+        // number是真正生成的卡牌数量，arr里是所有格子位置，可以不用填满格子
+        
+        
+
+        for(let i = 0; i < (number/3)*0.5; i++){ 
+            const type = Math.floor(Math.random() * availableTypes) + 1;
+            for(let layer = 1; layer <= totallayer; layer++){
+                let block = arr[i*totallayer+layer-1];
+                // 获取层节点
+                let layerx = this.node.getChildByName("layer" + block.layer);
+                // 随机位置
+                const mapPos = new Vec2(block.x + 1, block.y + 1);
+                // 生成卡片
+                this.SpawnLayeredCard(layerx, mapPos, type, block.layer);
+            }
+        }
+        setTimeout(()=>{
+            this.updateAllCardMaskStatus();
+        }, 10);
+    }
+
+    /**
+     * 每帧更新
+     */
+    // protected update(dt: number): void {
+    //     // 如果按下D键，刷新mask状态
+    //     if (input.getTouch(0)) {
+    //         this.updateAllCardMaskStatus();
+    //     }
+    // }
+
+    /**
+     * 更新所有卡牌的mask状态
+     */
+    private updateAllCardMaskStatus() {
         for (let layer = 1; layer <= 2; layer++) {
             let layerx = this.node.getChildByName("layer" + layer);
             for(let c = 0; c < layerx.children.length; c++){
@@ -1869,7 +1899,6 @@ export class gridcreator extends Component {
             }
         }
     }
-    
     /**
      * 生成分层卡牌
      */

@@ -201,6 +201,7 @@ export class TObject extends Component {
     // 修改Select方法以支持隐藏模式
     private Select(showtime: number=1000): void {
 
+        
         // 如果处于隐藏模式，选中时隐藏back节点
         if (this.mode && this.back) {
             // 清除之前的定时器
@@ -618,39 +619,18 @@ export class TObject extends Component {
                 console.log('卡牌已经被移动到容器中，无法再次点击');
                 return;
             }
-            
-            // 检查当前位置是否有上层卡牌（即当前卡牌是否为顶层卡牌）
-            const cell = gridcreator.map[this.x + 1][this.y + 1];
-            if (Array.isArray(cell) && cell.length > 0) {
-                // 获取该位置的卡牌数量，判断当前卡牌是否为顶层
-                const totalLayers = cell.length;
-                // 在分层叠加模式中，TObject的layer属性应该表示当前卡牌在该位置的层级
-                // 但TObject类中没有直接的layer属性，我们需要通过节点名称或其他方式判断
-                // 从SpawnLayeredCard方法中可以看到，节点名称格式为 "x,y_layerN"
-                const nodeName = this.node.name;
-                const layerMatch = nodeName.match(/_layer(\d+)$/);
-                let currentCardLayer = 0;
-                if (layerMatch) {
-                    currentCardLayer = parseInt(layerMatch[1]);
-                }
-                
-                // 如果当前卡牌不是顶层卡牌（即当前层级不等于总层数-1），则不允许点击
-                if (currentCardLayer !== totalLayers - 1) {
-                    console.log(`位置(${this.x}, ${this.y})有上层卡牌，当前卡牌层级${currentCardLayer}，总层数${totalLayers}，无法点击`);
-                    // 触发震动反馈，提示玩家不能选择被覆盖的卡牌
-                    this.triggerScreenShake();
-                    return;
-                }
+            // 检查mask是否存在且处于激活状态
+            if (this.mask && this.mask.node.active) {
+                // 卡牌被遮挡，不允许选中
+                this.triggerScreenShake();
+                return;
             }
-            
+              
+
+         
             // 添加保护性检查，确保节点仍然有效
             if (this.node && this.node.isValid) {
-                // 在移动卡牌之前，从地图中移除顶层卡牌
-                const cell = gridcreator.map[this.x + 1][this.y + 1];
-                if (Array.isArray(cell) && cell.length > 0) {
-                    cell.pop(); // 移除顶层卡牌
-                }
-                
+               
                 // 标记卡牌为已释放（已移动到容器中）
                 this.released = true;
                 

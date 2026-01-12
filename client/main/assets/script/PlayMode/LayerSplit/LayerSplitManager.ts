@@ -1,7 +1,7 @@
 import { _decorator, Component, Node, Vec3, tween, SpriteFrame, Sprite, UITransform, Button } from 'cc';
-import { Main } from './main';
-import { TObject } from './Card/TObject';
-import { gridcreator } from './gridcreator';
+import { Main } from '../../main';
+import { TObject } from '../../Card/TObject';
+import { gridcreator } from '../../gridcreator';
 
 const { ccclass, property } = _decorator;
 
@@ -559,9 +559,7 @@ export class LayerSplitManager extends Component {
                 this.eliminateCards(cards.slice(0, 3));
  
                 // 延迟一帧调用checkGameWin方法
-                setTimeout(() => {
-                    this.checkGameWin();
-                }, 0); 
+
                 return; // 一次只消除一组
             }
         }
@@ -596,13 +594,14 @@ export class LayerSplitManager extends Component {
         // 从容器中移除这些卡牌
         this.containerCards = this.containerCards.filter(card => cards.indexOf(card) === -1);
         
+        let that=this;
         // 直接销毁卡牌，不使用动画
         for (const card of cards) {
             // 添加保护性检查，确保卡牌节点仍然有效
             if (card && card.isValid) {
                 try {
                     card.getComponent(TObject).PlayEffect(()=>{
-
+                        that.checkGameWin();
                     });
                 } catch (error) {
                     console.warn('销毁卡牌时出错:', error);
@@ -635,7 +634,7 @@ export class LayerSplitManager extends Component {
                  
                 // 如果无法通过地图数据检查，则使用原来的事件检查方式
                 const hasCardsInGrid = Main.DispEvent('event_get_grid_children');
-                if (hasCardsInGrid ==0) {
+                if (hasCardsInGrid.length ==0) {
                     console.log('分层叠加模式游戏胜利！');
                     // 通知主场景隐藏 ylgyContainer
                     Main.DispEvent('event_show_ylgy_container', false);
