@@ -488,7 +488,17 @@ export class frm_main extends frmbase {
             this.hide();
         })
         Main.RegistEvent("event_restart",()=>{ 
-            Main.DispEvent("event_play",this.level_playing); 
+            if(this.gridcreator.gameType == GameType.NORMAL)
+            {
+                Main.DispEvent("event_play",this.level_playing); 
+            }
+            else if(this.gridcreator.gameType == GameType.SANXIAO)
+            {
+                Main.DispEvent("event_play_sanxiao"); 
+            }
+            else{
+                console.error("未处理游戏模式"+this.gridcreator.gameType);
+            }
             return null;
         });
         Main.RegistEvent("event_fruszon",(f)=>{ 

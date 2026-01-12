@@ -94,7 +94,18 @@ export class frm_result extends frmbase {
         
         return result;
     }
-
+    /**
+     * 显示下一关按钮
+     */
+    ShowNextlevel(){
+        if(this.level_played<=0){
+            // 非闯关模式，没有下一关
+            this.btn_nextlevel.node.active = false;
+        }
+        else{
+            this.btn_nextlevel.node.active = true;
+        }
+    }
     /**
      * 显示时处理逻辑
      */
@@ -108,7 +119,7 @@ export class frm_result extends frmbase {
                 this.btn_menu_faild.node.active = true;
                 this.btn_again_win.node.active = true;
                 this.btn_menu_win.node.active = true;
-                this.btn_nextlevel.node.active = true;
+                this.ShowNextlevel();
             }, 3.5);
             this.btn_again_faild.node.active = false;
             this.btn_menu_faild.node.active = false;
@@ -121,7 +132,7 @@ export class frm_result extends frmbase {
             this.btn_menu_faild.node.active = true;
             this.btn_again_win.node.active = true;
             this.btn_menu_win.node.active = true;
-            this.btn_nextlevel.node.active = true;
+            this.ShowNextlevel();
             this.checkGuide();
         }
     }
