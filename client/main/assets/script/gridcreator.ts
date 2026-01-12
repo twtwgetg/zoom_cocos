@@ -73,6 +73,15 @@ export class gridcreator extends Component {
             }
         });
 
+        Main.RegistEvent('CARD_ANIMATIONS_COMPLETE', (x)=>{
+            if(this.gameType === GameType.LAYER_SPLIT){
+                this.updateAllCardMaskStatus();
+            }
+            else{
+
+            }
+        })
+
         Main.RegistEvent('event_move_to_container', (x)=>{
             const children = this.node.children;
             for (const child of children) {
@@ -494,35 +503,64 @@ export class gridcreator extends Component {
      * 播放出场效果
      */
     PlayEffect() {
-        // 计算中心点位置
-        const uiTransform = this.node.getComponent(UITransform);
+        // 计算中心点位置 
         const centerX = 0;
         const centerY = 0;
         
         // 创建一个数组来存储所有的卡片动画Promise
         const cardPromises: Promise<void>[] = [];
         
-        // 为每个卡片创建动画
-        for(let i = 0; i < this.node.children.length; i++) {
-            const child = this.node.children[i];
-            const card = child.getComponent('TObject') as TObject;
-            if (card) {
-                // 保存原始位置
-                const originalPosition = child.position.clone();
+        if(this.gameType == GameType.LAYER_SPLIT){
+            // 分层叠加模式，不播放动画
+            for(let layer = 0; layer < this.totallayer; layer++){
+                let layerNode = this.node.children[layer];
+                let layerChildren = layerNode.children;
                 
-                // 生成随机的聚集位置（在中心点附近）
-                const randomOffsetX = (Math.random() - 0.5) * 200;
-                const randomOffsetY = (Math.random() - 0.5) * 200;
-                const gatherPos = new Vec3(
-                    centerX + randomOffsetX,
-                    centerY + randomOffsetY,
-                    originalPosition.z
-                );
-                card.oldpos = child.position.clone(); // 保存原始位置
-                // 先将所有卡片移动到随机聚集位置
-                child.setPosition(gatherPos); 
+                for(let i = 0; i < layerChildren.length; i++) {
+                    const child = layerChildren[i];     
+                    const card = child.getComponent('TObject') as TObject;
+                    if (card) {
+                        // 获取卡片的初始位置
+                        const originalPosition = child.position.clone();  
+                        // 生成随机的聚集位置（在中心点附近）
+                        const randomOffsetX = (Math.random() - 0.5) * 200;
+                        const randomOffsetY = (Math.random() - 0.5) * 200;
+                        const gatherPos = new Vec3(
+                            centerX + randomOffsetX,
+                            centerY + randomOffsetY,
+                            originalPosition.z
+                        );
+                        card.oldpos = child.position.clone(); // 保存原始位置
+                        // 先将所有卡片移动到随机聚集位置
+                        child.setPosition(gatherPos); 
+                    }
+                }
             }
         }
+        else{
+            // 为每个卡片创建动画
+            for(let i = 0; i < this.node.children.length; i++) {
+                const child = this.node.children[i];
+                const card = child.getComponent('TObject') as TObject;
+                if (card) {
+                    // 保存原始位置
+                    const originalPosition = child.position.clone();
+                    
+                    // 生成随机的聚集位置（在中心点附近）
+                    const randomOffsetX = (Math.random() - 0.5) * 200;
+                    const randomOffsetY = (Math.random() - 0.5) * 200;
+                    const gatherPos = new Vec3(
+                        centerX + randomOffsetX,
+                        centerY + randomOffsetY,
+                        originalPosition.z
+                    );
+                    card.oldpos = child.position.clone(); // 保存原始位置
+                    // 先将所有卡片移动到随机聚集位置
+                    child.setPosition(gatherPos); 
+                }
+            }
+        }
+       
         
         // 延迟0.5秒后播放tUpdateCardPositions动画
         setTimeout(() => {
@@ -533,18 +571,39 @@ export class gridcreator extends Component {
     }
     
     private tUpdateCardPositions(time=0.3, onComplete?: () => void) {
-        const children = this.node.children;
-        
+
         // 计算中心点位置
         const centerX = 0;
         const centerY = 0;
         
         // 计算需要执行动画的子节点数量
+        let allcard=[];
         let totalAnimatedChildren = 0;
-        for (const child of children) {
-            const tobj = child.getComponent('TObject') as TObject;
-            if (tobj && tobj.x !== undefined && tobj.y !== undefined) {
-                totalAnimatedChildren++;
+        if(this.gameType == GameType.LAYER_SPLIT){
+            // 分层叠加模式，不播放动画
+            for(let layer = 0; layer < this.totallayer; layer++){
+                let layerNode = this.node.children[layer];
+                let layerChildren = layerNode.children;
+                
+                for(let i = 0; i < layerChildren.length; i++) {
+                    const child = layerChildren[i];     
+                    const card = child.getComponent('TObject') as TObject;
+                    if (card) {
+                        totalAnimatedChildren++;
+                        allcard.push(card);
+                    }
+                }
+            }
+        }
+        else{
+            // 为每个卡片创建动画
+            const children = this.node.children;
+            for (const child of children) {
+                const tobj = child.getComponent('TObject') as TObject;
+                if (tobj && tobj.x !== undefined && tobj.y !== undefined) {
+                    totalAnimatedChildren++;
+                    allcard.push(tobj);
+                }
             }
         }
         
@@ -558,13 +617,12 @@ export class gridcreator extends Component {
         
         let completedAnimations = 0;
         
-        for (const child of children) {
-            const tobj = child.getComponent('TObject') as TObject;
+        for (const tobj of allcard) {
             // 添加空值检查，防止tobj为null时出现错误
             if (!tobj || tobj.x === undefined || tobj.y === undefined) {
                 continue;
             }
-            
+            const child = tobj.node;
             //let pos = this.tref.add(new Vec2((tobj.x) * this.gridsize, (tobj.y) * this.gridsize)); 
             const targetPos = tobj.oldpos;
             
@@ -1853,7 +1911,6 @@ export class gridcreator extends Component {
             }   
         }
         this.Shuffle(arr);
-        // number是真正生成的卡牌数量，arr里是所有格子位置，可以不用填满格子
         
         let pares=Math.floor(number/3*0.5);
 
@@ -1869,9 +1926,8 @@ export class gridcreator extends Component {
                 this.SpawnLayeredCard(layerx, mapPos, type, block.layer);
             }
         }
-        setTimeout(()=>{
-            this.updateAllCardMaskStatus();
-        }, 1);
+ 
+        this.PlayEffect();
     }
 
     /**

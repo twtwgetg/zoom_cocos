@@ -220,7 +220,7 @@ export class frm_result extends frmbase {
             this.btn_menu_faild.node.active = true;
             this.btn_again_win.node.active = true;
             this.btn_menu_win.node.active = true;
-            this.btn_nextlevel.node.active = true;
+            this.ShowNextlevel();
             this.checkGuide();
         });
         Main.RegistEvent("GET_GETREWARD_CTRL", (x) => {
@@ -255,8 +255,8 @@ export class frm_result extends frmbase {
                 this.btn_nextlevel.node.active = false;
             } else {
                 // 其他模式下显示下一关按钮
-                this.btn_nextlevel.node.active = true;
-            }
+                this.ShowNextlevel();
+            }   
             
             // StartCoroutine(showsource(source_suc, source));
             this.show();

@@ -366,7 +366,7 @@ export class LayerSplitManager extends Component {
                 console.warn('卡牌没有父节点');
                 return;
             }
-            
+            //card.parent=card.parent.parent;
             const parentWorldPosition = card.parent.worldPosition.clone();
             
             // 计算相对位置（目标位置相对于卡牌父节点的位置）

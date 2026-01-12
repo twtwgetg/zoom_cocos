@@ -230,15 +230,18 @@ export class frm_main extends frmbase {
         let that =this;
         Main.RegistEvent("CARD_ANIMATIONS_COMPLETE",(x)=>{ 
           
-            if(PlayerPrefb.getInt("GuideStep",1)==1){
-                Main.DispEvent("GUIDE_SHOW","normal");
-            }
-            // 指引提醒道具
-            if(PlayerPrefb.getInt("GuideStep",1)==4){
-                Main.DispEvent("GUIDE_SHOW","remind");
-            }
+            if(this.gridcreator.gameType === GameType.LAYER_SPLIT){
 
-            
+            }
+            else{
+                if(PlayerPrefb.getInt("GuideStep",1)==1){
+                    Main.DispEvent("GUIDE_SHOW","normal");
+                }
+                // 指引提醒道具
+                if(PlayerPrefb.getInt("GuideStep",1)==4){
+                    Main.DispEvent("GUIDE_SHOW","remind");
+                }
+            }
         });
  
         Main.RegistEvent("GET_REMIND_CTRL",(x)=>{

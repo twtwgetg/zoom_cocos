@@ -447,9 +447,6 @@ export class TObject extends Component {
     
 
     PlayEffect(cb) {
-
-  
-// 播放动画
         let anim = this.node.getComponent(Animation);
 
         var node = this.node;
@@ -718,11 +715,6 @@ export class TObject extends Component {
         this.y = j;
         this.src.spriteFrame = xx;
         
-        // 如果是分层叠加模式，添加特殊视觉效果
-        if (_creator && (_creator as any).isLayerSplitMode) {
-            // 可以在这里添加分层模式的特殊效果
-            // 例如添加边框或特殊颜色来表示可点击状态
-        }
         
         // 如果启用了隐藏模式，初始化back节点为开启状态
         if (this.mode && this.back) {
