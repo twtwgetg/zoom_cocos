@@ -1789,7 +1789,7 @@ export class gridcreator extends Component {
     
         console.log(`三消模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
     }
-    
+    totallayer = 4;
     /**
      * 创建分层叠加模式关卡
      */
@@ -1799,8 +1799,8 @@ export class gridcreator extends Component {
         this.gameType = GameType.LAYER_SPLIT;
         // 使用传入的参数设置网格尺寸
         this.infiniteWid = 5;
-        this.infiniteHei = 8;
-        let totallayer = 3;
+        this.infiniteHei = 7;
+    
 
         this.clear();
 
@@ -1822,26 +1822,26 @@ export class gridcreator extends Component {
         // 获取可用类型数量
         this.pl = this.plSprites;
         // 根据格子数量设置卡牌种类数量为格子数量/4
-        const totalLayerCells = this.infiniteWid * this.infiniteHei * totallayer; // 计算总格子数
+        const totalLayerCells = this.infiniteWid * this.infiniteHei *   this.totallayer; // 计算总格子数
 
         
         let number =  Math.floor(totalLayerCells/3)*3;
         
-        const availableTypes = Math.min(Math.max(4, Math.floor(totalLayerCells / 12)), this.pl.length - 1); // 至少4种卡牌，最多不超过可用类型
+        const availableTypes = Math.min(Math.max(4, Math.floor(totalLayerCells / 6)), this.pl.length - 1); // 至少4种卡牌，最多不超过可用类型
         if (availableTypes < 2) {
             console.error('图片类型不足，至少需要2个');
             return;
         }
  
         //准备层节点
-        for(let layer = 1; layer <= totallayer; layer++){
+        for(let layer = 1; layer <= this.totallayer; layer++){
             let layerx = new Node("layer" + layer);
             this.node.addChild(layerx); 
             layerx.setPosition(Math.random() * this.gridsize- this.gridsize/2, Math.random() * this.gridsize- this.gridsize/2, layer); 
         }
 
         let arr=new Array<TBlock>();
-        for(let layer = 1; layer <= totallayer; layer++){
+        for(let layer = 1; layer <= this.totallayer; layer++){
             for(let x = 0; x < this.infiniteWid; x++){
                 for(let y = 0; y < this.infiniteHei; y++){
                     let block = new TBlock();
@@ -1855,12 +1855,12 @@ export class gridcreator extends Component {
         this.Shuffle(arr);
         // number是真正生成的卡牌数量，arr里是所有格子位置，可以不用填满格子
         
-        
+        let pares=Math.floor(number/3*0.5);
 
-        for(let i = 0; i < (number/3)*0.5; i++){ 
+        for(let i = 0; i < pares; i++){ 
             const type = Math.floor(Math.random() * availableTypes) + 1;
-            for(let layer = 1; layer <= totallayer; layer++){
-                let block = arr[i*totallayer+layer-1];
+            for(let count = 1; count <=3; count++){
+                let block = arr[i*3+count-1];
                 // 获取层节点
                 let layerx = this.node.getChildByName("layer" + block.layer);
                 // 随机位置
@@ -1871,7 +1871,7 @@ export class gridcreator extends Component {
         }
         setTimeout(()=>{
             this.updateAllCardMaskStatus();
-        }, 10);
+        }, 1);
     }
 
     /**
@@ -1888,7 +1888,7 @@ export class gridcreator extends Component {
      * 更新所有卡牌的mask状态
      */
     private updateAllCardMaskStatus() {
-        for (let layer = 1; layer <= 2; layer++) {
+        for (let layer = 1; layer <= this.totallayer; layer++) {
             let layerx = this.node.getChildByName("layer" + layer);
             for(let c = 0; c < layerx.children.length; c++){
                 let cx = layerx.children[c];

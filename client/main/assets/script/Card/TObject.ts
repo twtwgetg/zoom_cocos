@@ -76,7 +76,12 @@ export class TObject extends Component {
         
         // 获取当前卡牌的世界坐标矩形
         const currentWorldRect = this.node.getComponent(UITransform)!.getBoundingBoxToWorld();
-        
+        // 当前矩形向左上角偏移20%像素
+        //currentWorldRect.xMin -= currentWorldRect.width * 0.05;
+        //currentWorldRect.yMin += currentWorldRect.height * 0.05;
+        currentWorldRect.width *= 0.9;
+        currentWorldRect.height *= 0.9;
+
         // 默认不被遮挡
         let isCovered = false;
         

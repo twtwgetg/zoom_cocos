@@ -758,22 +758,22 @@ export class LayerSplitManager extends Component {
         }
         
         // 统计卡槽中每种卡牌类型的数量
-        const cardTypeCountInContainer: Map<number, number> = new Map();
-        for (const card of this.containerCards) {
-            if (card && card.isValid) {
-                const tobj = card.getComponent('TObject') as any;
-                if (tobj) {
-                    const type = tobj.type;
-                    cardTypeCountInContainer.set(type, (cardTypeCountInContainer.get(type) || 0) + 1);
-                }
-            }
-        }
+        // const cardTypeCountInContainer: Map<number, number> = new Map();
+        // for (const card of this.containerCards) {
+        //     if (card && card.isValid) {
+        //         const tobj = card.getComponent('TObject') as any;
+        //         if (tobj) {
+        //             const type = tobj.type;
+        //             cardTypeCountInContainer.set(type, (cardTypeCountInContainer.get(type) || 0) + 1);
+        //         }
+        //     }
+        // }
         
         // 如果没有有效的卡牌类型，直接返回
-        if (cardTypeCountInContainer.size === 0) {
-            console.log('卡槽中没有有效的卡牌类型，无需处理');
-            return;
-        }
+        // if (cardTypeCountInContainer.size === 0) {
+        //     console.log('卡槽中没有有效的卡牌类型，无需处理');
+        //     return;
+        // }
         
         // 查找网格中所有卡牌，并按类型分组
         const allGridCards: Map<number, any[]> = new Map();
@@ -783,97 +783,163 @@ export class LayerSplitManager extends Component {
             if (gridCreator) {
                 // 遍历网格中的所有卡牌
                 const children = gridCreator.node.children;
-                for (const child of children) {
-                    const card = child.getComponent('TObject') as any;
-                    if (card && !card.released) {
-                        const type = card.type;
-                        if (!allGridCards.has(type)) {
-                            allGridCards.set(type, []);
+                for(const layer of children){ 
+               
+                        for (const child of layer.children) {
+                        const card = child.getComponent('TObject') as any;
+                        if (card && !card.released) {
+                            const type = card.type;
+                            if (!allGridCards.has(type)) {
+                                allGridCards.set(type, []);
+                            }
+                            allGridCards.get(type)!.push(card);
                         }
-                        allGridCards.get(type)!.push(card);
-                    }
+                    } 
                 }
             }
         } catch (error) {
             console.error('查找网格中卡牌时出错:', error);
         }
-        
-        // 计算需要从网格中删除的卡牌
-        const cardsToRemoveFromGrid: any[] = [];
-        for (const [type, countInContainer] of cardTypeCountInContainer) {
-            // 计算需要从网格中删除多少张该类型的卡牌（凑成3的倍数）
-            const needToRemove = 3 - (countInContainer % 3);
-            
-            // 获取网格中该类型的卡牌
-            const gridCards = allGridCards.get(type) || [];
-            
-            // 从网格中选择需要删除的卡牌
-            for (let i = 0; i < Math.min(needToRemove, gridCards.length); i++) {
-                cardsToRemoveFromGrid.push(gridCards[i]);
-            }
-        }
-        
-        // 显示分数弹出效果并移除卡槽中的卡牌
-        let totalReturned = 0;
-        const cardsToReturn = [...this.containerCards]; // 创建副本以避免在迭代时修改数组
-        for (const card of cardsToReturn) {
+
+        const needRemoveCards: any[] = [];
+
+        for(let i=0;i<this.containerCards.length;i++){
+            const card = this.containerCards[i];
             if (card && card.isValid) {
-                // 显示分数弹出效果
-                const returnPos = card.position.clone();
-                Main.DispEvent('event_show_score_popup', returnPos);
-                
-                // 销毁卡槽中的卡牌
-                card.destroy();
-                totalReturned++;
-            }
-        }
-        
-        // 显示分数弹出效果并移除网格中的指定卡牌
-        let totalRemovedFromGrid = 0;
-        for (const card of cardsToRemoveFromGrid) {
-            if (card && card.node && card.node.isValid) {
-                // 显示分数弹出效果
-                const removePos = card.node.position.clone();
-                Main.DispEvent('event_show_score_popup', removePos);
-                
-                // 从地图数据中移除卡牌
-                try {
-                    const gridCreator = Main.DispEvent('event_get_gridcreator');
-                    if (gridCreator && gridCreator.map) {
-                        // 更新地图数据
-                        const mapX = card.x + 1;
-                        const mapY = card.y + 1;
-                        const cell = gridCreator.map[mapX][mapY];
-                        
-                        if (Array.isArray(cell) && cell.length > 0) {
-                            // 在分层模式下，移除顶层卡牌
-                            cell.pop();
-                        } else {
-                            // 在普通模式下，清空位置
-                            gridCreator.map[mapX][mapY] = 0;
-                        }
+                const tobj = card.getComponent('TObject') as TObject;
+                if (tobj) {
+                    const type = tobj.type;
+                    if (needRemoveCards[type.toString()] ==null) {
+                        // 初始化该类型的卡牌计数
+                        needRemoveCards[type.toString()] = [];
                     }
-                } catch (error) {
-                    console.error('更新地图数据时出错:', error);
+                    needRemoveCards[type.toString()].push(card);
                 }
-                
-                // 销毁网格中的卡牌
-                card.node.destroy();
-                totalRemovedFromGrid++;
             }
         }
-        
-        // 触发积分增加事件（每组3张卡牌加1分）
-        const totalCards = totalReturned + totalRemovedFromGrid;
-        const totalScore = Math.floor(totalCards / 3);
-        if (totalScore > 0) {
-            Main.DispEvent('event_add_jifen', totalScore);
+        //遍历needRemoveCards
+        for(let key in needRemoveCards){
+            let  dt = needRemoveCards[key] as Array<any>;
+            let count = 3-dt.length;
+            for(let i=count;i>0;i--){   
+                let gridCards = allGridCards.get(Number(key))||[];
+                for(let v = 0;v< gridCards.length;v++){
+                    if(gridCards[v].released){
+                        continue;
+                    }
+                    gridCards[v].released = true;
+                    dt.push(gridCards[v].node);
+                    break;
+                }
+            }
         }
+        const that = this;
+
+        for(let key in needRemoveCards){
+            let  dt = needRemoveCards[key] as Array<any>;
+
+
+            for(let i=0;i<dt.length;i++){
+                let tobj = dt[i].getComponent('TObject') as TObject;
+                tobj.PlayEffect(()=>{ 
+                      that.checkGameWin(); 
+                });
+            }
+        }
+
+        // //遍历needRemoveCards，不够3个的就从网格中填上
+        // for (const [type, countInContainer] of needRemoveCards) {
+        //      // 获取网格中该类型的卡牌
+        //      const gridCards = allGridCards.get(type) || [];
+        //      // 获取需要从网格中删除的卡牌数量（凑成3的倍数）
+        //      const needToRemove = 3 - (countInContainer % 3);
+        // //     // 从网格中选择需要删除的卡牌
+        // }
+
+ 
+
+
+        // // // 计算需要从网格中删除的卡牌
+        // // // const cardsToRemoveFromGrid: any[] = [];
+        // // // for (const [type, countInContainer] of cardTypeCountInContainer) {
+        // // //     // 计算需要从网格中删除多少张该类型的卡牌（凑成3的倍数）
+        // // //     const needToRemove = 3 - (countInContainer % 3);
+            
+        // // //     // 获取网格中该类型的卡牌
+        // // //     const gridCards = allGridCards.get(type) || [];
+            
+        // // //     // 从网格中选择需要删除的卡牌
+        // // //     for (let i = 0; i < Math.min(needToRemove, gridCards.length); i++) {
+        // // //         cardsToRemoveFromGrid.push(gridCards[i]);
+        // // //     }
+        // // // }
         
-        // 清空卡槽中的卡牌引用
+        // // // 显示分数弹出效果并移除卡槽中的卡牌
+        // // let totalReturned = 0;
+        // // const cardsToReturn = [...this.containerCards]; // 创建副本以避免在迭代时修改数组
+        // // for (const card of cardsToReturn) {
+        // //     if (card && card.isValid) {
+        // //         // 显示分数弹出效果
+        // //         const returnPos = card.position.clone();
+        // //         Main.DispEvent('event_show_score_popup', returnPos);
+                
+        // //         // 销毁卡槽中的卡牌
+        // //         card.getComponent('TObject').PlayEffect(() => { 
+
+        // //         });
+                
+        // //         totalReturned++;
+        // //     }
+        // // }
+        
+        // // // 显示分数弹出效果并移除网格中的指定卡牌
+        // // let totalRemovedFromGrid = 0;
+        // // for (const card of cardsToRemoveFromGrid) {
+        // //     if (card && card.node && card.node.isValid) {
+        // //         // 显示分数弹出效果
+        // //         const removePos = card.node.position.clone();
+        // //         Main.DispEvent('event_show_score_popup', removePos);
+                
+        // //         // 从地图数据中移除卡牌
+        // //         try {
+        // //             const gridCreator = Main.DispEvent('event_get_gridcreator');
+        // //             if (gridCreator && gridCreator.map) {
+        // //                 // 更新地图数据
+        // //                 const mapX = card.x + 1;
+        // //                 const mapY = card.y + 1;
+        // //                 const cell = gridCreator.map[mapX][mapY];
+                        
+        // //                 if (Array.isArray(cell) && cell.length > 0) {
+        // //                     // 在分层模式下，移除顶层卡牌
+        // //                     cell.pop();
+        // //                 } else {
+        // //                     // 在普通模式下，清空位置
+        // //                     gridCreator.map[mapX][mapY] = 0;
+        // //                 }
+        // //             }
+        // //         } catch (error) {
+        // //             console.error('更新地图数据时出错:', error);
+        // //         }
+                
+        // //         // 销毁网格中的卡牌
+        // //         card.getComponent('TObject').PlayEffect(() => { 
+                    
+        // //         });
+        // //         totalRemovedFromGrid++;
+        // //     }
+        // // }
+        
+        // // // 触发积分增加事件（每组3张卡牌加1分）
+        // // const totalCards = totalReturned + totalRemovedFromGrid;
+        // // const totalScore = Math.floor(totalCards / 3);
+        // // if (totalScore > 0) {
+        // //     Main.DispEvent('event_add_jifen', totalScore);
+        // // }
+        
+        // // 清空卡槽中的卡牌引用
         this.containerCards = [];
         
-        console.log(`成功移除${totalReturned}张卡槽卡牌和${totalRemovedFromGrid}张网格卡牌，共获得${totalScore}分`);
-        console.log('清除道具使用完成');
+        // console.log(`成功移除${totalReturned}张卡槽卡牌和${totalRemovedFromGrid}张网格卡牌，共获得${totalScore}分`);
+        // console.log('清除道具使用完成');
     }
 }
