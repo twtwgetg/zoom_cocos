@@ -36,6 +36,12 @@ export class frm_guanka extends frmbase {
     @property(Button)
     public btn_mem: Button = null!; 
     
+
+    @property(Button)
+    public btn_lianliankan: Button = null!; 
+ 
+
+
     @property(Button)
     public btn_layersplit: Button = null!;
     @property(Button)
@@ -56,8 +62,8 @@ export class frm_guanka extends frmbase {
     @property(Prefab)
     prefab_item: Prefab = null!;
     // 添加积分奖励相关节点
-    @property(Node)
-    node_jifen_reward: Node = null!;
+    //@property(Node)
+    //node_jifen_reward: Node = null!;
     @property(RichText)
     lbl_jifen_reward_desc: RichText = null!;
     @property(Button)
@@ -475,29 +481,29 @@ export class frm_guanka extends frmbase {
         // 获取下一个奖励信息
         const rewardInfo = this.getNextJifenRewardInfo(currentJifen);
         
-        if (this.node_jifen_reward) {
-            if (rewardInfo) {
-                // 显示奖励信息
-                this.node_jifen_reward.active = true;
-                if (this.lbl_jifen_reward_desc) {
-                    // 在描述文本中添加当前积分信息，只对积分数字部分应用颜色
-                    const colorTag = rewardInfo.canClaim ? "#00FF00" : "#FF0000"; // 绿色或红色
-                    let text = `${rewardInfo.description} (当前积分: <color=${colorTag}>${currentJifen}</color>)`;
+        // if (this.node_jifen_reward) {
+        //     if (rewardInfo) {
+        //         // 显示奖励信息
+        //         this.node_jifen_reward.active = true;
+        //         if (this.lbl_jifen_reward_desc) {
+        //             // 在描述文本中添加当前积分信息，只对积分数字部分应用颜色
+        //             const colorTag = rewardInfo.canClaim ? "#00FF00" : "#FF0000"; // 绿色或红色
+        //             let text = `${rewardInfo.description} (当前积分: <color=${colorTag}>${currentJifen}</color>)`;
                     
-                    // 循环检测，每20个字符换行
-                    text = this.wrapText(text, 22);
+        //             // 循环检测，每20个字符换行
+        //             text = this.wrapText(text, 22);
                     
-                    this.lbl_jifen_reward_desc.string = text;
-                }
-                // 更新领取按钮状态
-                if (this.btn_get_jifen_reward) {
-                    this.btn_get_jifen_reward.interactable = rewardInfo.canClaim;
-                }
-            } else {
-                // 没有奖励信息
-                this.node_jifen_reward.active = false;
-            }
-        }
+        //             this.lbl_jifen_reward_desc.string = text;
+        //         }
+        //         // 更新领取按钮状态
+        //         if (this.btn_get_jifen_reward) {
+        //             this.btn_get_jifen_reward.interactable = rewardInfo.canClaim;
+        //         }
+        //     } else {
+        //         // 没有奖励信息
+        //         this.node_jifen_reward.active = false;
+        //     }
+        // }
     }
     
     /**
