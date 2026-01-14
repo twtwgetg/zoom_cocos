@@ -84,10 +84,10 @@ export class TObject extends Component {
 
         // 默认不被遮挡
         let isCovered = false;
-        
+        let node = this.creator.card_container;
         // 遍历所有卡牌，检查是否有上层卡牌遮挡当前卡牌
-        for (let i = 0; i < this.creator!.node.children.length; i++) {
-            const child = this.creator!.node.children[i];
+        for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
             for(let j=0;j<child.children.length;j++){
                 const cchild = child.children[j];
                 const tobj = cchild.getComponent(TObject);

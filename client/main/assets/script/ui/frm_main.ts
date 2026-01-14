@@ -45,7 +45,7 @@ export class frm_main extends frmbase {
     node_c: Node = null!;
     // 添加模式标签
     @property(Label)
-    lbl_mode: Label = null!;
+    lbl_level: Label = null!;
 
     /**
      * -1 表示无限模式
@@ -59,8 +59,6 @@ export class frm_main extends frmbase {
     @property(Sprite)
     spr_bar: Sprite = null!;
      
-    @property(Sprite)   
-    spr_bg: Sprite = null!;
     // 添加天气管理器引用
     @property(WeatherShaderManager)
     weatherManager: WeatherShaderManager = null!;
@@ -114,7 +112,7 @@ export class frm_main extends frmbase {
     
     fruzonBar(f:boolean){
         if(!f){
-            this.spr_bar.color=new Color(255,173,0,255); 
+            this.spr_bar.color=new Color(255,255, 255, 255); 
             if (!this.isInfinityMode) {
                 this.jishi=true;
             } else {
@@ -122,7 +120,7 @@ export class frm_main extends frmbase {
                 this.stopInfiniteModeGenerator = false;
             }
             // 冰封结束，渐变回正常颜色 #585858
-            this.animateGridColor(new Color(88, 88, 88, 255), 0.5);
+            this.animateGridColor(new Color(255,255,255, 255), 0.5);
             // 取消天气效果
             this.deactivateWeatherEffect();
             
@@ -132,7 +130,7 @@ export class frm_main extends frmbase {
             this.heartbeatPlaying = false;
         }
         else{
-            this.spr_bar.color=new Color(0,214,255,255);
+            this.spr_bar.color=new Color(0,255,255,255);
             //this.ice_node.active=true;
             this.jishi=false;
             // 冰封开始，渐变为冰封颜色 #00689C
@@ -192,9 +190,7 @@ export class frm_main extends frmbase {
         item.scale = new Vec3(1, 1, 1);
     
     }
-    brushMode(x){ 
-        this.lbl_mode.node.active=this.level_playing>0; 
-    }
+ 
     /**
      * 刷新有限类型
      * @param 
@@ -202,25 +198,25 @@ export class frm_main extends frmbase {
     brushType(gametyp:GameType){
         this.gridcreator.gameType = gametyp;
         this.node_c.active = gametyp === GameType.LAYER_SPLIT;//只有分层叠加模式显示node_c
-
+        this.lbl_level.node.active = gametyp === GameType.NORMAL;//只有普通模式显示游戏等级
         // 根据游戏模式填充道具
         if(gametyp===GameType.NORMAL){
             this.fillItems(enum_paly_type.LIANLIANKAN);
-            this.spr_bg.node.active = true;
+            this.progress_time.node.active = true;
         }else if(gametyp===GameType.LAYER_SPLIT){
             this.fillItems(enum_paly_type.LAYERSPLIT);
-            this.spr_bg.node.active = false;
+            this.progress_time.node.active = false;
         }else if(gametyp===GameType.INFINITE){
             this.fillItems(enum_paly_type.LIANLIANKAN);
-            this.spr_bg.node.active = false;
+            this.progress_time.node.active = false;
         }
         else if(gametyp=== GameType.MEM){
             this.fillItems(enum_paly_type.Mem);
-            this.spr_bg.node.active = false;
+            this.progress_time.node.active = false;     
         }
         else if(gametyp=== GameType.SANXIAO){
             this.fillItems(enum_paly_type.SANXIAO);
-            this.spr_bg.node.active = false;
+            this.progress_time.node.active = false;
         }
         else{
             console.error("未知的游戏模式"+gametyp);
@@ -300,9 +296,7 @@ export class frm_main extends frmbase {
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
  
-
-            // 显示时间进度条（仅在普通连连看模式下显示）
-            this.brushMode(x);
+ 
             // 重置本局积分
             this.resetCurrentJifen();
 
@@ -373,9 +367,7 @@ export class frm_main extends frmbase {
             }
 
             // 重置本局积分
-            this.resetCurrentJifen();
-
-            this.brushMode(-1);
+            this.resetCurrentJifen(); 
             return null;
         });
         //添加分层叠加模式
@@ -404,8 +396,7 @@ export class frm_main extends frmbase {
                 }
             }, 0);
 
-            this.level_playing = -3; // -3表示分层叠加模式
-            this.brushMode(-3);
+            this.level_playing = -3; // -3表示分层叠加模式 
             this.lbl_guanka.string = "分层叠加模式";
             
             // 显示当前游戏模式
@@ -484,8 +475,7 @@ export class frm_main extends frmbase {
             }
 
             // 重置本局积分
-            this.resetCurrentJifen();
-            this.brushMode(-2);
+            this.resetCurrentJifen(); 
             return null;
         });
         Main.RegistEvent("game_begin",()=>{
@@ -605,15 +595,7 @@ export class frm_main extends frmbase {
      * 更新模式标签显示
      */
     updateModeLabel() {
-        if (this.lbl_mode) {
-            if (LevelMgr.gameMode === GameMode.EASY) {
-                this.lbl_mode.string = "简单模式";
-                this.lbl_mode.color = new Color(0, 255, 0); // 绿色
-            } else {
-                this.lbl_mode.string = "困难模式";
-                this.lbl_mode.color = new Color(255, 0, 0); // 红色
-            }
-        }
+ 
     }
     
     start() {
@@ -1033,9 +1015,7 @@ export class frm_main extends frmbase {
         // 使用新的天气管理器激活天气效果
         if (this.weatherManager) {
             this.weatherManager.activateWeatherEffect();
-        } else {
-            // 如果没有天气管理器，使用旧的方法
-            this.setWeatherColor(new Color(140, 140, 160, 255), 1.0);
+        } else { 
         }
     }
     
@@ -1048,45 +1028,11 @@ export class frm_main extends frmbase {
         if (this.weatherManager) {
             this.weatherManager.deactivateWeatherEffect();
         } else {
-            // 如果没有天气管理器，使用旧的方法
-            this.setWeatherColor(new Color(255, 255, 255, 255), 1.0);
+            // 如果没有天气管理器，使用旧的方法 
         }
     }
     
-    /**
-     * 设置天气颜色（带渐变）
-     */
-    private setWeatherColor(targetColor: Color, duration: number) {
-        // 确保spr_bg存在
-        if (!this.spr_bg) {
-            console.warn('背景Sprite不存在');
-            return;
-        }
-        
-        // 获取当前颜色
-        const currentColor = this.spr_bg.color.clone();
-        
-        console.log('设置天气颜色:', {
-            from: `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`,
-            to: `rgb(${targetColor.r}, ${targetColor.g}, ${targetColor.b})`,
-            duration: duration
-        });
-        
-        // 停止之前的动画
-        tween(this.spr_bg).stop();
-        
-        // 创建颜色渐变动画
-        tween(this.spr_bg)
-            .to(duration, { 
-                color: targetColor
-            }, {
-                easing: 'smooth'
-            })
-            .call(() => {
-                console.log('主背景天气颜色渐变完成');
-            })
-            .start();
-    }
+  
     
     /**
      * 结束无限模式

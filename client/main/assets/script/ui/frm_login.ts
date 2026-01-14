@@ -24,11 +24,18 @@ export class frm_login extends frmbase {
             this.hide();
             return null;
         });
-        Main.RegistEvent("event_begin", (x) =>
+        Main.RegistEvent("event_playclose", (x) =>
         {
-            // 停止心跳音效
-            Main.DispEvent("event_heartbeat_stop");
-            this.hide();
+            let anim = this.gb.getComponent(cc.Animation); 
+            if(anim) {
+                // 监听动画结束，自动隐藏节点
+                anim.on(cc.Animation.EventType.FINISHED, () => {
+                Main.DispEvent("event_play");
+                        Main.DispEvent("event_heartbeat_stop");
+                        this.hide();
+                }, this);
+                anim.play();
+            }   
             return null;
         });
         Main.RegistEvent("event_returnlogin", (x) =>
@@ -43,7 +50,7 @@ export class frm_login extends frmbase {
     } 
     protected OnShow(): void {
         setTimeout(() => {
-            Main.DispEvent('event_begin');    
+            Main.DispEvent('event_playclose');    
         }, 1000);
     }
     private onLoginClick(): void {
