@@ -98,6 +98,13 @@ export class frm_guanka extends frmbase {
             this.updateModeButtons();
             Main.DispEvent('event_play',LevelMgr.level);
         }, this);
+        this.btn_lianliankan.node.on(Button.EventType.CLICK, () =>
+        {
+            LevelMgr.gameMode = GameMode.EASY;
+            this.updateModeButtons();
+            Main.DispEvent('event_play',LevelMgr.level);
+        }, this);
+
         // 添加无限模式按钮点击事件
         this.btn_wuxian.node.on(Button.EventType.CLICK, ()=>{
             // 进入无限模式
@@ -198,6 +205,14 @@ export class frm_guanka extends frmbase {
         this.refreshLevelUI();
         // 显示积分奖励
         this.showJifenReward();
+        let anim = this.gb.getComponent(cc.Animation); 
+        if(anim) {
+            // 监听动画结束，自动隐藏节点
+            anim.on(cc.Animation.EventType.FINISHED, () => {
+            
+            }, this);
+            anim.play();
+        }   
     }
     
     /**

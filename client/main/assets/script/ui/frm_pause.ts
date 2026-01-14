@@ -138,8 +138,10 @@ export class frm_pause extends frmbase {
     brushflag()
     {
         console.log('musicenable='+musicmgr.bMusicEnable)
-        this.btn_musicenable.node.getChildByName('mask').active = !musicmgr.bMusicEnable;
-        this.btn_soundenable.node.getChildByName('mask').active = !soundmgr.bSoundEnable;
+        this.btn_musicenable.node.getChildByName('on').active = musicmgr.bMusicEnable;
+        this.btn_soundenable.node.getChildByName('on').active = soundmgr.bSoundEnable;
+        this.btn_musicenable.node.getChildByName('off').active = !musicmgr.bMusicEnable;
+        this.btn_soundenable.node.getChildByName('off').active = !soundmgr.bSoundEnable;
     }
     
     level_playing: number = 0;

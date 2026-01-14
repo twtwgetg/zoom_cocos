@@ -24,7 +24,8 @@ export class frm_main extends frmbase {
     btn_pause: Button = null!;
     time_all: number = 0;
     time_now: number = 0;
-
+    @property(Label)
+    lbl_time: Label = null!;
     @property(Prefab)
     item_prefab: Prefab = null!;
     @property(Node)
@@ -648,7 +649,11 @@ export class frm_main extends frmbase {
 
         this.time_now += deltaTime; 
         this.progress_time.progress =1.0- this.time_now / this.time_all; 
-    
+        // 更新时间标签
+        if (this.lbl_time) {
+            this.lbl_time.string = tools.formatTime(this.time_all - this.time_now);
+        }
+        
         // 检测卡牌消失时间
         this.checkCardRemovalTime();
     

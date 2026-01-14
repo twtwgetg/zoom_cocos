@@ -20,14 +20,16 @@ export class gridcreator extends Component {
     item: Prefab = null!;
     @property(Node)
     container: Node = null!;
-
+    @property(Node)
+    card_container: Node = null!;
     @property(Prefab)
     item_line: Prefab = null!;
     public static map: (number | number[])[][] = [];
     public gridsize: number = 100;
     private level_cur: number = 0;
     private pl: SpriteFrame[] = [];
-
+    @property(Node)
+    bg: Node = null!;
     private gameOver: boolean = false; // 游戏结束标志
 
     // 添加游戏类型变量
@@ -62,7 +64,7 @@ export class gridcreator extends Component {
         // 这里假设Main是一个全局的事件管理类，在Cocos中可以使用director或自定义事件管理器
         
         Main.RegistEvent('event_tixing',(x)=>{
-            const children = this.node.children;
+            const children = this.card_container.children;
             for (const child of children) {
                 const p = child.getComponent('TObject') as TObject;
                 if (!p) continue;
@@ -83,7 +85,7 @@ export class gridcreator extends Component {
         })
 
         Main.RegistEvent('event_move_to_container', (x)=>{
-            const children = this.node.children;
+            const children = this.card_container.children;
             for (const child of children) {
                 for(let i=0;i<child.children.length;i++){
                     const p = child.children[i].getComponent('TObject') as TObject;
@@ -94,7 +96,7 @@ export class gridcreator extends Component {
         });
 
         Main.RegistEvent('GET_CARD_GUIDE', (x)=>{
-            const children = this.node.children;
+            const children = this.card_container.children;
             for (const child of children) {
                 const p = child.getComponent('TObject') as TObject;
                 if (!p) continue;
@@ -123,7 +125,7 @@ export class gridcreator extends Component {
         })
         Main.RegistEvent('event_showfront', (x)=>{
             
-            for (const child of this.node.children) {
+            for (const child of this.card_container.children) {
                 const p = child.getComponent('TObject') as any;
                 if (!p) continue;
                 p.Select(3000);
@@ -144,23 +146,23 @@ export class gridcreator extends Component {
         // 添加事件：获取网格中的子节点
         Main.RegistEvent('event_get_grid_children', () => {
             if(this.isLayerSplitMode){
-                for(let i=0;i<this.node.children.length;i++){
-                    const layerx = this.node.children[i];
+                for(let i=0;i<this.card_container.children.length;i++){
+                    const layerx = this.card_container.children[i];
                     if(layerx.children.length>0){
                         return layerx.children;
                     }
                 }
                 return [];
             }
-            return this.node.children;
+            return this.card_container.children;
         });
         
         // 添加事件：检查网格中是否还有卡牌（用于分层叠加模式）
         Main.RegistEvent('event_has_cards_in_grid', () => {
             // 修复：在分层叠加模式下，需要检查地图数据
             if (this.isLayerSplitMode) {
-                for(let layer = 0; layer < this.node.children.length;layer++){
-                    const layerx = this.node.children[layer];
+                for(let layer = 0; layer < this.card_container.children.length;layer++){
+                    const layerx = this.card_container.children[layer];
                     if(layerx.children.length>0){
                         return true;
                     }
@@ -169,7 +171,7 @@ export class gridcreator extends Component {
                 return false;
             } else {
                 // 在普通模式下，检查节点数量
-                return this.node.children.length > 0;
+                return this.card_container.children.length > 0;
             }
         });
         
@@ -208,7 +210,7 @@ export class gridcreator extends Component {
             that.zhengli();
             that.checkLeft();
 
-            if (that.node.children.length === 0) {
+            if (that.card_container.children.length === 0) {
                 frm_main.isPause = true;
 
                 // 等待0.5秒
@@ -269,7 +271,7 @@ export class gridcreator extends Component {
 
         while (!hasconnect && trytimes > 0) {
             trytimes--;
-            const children = this.node.children;
+            const children = this.card_container.children;
 
             for (const child of children) {
                 const p = child.getComponent('TObject') as any;
@@ -280,7 +282,7 @@ export class gridcreator extends Component {
             }
 
             if (!hasconnect) {
-                const xs = this.node.getComponentsInChildren('TObject') as any[];
+                const xs = this.card_container.getComponentsInChildren('TObject') as any[];
                 // 降低触发自动刷新的阈值，从原来的2个卡牌减少到1个卡牌
                 // 这样即使只剩下很少的卡牌也会触发刷新，让玩家更快接触到新动物
                 if (xs.length > 1) {
@@ -298,7 +300,7 @@ export class gridcreator extends Component {
     } 
 
     clear(){
-        this.node.removeAllChildren();
+        this.card_container.removeAllChildren();
     }
     /**
      * 记忆模式
@@ -442,6 +444,19 @@ export class gridcreator extends Component {
         const cellWidth = availableWidth / this.wid;
         const cellHeight = availableHeight / this.hei;
 
+        if(cellHeight < cellWidth){
+            //如果高度小于宽度，则使用宽度作为网格大小
+            // 设置bg的宽度比父节点宽10%
+            const bgTransform = this.bg.getComponent(UITransform)!;
+            bgTransform.setContentSize(availableWidth , availableHeight* 1.1);
+        }
+        else{
+            //如果宽度小于高度，则使用高度作为网格大小
+            // 设置bg的高度比父节点高10%
+            const bgTransform = this.bg.getComponent(UITransform)!;
+            bgTransform.setContentSize(availableWidth* 1.1, availableHeight );
+        }
+
         this.gridsize = Math.min(cellWidth, cellHeight);
         this.gridsize = Math.min(180, this.gridsize);
 
@@ -513,7 +528,7 @@ export class gridcreator extends Component {
         if(this.gameType == GameType.LAYER_SPLIT){
             // 分层叠加模式，不播放动画
             for(let layer = 0; layer < this.totallayer; layer++){
-                let layerNode = this.node.children[layer];
+                let layerNode = this.card_container.children[layer];
                 let layerChildren = layerNode.children;
                 
                 for(let i = 0; i < layerChildren.length; i++) {
@@ -539,8 +554,8 @@ export class gridcreator extends Component {
         }
         else{
             // 为每个卡片创建动画
-            for(let i = 0; i < this.node.children.length; i++) {
-                const child = this.node.children[i];
+            for(let i = 0; i < this.card_container.children.length; i++) {
+                const child = this.card_container.children[i];
                 const card = child.getComponent('TObject') as TObject;
                 if (card) {
                     // 保存原始位置
@@ -582,7 +597,7 @@ export class gridcreator extends Component {
         if(this.gameType == GameType.LAYER_SPLIT){
             // 分层叠加模式，不播放动画
             for(let layer = 0; layer < this.totallayer; layer++){
-                let layerNode = this.node.children[layer];
+                let layerNode = this.card_container.children[layer];
                 let layerChildren = layerNode.children;
                 
                 for(let i = 0; i < layerChildren.length; i++) {
@@ -597,7 +612,7 @@ export class gridcreator extends Component {
         }
         else{
             // 为每个卡片创建动画
-            const children = this.node.children;
+            const children = this.card_container.children;
             for (const child of children) {
                 const tobj = child.getComponent('TObject') as TObject;
                 if (tobj && tobj.x !== undefined && tobj.y !== undefined) {
@@ -835,7 +850,7 @@ export class gridcreator extends Component {
     }
 
     private FindCardAt(x: number, y: number): any {
-        const children = this.node.children;
+        const children = this.card_container.children;
         for (const child of children) {
             const tobj = child.getComponent('TObject') as any;
             if (tobj && tobj.x === x && tobj.y === y) {
@@ -846,7 +861,7 @@ export class gridcreator extends Component {
     }
 
     private UpdateCardPositions(time=0.3) {
-        const children = this.node.children;
+        const children = this.card_container.children;
         for (const child of children) {
             const tobj = child.getComponent('TObject') as any;
             // 添加空值检查，防止tobj为null时出现错误
@@ -897,7 +912,7 @@ export class gridcreator extends Component {
 
     private SpawnCard(mapPos: Vec2, type: number) {
         const cx = instantiate(this.item);
-        this.node.addChild(cx);
+        this.card_container.addChild(cx);
 
         // 设置精灵
         const xx = this.pl[type] as SpriteFrame;
@@ -1273,7 +1288,7 @@ export class gridcreator extends Component {
     public brushkind() {
         // 收集所有剩余的TObject实例
         const remainingCards: any[] = [];
-        const children = this.node.children;
+        const children = this.card_container.children;
 
         for (const child of children) {
             const tobj = child.getComponent('TObject') as any;
@@ -1848,6 +1863,7 @@ export class gridcreator extends Component {
         console.log(`三消模式创建完成，网格大小: ${this.infiniteWid}x${this.infiniteHei}，使用${availableTypes}种卡牌类型`);
     }
     totallayer = 4;
+
     /**
      * 创建分层叠加模式关卡
      */
@@ -1861,7 +1877,7 @@ export class gridcreator extends Component {
     
 
         this.clear();
-
+        
         // 计算网格大小
         const parentRect = this.node.getComponent(UITransform)!;
         const availableWidth = parentRect.width;
@@ -1894,7 +1910,7 @@ export class gridcreator extends Component {
         //准备层节点
         for(let layer = 1; layer <= this.totallayer; layer++){
             let layerx = new Node("layer" + layer);
-            this.node.addChild(layerx); 
+            this.card_container.addChild(layerx); 
             layerx.setPosition(Math.random() * this.gridsize- this.gridsize/2, Math.random() * this.gridsize- this.gridsize/2, layer); 
         }
 
@@ -1919,7 +1935,7 @@ export class gridcreator extends Component {
             for(let count = 1; count <=3; count++){
                 let block = arr[i*3+count-1];
                 // 获取层节点
-                let layerx = this.node.getChildByName("layer" + block.layer);
+                let layerx = this.card_container.getChildByName("layer" + block.layer);
                 // 随机位置
                 const mapPos = new Vec2(block.x + 1, block.y + 1);
                 // 生成卡片
@@ -1945,7 +1961,7 @@ export class gridcreator extends Component {
      */
     private updateAllCardMaskStatus() {
         for (let layer = 1; layer <= this.totallayer; layer++) {
-            let layerx = this.node.getChildByName("layer" + layer);
+            let layerx = this.card_container.getChildByName("layer" + layer);
             for(let c = 0; c < layerx.children.length; c++){
                 let cx = layerx.children[c];
                 let tobj = cx.getComponent('TObject') as any;

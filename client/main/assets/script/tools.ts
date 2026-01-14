@@ -1,7 +1,12 @@
 import { Main } from "./main";
 import { PlayerPrefb } from "./PlayerPrefb";
 
-export class tools { 
+export class tools {
+    static formatTime(arg0: number): string {
+        const minutes = Math.floor(arg0 / 60);
+        const seconds = Math.floor(arg0 % 60);
+        return "剩余时间：" + `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    } 
     /**
      * 提醒道具数量
      */

@@ -326,13 +326,13 @@ export class TObject extends Component {
     
     public HasConnect(): boolean {
         // 添加空值检查
-        if (!this.creator || !this.creator.node || !gridcreator.map) {
-            console.error("HasConnect: creator, creator.node or gridcreator.map is null");
+        if (!this.creator || !this.creator.card_container || !gridcreator.map) {
+            console.error("HasConnect: creator, creator.card_container or gridcreator.map is null");
             return false;
         }
         
         let ret = false;
-        const children = this.creator.node.children;
+        const children = this.creator.card_container.children;
 
         for (const child of children) {
             const _sel = child.getComponent(TObject);
@@ -458,6 +458,7 @@ export class TObject extends Component {
         }, this);
         anim.play();
     }
+    
     /**
      * 检查是否可以连接
      */
@@ -510,16 +511,17 @@ export class TObject extends Component {
         return gridcreator.CanConnect(last.x + 1, last.y + 1, _sel.x + 1, _sel.y + 1, poslist);
     }
     Tixing(): boolean {
+        let cardnode = this.creator.card_container;
         // 添加空值检查
-        if (!this.creator || !this.creator.node) {
-            console.error("Tixing: creator or creator.node is null");
+        if (!this.creator || !cardnode) {
+            console.error("Tixing: creator or card_container is null");
             return false;
         }
         
         let ret = false;
         // 遍历 creator 节点的所有子节点
-        for (let i = 0; i < this.creator!.node.children.length; i++) {
-            const tx = this.creator!.node.children[i];
+        for (let i = 0; i < cardnode.children.length; i++) {
+            const tx = cardnode.children[i];    
             const _sel = tx.getComponent(TObject);
             if (_sel != null) {
                 let pres: Vec2[] = [];
@@ -531,7 +533,7 @@ export class TObject extends Component {
                         const p = pres[pres.length - 1];
                         // 添加边界检查
                         if (p.x - 1 >= 0 && p.y - 1 >= 0) {
-                            const node1 = this.creator!.node.getChildByName(`${p.x - 1},${p.y - 1}`);
+                            const node1 =cardnode.getChildByName(`${p.x - 1},${p.y - 1}`);
                             if (node1) {
                                 const tobj1 = node1.getComponent(TObject);
                                 if (tobj1) {
@@ -546,7 +548,7 @@ export class TObject extends Component {
                         const p2 = pres[0];
                         // 添加边界检查
                         if (p2.x - 1 >= 0 && p2.y - 1 >= 0) {
-                            const node2 = this.creator!.node.getChildByName(`${p2.x - 1},${p2.y - 1}`);
+                            const node2 = cardnode.getChildByName(`${p2.x - 1},${p2.y - 1}`);
                             if (node2) {
                                 const tobj2 = node2.getComponent(TObject);
                                 if (tobj2) {
