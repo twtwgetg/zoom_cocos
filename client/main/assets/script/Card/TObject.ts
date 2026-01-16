@@ -76,11 +76,6 @@ export class TObject extends Component {
         
         // 获取当前卡牌的世界坐标矩形
         const currentWorldRect = this.node.getComponent(UITransform)!.getBoundingBoxToWorld();
-        // 当前矩形向左上角偏移20%像素
-        //currentWorldRect.xMin -= currentWorldRect.width * 0.05;
-        //currentWorldRect.yMin += currentWorldRect.height * 0.05;
-        currentWorldRect.width *= 0.9;
-        currentWorldRect.height *= 0.9;
 
         // 默认不被遮挡
         let isCovered = false;
@@ -100,10 +95,25 @@ export class TObject extends Component {
                     // 获取其他卡牌的世界坐标矩形
                     const otherWorldRect = tobj.node.getComponent(UITransform)!.getBoundingBoxToWorld();
                     
-                    // 检查两个矩形是否相交
-                    if (currentWorldRect.intersects(otherWorldRect)) {
-                        // 存在重叠，当前卡牌被遮挡
-                        isCovered = true;
+                    // 检测上层卡牌的四个角是否在当前卡牌的矩形框内
+                    // 四个角的坐标：左上角、右上角、左下角、右下角
+                    const corners = [
+                        new Vec2(otherWorldRect.xMin, otherWorldRect.yMax), // 左上角
+                        new Vec2(otherWorldRect.xMax, otherWorldRect.yMax), // 右上角
+                        new Vec2(otherWorldRect.xMin, otherWorldRect.yMin), // 左下角
+                        new Vec2(otherWorldRect.xMax, otherWorldRect.yMin)  // 右下角
+                    ];
+                    
+                    // 检查是否有任何一个角在当前卡牌的矩形框内
+                    for (const corner of corners) {
+                        if (currentWorldRect.contains(corner)) {
+                            // 存在角点在当前卡牌矩形内，当前卡牌被遮挡
+                            isCovered = true;
+                            break;
+                        }
+                    }
+                    
+                    if (isCovered) {
                         break;
                     }
                 }
@@ -206,6 +216,11 @@ export class TObject extends Component {
     // 修改Select方法以支持隐藏模式
     private Select(showtime: number=1000): void {
 
+        // 检查卡牌是否被遮挡
+        if (this.mask && this.mask.node.active) {
+            console.log("Card covered, cannot select");
+            return;
+        }
         
         // 如果处于隐藏模式，选中时隐藏back节点
         if (this.mode && this.back) {

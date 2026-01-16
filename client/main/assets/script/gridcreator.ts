@@ -403,17 +403,18 @@ export class gridcreator extends Component {
         
         this.PlayEffect();
     }
-    
+    get availableWidth(): number {
+        const parentRect = this.node.getComponent(UITransform)!;
+        return parentRect.width;
+    }
+    get availableHeight(): number {
+        const parentRect = this.node.getComponent(UITransform)!;
+        return parentRect.height;
+    }
     Create(level_playing: number) {
         this.gameOver = false;
         // 确保重置游戏类型为普通模式
         this.gameType = GameType.NORMAL;
-        
-        // 重置TObject中的静态变量
-        // 通过反射获取TObject类并重置静态变量
-        // 注意：这里我们需要获取场景中的TObject实例来重置静态变量
-        // 由于静态变量属于类而不是实例，我们需要通过其他方式重置
-        
         this.level_cur = level_playing;
 
         // 清空TObject（需要根据实际实现调整）
@@ -435,26 +436,22 @@ export class gridcreator extends Component {
             }
         }
 
-        // 计算网格大小
-        const parentRect = this.node.getComponent(UITransform)!;
+  
 
-        const availableWidth = parentRect.width;
-        const availableHeight = parentRect.height;
-
-        const cellWidth = availableWidth / this.wid;
-        const cellHeight = availableHeight / this.hei;
+        const cellWidth = this.availableWidth *0.9/ this.wid;
+        const cellHeight = this.availableHeight *0.9/ this.hei;
 
         if(cellHeight < cellWidth){
             //如果高度小于宽度，则使用宽度作为网格大小
             // 设置bg的宽度比父节点宽10%
             const bgTransform = this.bg.getComponent(UITransform)!;
-            bgTransform.setContentSize(availableWidth , availableHeight* 1.1);
+            bgTransform.setContentSize(this.availableWidth * 1.1, this.availableHeight);
         }
         else{
             //如果宽度小于高度，则使用高度作为网格大小
             // 设置bg的高度比父节点高10%
             const bgTransform = this.bg.getComponent(UITransform)!;
-            bgTransform.setContentSize(availableWidth* 1.1, availableHeight );
+            bgTransform.setContentSize(this.availableWidth, this.availableHeight * 1.1);
         }
 
         this.gridsize = Math.min(cellWidth, cellHeight);
@@ -1949,12 +1946,12 @@ export class gridcreator extends Component {
     /**
      * 每帧更新
      */
-    // protected update(dt: number): void {
-    //     // 如果按下D键，刷新mask状态
-    //     if (input.getTouch(0)) {
-    //         this.updateAllCardMaskStatus();
-    //     }
-    // }
+    protected update(dt: number): void {
+        // 如果按下D键，刷新mask状态
+        if (input.isKeyDown(input.KeyCode.KEY_D)) {
+            this.updateAllCardMaskStatus();
+        }
+    }
 
     /**
      * 更新所有卡牌的mask状态

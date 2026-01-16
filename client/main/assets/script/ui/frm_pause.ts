@@ -33,7 +33,7 @@ export class frm_pause extends frmbase {
     btn_submit: Button = null!;
     @property(EditBox)
     input_tucao: EditBox = null!;
-
+ 
     // 添加音乐状态变量，用于记录暂停前的音乐状态
     private wasMusicPlaying: boolean = false;
     
@@ -52,7 +52,7 @@ export class frm_pause extends frmbase {
                 }
             }});
             
-        }, this);
+        }, this); 
         this.btn_tucao.node.on(Button.EventType.CLICK, () =>
         {
             this.panel_tucao.active=true;
