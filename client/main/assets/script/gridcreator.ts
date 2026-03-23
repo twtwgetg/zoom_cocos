@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button, SpriteFrame, input, Input } from 'cc';
+import { _decorator, Component, Node, Sprite, UITransform, Vec2, instantiate, director, Prefab, math, Vec3, tween, Label, Color, Button, SpriteFrame, input, Input, KeyCode } from 'cc';
 import { Main } from './main';
 import { LevelMgr, GameMode, GameType } from './levelmgr';
 import { frm_main } from './ui/frm_main';
@@ -1948,9 +1948,9 @@ export class gridcreator extends Component {
      */
     protected update(dt: number): void {
         // 如果按下D键，刷新mask状态
-        if (input.isKeyDown(input.KeyCode.KEY_D)) {
-            this.updateAllCardMaskStatus();
-        }
+        // if (input.isKeyDown(KeyCode.KEY_D)) {
+        //     this.updateAllCardMaskStatus();
+        // }
     }
 
     /**

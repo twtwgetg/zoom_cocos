@@ -156,6 +156,13 @@ export class frm_guide extends frmbase {
                 frm_guide.state = 1;
                 //找到成对卡牌，开始
             }
+            else{
+                // 没有找到，结束指引
+                console.error("没有找到指引卡牌，结束指引");
+                frm_guide.state = 0;
+                PlayerPrefb.setInt('GuideStep',1);
+                this.hide();
+            }
         }
         else if(frm_guide.state==1){
             frm_guide.currCard = this.card[0];

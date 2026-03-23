@@ -12,15 +12,15 @@ const { ccclass, property } = _decorator;
 @ccclass('TObject')
 export class TObject extends Component {
     GetTixing():TObject[] {
-         if (!this.creator || !this.creator.node) {
+         if (!this.creator || !this.creator.card_container) {
             console.error("Tixing: creator or creator.node is null");
             return [];
         }
         
         let ret: TObject[] = [];
         // 遍历 creator 节点的所有子节点
-        for (let i = 0; i < this.creator!.node.children.length; i++) {
-            const tx = this.creator!.node.children[i];
+        for (let i = 0; i < this.creator!.card_container.children.length; i++) {
+            const tx = this.creator!.card_container.children[i];
             const _sel = tx.getComponent(TObject);
             if (_sel != null) {
                 let pres: Vec2[] = [];
@@ -32,7 +32,7 @@ export class TObject extends Component {
                         const p = pres[pres.length - 1];
                         // 添加边界检查
                         if (p.x - 1 >= 0 && p.y - 1 >= 0) {
-                            const node1 = this.creator!.node.getChildByName(`${p.x - 1},${p.y - 1}`);
+                            const node1 = this.creator!.card_container.getChildByName(`${p.x - 1},${p.y - 1}`);
                             if (node1) {
                                 const tobj1 = node1.getComponent(TObject); 
                                 ret.push(tobj1);
@@ -46,7 +46,7 @@ export class TObject extends Component {
                         const p2 = pres[0];
                         // 添加边界检查
                         if (p2.x - 1 >= 0 && p2.y - 1 >= 0) {
-                            const node2 = this.creator!.node.getChildByName(`${p2.x - 1},${p2.y - 1}`);
+                            const node2 = this.creator!.card_container.getChildByName(`${p2.x - 1},${p2.y - 1}`);
                             if (node2) {
                                 const tobj2 = node2.getComponent(TObject); 
                                 ret.push(tobj2);
@@ -380,9 +380,9 @@ export class TObject extends Component {
             // 由于网格坐标是从1开始的，需要减1得到0基坐标
             // 然后根据tref计算实际位置，注意要加上gridsize/2来对齐到网格中心
             let startPos = this.creator.tref.add(new Vec2((p.x - 1) * this.creator.gridsize + this.creator.gridsize/2, 
-                                                         (p.y - 1) * this.creator.gridsize ));
+                                                         (p.y - 1) * this.creator.gridsize-this.creator.gridsize/2));
             let endPos = this.creator.tref.add(new Vec2((p2.x - 1) * this.creator.gridsize + this.creator.gridsize/2, 
-                                                       (p2.y - 1) * this.creator.gridsize ));
+                                                       (p2.y - 1) * this.creator.gridsize-this.creator.gridsize/2));
 
             // 计算线段的中点作为节点位置
             let midPos = new Vec2((startPos.x + endPos.x) / 2, (startPos.y + endPos.y) / 2);
