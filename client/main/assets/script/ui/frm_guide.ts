@@ -13,6 +13,8 @@ export class frm_guide extends frmbase {
     guide_node: Node = null!;
     @property(Node)
     guide_arrow: Node = null!;
+    @property(Button)
+    setup_btn: Button = null!;
     @property(Node)
     bg: Node = null!;
     @property(Node)
@@ -28,6 +30,10 @@ export class frm_guide extends frmbase {
         });
         Main.RegistEvent('event_result_next',(x)=>{
             frm_guide.state=4;
+        });
+
+        this.setup_btn.node.on(Button.EventType.CLICK, () => {
+            Main.DispEvent("event_pause", -1);
         });
     }
     protected OnShow(): void {

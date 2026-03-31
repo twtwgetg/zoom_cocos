@@ -389,7 +389,7 @@
         "__id__": 45
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 49
@@ -1431,7 +1431,7 @@
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": true,
+    "_enableOutline": false,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -2247,7 +2247,7 @@
         "__id__": 271
       }
     ],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 296
@@ -9236,7 +9236,7 @@
         "__id__": 263
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 270
@@ -10396,9 +10396,9 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
+      "r": 214,
+      "g": 214,
+      "b": 214,
       "a": 255
     },
     "_spriteFrame": {
@@ -10432,7 +10432,7 @@
     "__prefab": null,
     "clickEvents": [],
     "_interactable": true,
-    "_transition": 2,
+    "_transition": 0,
     "_normalColor": {
       "__type__": "cc.Color",
       "r": 214,
@@ -10729,7 +10729,7 @@
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -11108,7 +11108,7 @@
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -32960,6 +32960,7 @@
     "guide_arrow": {
       "__id__": 876
     },
+    "setup_btn": null,
     "bg": {
       "__id__": 868
     },

@@ -151,10 +151,10 @@ export class frm_pause extends frmbase {
             frm_main.isPause = true;
             this.show();
             this.level_playing = x;
-            this.brushflag();
-             
+            this.brushflag();  
             return null;
         });
+        
         Main.RegistEvent("event_begin",(x)=>{ 
             this.hide();
             // 重置连连看模式动画类型，确保新游戏使用同一种动画效果
