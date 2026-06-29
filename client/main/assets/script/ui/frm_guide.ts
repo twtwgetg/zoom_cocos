@@ -31,10 +31,17 @@ export class frm_guide extends frmbase {
         Main.RegistEvent('event_result_next',(x)=>{
             frm_guide.state=4;
         });
-
-        this.setup_btn.node.on(Button.EventType.CLICK, () => {
-            Main.DispEvent("event_pause", -1);
+        Main.RegistEvent('GUIDE_GETREWARD_HOME_CLICK',()=>{
+            if(frm_guide.data==="getreward" && frm_guide.state===3){
+                frm_guide.state=4;
+            }
         });
+
+        if (this.setup_btn) {
+            this.setup_btn.node.on(Button.EventType.CLICK, () => {
+                Main.DispEvent("event_pause", -1);
+            });
+        }
     }
     protected OnShow(): void {
         frm_guide.isShow = true;
@@ -117,20 +124,13 @@ export class frm_guide extends frmbase {
             frm_guide.getreward = Main.DispEvent('GET_GETREWARD_CTRL');
             this.setGuidePos(frm_guide.getreward.node);
             frm_guide.state = 1;
-        }
-        else if(frm_guide.state==1){
-            
-        }
+        } 
         else if(frm_guide.state==2)
         {
             frm_guide.getreward = Main.DispEvent('GET_GETREWARD_NEXT');
             this.setGuidePos(frm_guide.getreward.node);
             frm_guide.state = 3;
-        }
-        else if(frm_guide.state==3)
-        {
-            
-        }
+        } 
         else if(frm_guide.state==4)
         {
             frm_guide.state = 0;

@@ -196,6 +196,7 @@ export class frm_result extends frmbase {
          this.btn_menu_win.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_begin");
+            Main.DispEvent("GUIDE_GETREWARD_HOME_CLICK");
         }, this);
 
         // 添加积分奖励按钮点击事件
@@ -228,6 +229,9 @@ export class frm_result extends frmbase {
         });
         Main.RegistEvent("GET_GETREWARD_NEXT", (x) => {
             return this.btn_nextlevel;
+        });
+        Main.RegistEvent("GET_GETREWARD_HOME", (x) => {
+            return this.btn_menu_win;
         });
         Main.RegistEvent("game_win", (x) =>
         {
@@ -453,10 +457,9 @@ export class frm_result extends frmbase {
             let time = Main.DispEvent("time_used");
             let timer_all = LevelMgr.getTimeAll(this.level_played);
             let per =1- time / timer_all;
-        // 降低星级门槛，让玩家更容易获得星星
-        this.star_1.active = per > 0.05;  // 原来0.1，现在0.05 (5%)
-        this.star_2.active = per > 0.3;   // 原来0.5，现在0.3 (30%)
-        this.star_3.active =per > 0.65;  // 原来0.9，现在0.65 (65%)
+        if (this.star_1) this.star_1.active = per > 0.05;
+        if (this.star_2) this.star_2.active = per > 0.3;
+        if (this.star_3) this.star_3.active = per > 0.65;
     }
     start() {
 

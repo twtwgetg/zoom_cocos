@@ -274,7 +274,7 @@ export class gridcreator extends Component {
             const children = this.card_container.children;
 
             for (const child of children) {
-                const p = child.getComponent('TObject') as any;
+                const p = child.getComponent(TObject);
                 if (p && p.HasConnect()) {
                     hasconnect = true;
                     break;
@@ -282,9 +282,7 @@ export class gridcreator extends Component {
             }
 
             if (!hasconnect) {
-                const xs = this.card_container.getComponentsInChildren('TObject') as any[];
-                // 降低触发自动刷新的阈值，从原来的2个卡牌减少到1个卡牌
-                // 这样即使只剩下很少的卡牌也会触发刷新，让玩家更快接触到新动物
+                const xs = this.card_container.getComponentsInChildren(TObject);
                 if (xs.length > 1) {
                     console.log('没有连接，刷新');
                     this.brushkind();
