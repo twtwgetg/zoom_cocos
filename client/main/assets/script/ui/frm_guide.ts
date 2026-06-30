@@ -48,6 +48,7 @@ export class frm_guide extends frmbase {
     }
     protected OnHide(): void {
         frm_guide.isShow = false;
+        this.currentTarget = null;
     }
     protected onLoad(): void {
         super.onLoad();
@@ -62,9 +63,13 @@ export class frm_guide extends frmbase {
     }
     static data: any;
     show_guide(data: any) { 
+        if (this.isShow && frm_guide.data === data) {
+            return null;
+        }
         this.show(); 
         frm_guide.data = data;
         frm_guide.state = 0;
+        this.currentTarget = null;
         // if(data=="normal"){
             
         // }
@@ -82,6 +87,7 @@ export class frm_guide extends frmbase {
     }
     card: TObject[] = [];
     static state: number = 0;
+    private currentTarget: Node | null = null;
     update(deltaTime: number) {
         if(!this.isShow){
             return ;
@@ -106,8 +112,12 @@ export class frm_guide extends frmbase {
     ProcItemTimerGuide() {
         if(frm_guide.state==0){
             frm_guide.remind = Main.DispEvent('GET_REMIND_CTRL',ItemType.time) as titem;
+            if (!frm_guide.remind || !this.focusGuideOn(frm_guide.remind.node)) {
+                frm_guide.state = 0;
+                this.hide();
+                return;
+            }
             frm_guide.state = 1;
-            this.setGuidePos(frm_guide.remind.node);
         }
         else if(frm_guide.state==1){
 
@@ -122,13 +132,21 @@ export class frm_guide extends frmbase {
     ProcGetRewardGuide() {
         if(frm_guide.state==0){
             frm_guide.getreward = Main.DispEvent('GET_GETREWARD_CTRL');
-            this.setGuidePos(frm_guide.getreward.node);
+            if (!frm_guide.getreward || !this.focusGuideOn(frm_guide.getreward.node)) {
+                frm_guide.state = 0;
+                this.hide();
+                return;
+            }
             frm_guide.state = 1;
         } 
         else if(frm_guide.state==2)
         {
             frm_guide.getreward = Main.DispEvent('GET_GETREWARD_NEXT');
-            this.setGuidePos(frm_guide.getreward.node);
+            if (!frm_guide.getreward || !this.focusGuideOn(frm_guide.getreward.node)) {
+                frm_guide.state = 0;
+                this.hide();
+                return;
+            }
             frm_guide.state = 3;
         } 
         else if(frm_guide.state==4)
@@ -140,10 +158,20 @@ export class frm_guide extends frmbase {
     ProcRemindGuide() {
         if(frm_guide.state==0){
             frm_guide.remind= Main.DispEvent('GET_REMIND_CTRL',ItemType.remind);
+            if (!frm_guide.remind || !this.focusGuideOn(frm_guide.remind.node)) {
+                frm_guide.state = 0;
+                PlayerPrefb.setInt('GuideStep',5);
+                this.hide();
+                return;
+            }
             frm_guide.state = 1;
         }
         else if(frm_guide.state==1){
-            this.setGuidePos(frm_guide.remind.node);
+            if (!frm_guide.remind || !this.focusGuideOn(frm_guide.remind.node)) {
+                frm_guide.state = 0;
+                PlayerPrefb.setInt('GuideStep',5);
+                this.hide();
+            }
             
         }
         else if(frm_guide.state==2){
@@ -158,7 +186,7 @@ export class frm_guide extends frmbase {
             // 指引开始
             // 先找一个卡牌
             this.card = Main.DispEvent('GET_CARD_GUIDE') as TObject[];
-            if(this.card!=null && this.card.length>0){
+            if(this.card!=null && this.card.length>=2){
                 frm_guide.state = 1;
                 //找到成对卡牌，开始
             }
@@ -172,11 +200,19 @@ export class frm_guide extends frmbase {
         }
         else if(frm_guide.state==1){
             frm_guide.currCard = this.card[0];
-            this.setGuidePos(this.card[0].node);
+            if (!frm_guide.currCard || !this.focusGuideOn(frm_guide.currCard.node)) {
+                frm_guide.state = 0;
+                PlayerPrefb.setInt('GuideStep',1);
+                this.hide();
+            }
         }
         else if(frm_guide.state==2){
             frm_guide.currCard = this.card[1];
-            this.setGuidePos(this.card[1].node); 
+            if (!frm_guide.currCard || !this.focusGuideOn(frm_guide.currCard.node)) {
+                frm_guide.state = 0;
+                PlayerPrefb.setInt('GuideStep',1);
+                this.hide();
+            }
         }
         else if(frm_guide.state==3){
             if(PlayerPrefb.getInt('GuideStep',1)===1){
@@ -193,6 +229,17 @@ export class frm_guide extends frmbase {
                 this.hide();
             }
         }
+    }
+    private focusGuideOn(node: Node | null): boolean {
+        if (!node || !node.isValid || !node.activeInHierarchy || !node.getComponent(UITransform)) {
+            return false;
+        }
+        if (this.currentTarget === node) {
+            return true;
+        }
+        this.currentTarget = node;
+        this.setGuidePos(node);
+        return true;
     }
     async setGuidePos(node: Node) { 
         let uit = node.getComponent(UITransform)!;

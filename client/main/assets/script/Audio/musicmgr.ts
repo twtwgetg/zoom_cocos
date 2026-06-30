@@ -23,19 +23,13 @@ export class musicmgr extends Component {
         
         Main.RegistEvent("game_begin", (x) =>
         {
-            this.source.stop(); //停止
-            this.source.loop=true;
-            this.source.clip = this.main;
-            this.source.play(); //播放
+            this.playLoop(this.main);
             
             return null;
         });
         Main.RegistEvent("event_play", (x) =>
         {
-            this.source.stop(); //停止
-            this.source.loop=true;
-            this.source.clip = this.play;
-            this.source.play(); //播放
+            this.playLoop(this.play);
             return null;
         });
         // 移除了game_win事件处理，因为已经移到soundmgr中
@@ -80,7 +74,7 @@ export class musicmgr extends Component {
         Main.RegistEvent("event_music_change", (x) =>
         {
             this.source.volume = musicmgr.bMusicEnable?1:0;
-            if(musicmgr.bMusicEnable)
+            if(musicmgr.bMusicEnable && !this.source.playing)
             {
                 this.source.play();
             }
@@ -97,6 +91,15 @@ export class musicmgr extends Component {
     {
         PlayerPrefb.setInt('music', value ? 1 : 0);
         Main.DispEvent("event_music_change");
+    }
+    private playLoop(clip: AudioClip) {
+        this.source.loop = true;
+        if (this.source.clip === clip && this.source.playing) {
+            return;
+        }
+        this.source.stop();
+        this.source.clip = clip;
+        this.source.play();
     }
     update(deltaTime: number) {
         

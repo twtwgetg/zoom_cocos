@@ -75,6 +75,7 @@ export class frm_result extends frmbase {
     sprite_brush: SpriteFrame = null!;
     @property(SpriteFrame)
     sprite_remind: SpriteFrame = null!;
+    private resultButtonsReady: boolean = false;
 
     //转成千位进制表示法
     formatNumber(num: number): string {
@@ -98,7 +99,7 @@ export class frm_result extends frmbase {
      * 显示下一关按钮
      */
     ShowNextlevel(){
-        if(this.level_played<=0){
+        if(this.level_played < 0 || this.level_played >= LevelMgr.realmaxlevel - 1){
             // 非闯关模式，没有下一关
             this.btn_nextlevel.node.active = false;
         }
@@ -120,7 +121,10 @@ export class frm_result extends frmbase {
                 this.btn_again_win.node.active = true;
                 this.btn_menu_win.node.active = true;
                 this.ShowNextlevel();
+                this.resultButtonsReady = true;
+                this.checkGuide();
             }, 3.5);
+            this.resultButtonsReady = false;
             this.btn_again_faild.node.active = false;
             this.btn_menu_faild.node.active = false;
             this.btn_again_win.node.active = false;
@@ -133,14 +137,23 @@ export class frm_result extends frmbase {
             this.btn_again_win.node.active = true;
             this.btn_menu_win.node.active = true;
             this.ShowNextlevel();
-            this.checkGuide();
+            this.resultButtonsReady = true;
+            this.scheduleOnce(() => this.checkGuide(), 0);
         }
     }
-    checkGuide() {
-        if (PlayerPrefb.getInt("GuideStep_GetReward", 1) == 1) {
-            Main.DispEvent("GUIDE_SHOW", "getreward");
-            PlayerPrefb.setInt("GuideStep_GetReward", 2);
+
+    private checkGuide() {
+        if (!this.resultButtonsReady || !this.sucess.active) {
+            return;
         }
+        if (PlayerPrefb.getInt("GuideStep_GetReward", 1) !== 1) {
+            return;
+        }
+        if (!this.btn_get_jifen_reward || !this.btn_get_jifen_reward.node.activeInHierarchy || !this.btn_get_jifen_reward.interactable) {
+            return;
+        }
+        Main.DispEvent("GUIDE_SHOW", "getreward");
+        PlayerPrefb.setInt("GuideStep_GetReward", 2);
     }
     
     protected onLoad(): void {
@@ -222,6 +235,7 @@ export class frm_result extends frmbase {
             this.btn_again_win.node.active = true;
             this.btn_menu_win.node.active = true;
             this.ShowNextlevel();
+            this.resultButtonsReady = true;
             this.checkGuide();
         });
         Main.RegistEvent("GET_GETREWARD_CTRL", (x) => {

@@ -226,17 +226,14 @@ export class frm_main extends frmbase {
         super.onLoad();
         let that =this;
         Main.RegistEvent("CARD_ANIMATIONS_COMPLETE", (x) => {
-            if (this.gridcreator.gameType === GameType.LAYER_SPLIT) {
-                return;
-            }
-
-            this.gridcreator.checkLeft();
-
-            if (PlayerPrefb.getInt("GuideStep", 1) === 1) {
-                Main.DispEvent("GUIDE_SHOW", "normal");
-            }
-            if (PlayerPrefb.getInt("GuideStep", 1) === 4) {
-                Main.DispEvent("GUIDE_SHOW", "remind");
+            if (this.gridcreator.gameType !== GameType.LAYER_SPLIT) {
+                this.gridcreator.checkLeft();
+                if (!frm_guide.isShow && PlayerPrefb.getInt("GuideStep", 1) === 1) {
+                    Main.DispEvent("GUIDE_SHOW", "normal");
+                }
+                if (!frm_guide.isShow && PlayerPrefb.getInt("GuideStep", 1) === 4) {
+                    Main.DispEvent("GUIDE_SHOW", "remind");
+                }
             }
         });
  
@@ -271,7 +268,6 @@ export class frm_main extends frmbase {
                 this.jishi=true;
                 frm_main.isPause = false;
                 // 播放道具按钮入场动画，但不显示三消模式的道具按钮
-                this.playToolButtonsEntranceAnimation();
             }, 0);
 
             this.level_playing = x;
@@ -333,8 +329,6 @@ export class frm_main extends frmbase {
                 this.time_now = 0;
                 this.jishi=false; // 无限模式不使用计时器
                 frm_main.isPause = false;
-                // 播放道具按钮入场动画
-                this.playToolButtonsEntranceAnimation();
                 // 启动无限模式生成器
                 this.startInfiniteModeGenerator();
             }, 0);
@@ -388,8 +382,6 @@ export class frm_main extends frmbase {
                     this.time_now = 0;
                     this.jishi=false; // 分层叠加模式不使用计时器
                     frm_main.isPause = false;
-                    // 播放道具按钮入场动画
-                    this.playToolButtonsEntranceAnimation();
                 } else {
                     console.error("gridcreator对象未正确初始化");
                 }
@@ -443,8 +435,6 @@ export class frm_main extends frmbase {
                 this.time_now = 0;
                 this.jishi = false; // 三消模式不使用计时器
                 frm_main.isPause = false;
-                // 播放道具按钮入场动画
-                this.playToolButtonsEntranceAnimation();
             }, 0);
 
             this.level_playing = -2; // 三消模式使用特殊关卡编号
@@ -643,10 +633,9 @@ export class frm_main extends frmbase {
     
         // 检查是否需要提醒玩家（剩余时间小于15秒）
         if (remainingTime <= 15 && !this.timeWarningShown) {
-
-            if(PlayerPrefb.getInt("GuideStep_Timer",1)==1){
-                PlayerPrefb.setInt("GuideStep_Timer",2);
-                Main.DispEvent("GUIDE_SHOW","item_timer");
+            if (!frm_guide.isShow && PlayerPrefb.getInt("GuideStep_Timer", 1) === 1) {
+                PlayerPrefb.setInt("GuideStep_Timer", 2);
+                Main.DispEvent("GUIDE_SHOW", "item_timer");
             }
 
             // 无论是否有时间道具都显示提醒
@@ -913,99 +902,6 @@ export class frm_main extends frmbase {
             .start();
     }
 
-    /**
-     * 播放道具按钮入场动画
-     * 三个按钮从底部向上滑动并带有缩放效果
-     */
-    private playToolButtonsEntranceAnimation() {
-        // 如果是三消模式，不显示道具按钮
-        if (this.level_playing === -2) {
-            return;
-        }
-        
-        // 先确保所有道具按钮都显示
-        // this.showToolButtons();
-        
-        // const toolButtons = [this.btn_remind, this.btn_time, this.btn_refrush];
-        
-        // toolButtons.forEach((button, index) => {
-        //     if (!button || !button.node) {
-        //         console.warn(`道具按钮 ${index} 未找到`);
-        //         return;
-        //     }
-
-        //     const originalPosition = button.node.position.clone();
-        //     const originalScale = button.node.scale.clone();
-            
-        //     // 设置初始状态：在原位置下方100像素，缩放为0
-        //     button.node.setPosition(originalPosition.x, originalPosition.y - 100, originalPosition.z);
-        //     button.node.setScale(0, 0, 1);
-            
-        //     // 延迟播放，每个按钮间隔0.1秒
-        //     const delay = index * 0.1;
-            
-        //     // 创建入场动画
-        //     tween(button.node)
-        //         .delay(delay)
-        //         .parallel(
-        //             // 位置动画：从下方滑动到原位置
-        //             tween().to(0.6, { position: originalPosition }, {
-        //                 easing: 'backOut' // 使用回弹效果
-        //             }),
-        //             // 缩放动画：从0缩放到原始大小
-        //             tween().to(0.6, { scale: originalScale }, {
-        //                 easing: 'backOut'
-        //             })
-        //         )
-        //         .call(() => {
-        //             console.log(`道具按钮 ${index} 入场动画完成`);
-        //             // 添加一个小的弹跳效果来吸引注意
-        //             this.addAttentionBounce(button.node);
-        //         })
-        //         .start();
-        // });
-    }
-
-
-
-    /**
-     * 显示所有道具按钮
-     */
-    private showToolButtons() {
-        // 显示刷新道具按钮
-        // if (this.btn_refrush && this.btn_refrush.node) {
-        //     this.btn_refrush.node.active = true;
-        // }
-        
-        // // 显示提醒道具按钮
-        // if (this.btn_remind && this.btn_remind.node) {
-        //     this.btn_remind.node.active = true;
-        // }
-        
-        // // 显示时间道具按钮
-        // if (this.btn_time && this.btn_time.node) {
-        //     this.btn_time.node.active = true;
-        // }
-    }
-    
-
-
-    /**
-     * 为按钮添加注意力弹跳效果
-     * @param buttonNode 按钮节点
-     */
-    private addAttentionBounce(buttonNode: Node) {
-        const originalScale = buttonNode.scale.clone();
-        
-        tween(buttonNode)
-            .delay(0.5) // 入场动画完成后稍作停顿
-            .to(0.2, { scale: new Vec3(originalScale.x * 1.1, originalScale.y * 1.1, originalScale.z) })
-            .to(0.2, { scale: originalScale })
-            .to(0.15, { scale: new Vec3(originalScale.x * 1.05, originalScale.y * 1.05, originalScale.z) })
-            .to(0.15, { scale: originalScale })
-            .start();
-    }
-    
     /**
      * 激活天气效果（阴天效果）
      */

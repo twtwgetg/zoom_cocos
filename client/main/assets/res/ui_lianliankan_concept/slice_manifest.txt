@@ -1,0 +1,16 @@
+01_panel_board.png: 267x274
+02_panel_top_status.png: 313x245
+03_button_primary_orange.png: 313x149
+04_button_secondary_mint.png: 271x149
+05_tile_base_blank.png: 275x299
+06_tile_selected_glow.png: 303x313
+07_line_connection_corner.png: 201x204
+08_badge_reward_star.png: 191x219
+09_tile_apple.png: 244x245
+10_tile_panda.png: 252x248
+11_tile_orange.png: 247x256
+12_tile_flower.png: 242x241
+13_icon_shuffle.png: 248x249
+14_icon_hint.png: 199x253
+15_icon_freeze_time.png: 224x246
+16_icon_score_star_coin.png: 235x236

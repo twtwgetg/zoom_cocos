@@ -11,15 +11,23 @@ export class frm_login extends frmbase {
 
     @property(Button)
     private btn_login: Button = null!;  
+    private isEntering = false;
     protected onLoad(): void {
         super.onLoad();
         Main.RegistEvent("game_begin", (x) =>
         {
+            this.isEntering = false;
             this.show();
             return null;
         });
 
         Main.RegistEvent("event_play", (x) =>
+        {
+            this.isEntering = false;
+            this.hide();
+            return null;
+        });
+        Main.RegistEvent("event_begin", (x) =>
         {
             this.hide();
             return null;
@@ -30,7 +38,7 @@ export class frm_login extends frmbase {
             if(anim) {
                 // 监听动画结束，自动隐藏节点
                 anim.on(cc.Animation.EventType.FINISHED, () => {
-                Main.DispEvent("event_play");
+                Main.DispEvent("event_play", 0);
                         Main.DispEvent("event_heartbeat_stop");
                         this.hide();
                 }, this);
@@ -40,6 +48,7 @@ export class frm_login extends frmbase {
         });
         Main.RegistEvent("event_returnlogin", (x) =>
         {
+            this.isEntering = false;
             this.show();
             return null;
         });
@@ -49,11 +58,14 @@ export class frm_login extends frmbase {
         }
     } 
     protected OnShow(): void {
-        setTimeout(() => {
-            Main.DispEvent('event_playclose');    
-        }, 1000);
+        // Keep the home screen visible so the player can enter from the main CTA.
     }
     private onLoginClick(): void {
+        if (this.isEntering) {
+            return;
+        }
+        this.isEntering = true;
+        this.hide();
         Main.DispEvent('event_begin');
         // 调用登录逻辑 
     }

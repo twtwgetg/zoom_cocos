@@ -11,6 +11,10 @@ const { ccclass, property } = _decorator;
 //declare const tt: any;
 @ccclass('frm_guanka')
 export class frm_guanka extends frmbase {
+    private static readonly INFINITE_UNLOCK_LEVEL = 3;
+    private static readonly MEMORY_UNLOCK_LEVEL = 5;
+    private previewLevel = -1;
+    private previewCount = -1;
     
     //添加一个预制体变量，用于存放关卡预制体
     @property(Node)
@@ -124,7 +128,7 @@ export class frm_guanka extends frmbase {
             this.claimJifenReward();
         }, this);
         //this.fillGuanKa();
-        this.brushGuanKa();
+        this.brushGuanKa(true);
         this.updateModeButtons();
         // 更新积分显示
         this.updateJifenLabel();
@@ -143,16 +147,40 @@ export class frm_guanka extends frmbase {
             this.btn_hard.node.getComponent(Sprite)!.color = new Color(255, 0, 0, 255); // 红色
             this.btn_easy.node.getComponent(Sprite)!.color = new Color(255, 255, 255, 255); // 白色
         }
+        this.updateModeEntryVisibility();
+    }
+
+    private setButtonActive(button: Button | null, active: boolean) {
+        if (button && button.node) {
+            button.node.active = active;
+        }
+    }
+
+    private updateModeEntryVisibility() {
+        const unlockedLevel = LevelMgr.level;
+
+        this.setButtonActive(this.btn_lianliankan, true);
+        this.setButtonActive(this.btn_easy, false);
+        this.setButtonActive(this.btn_hard, false);
+        this.setButtonActive(this.btn_wuxian, unlockedLevel >= frm_guanka.INFINITE_UNLOCK_LEVEL);
+        this.setButtonActive(this.btn_mem, unlockedLevel >= frm_guanka.MEMORY_UNLOCK_LEVEL);
+        this.setButtonActive(this.btn_sanxiao, false);
+        this.setButtonActive(this.btn_layersplit, false);
     }
 
     /**
      *  设置当前关卡
      */
-    brushGuanKa() { 
+    brushGuanKa(force = false) {
+        let count = LevelMgr.getCount(LevelMgr.level) ;
+        this.lbl_level.string = "当前关卡：" + (LevelMgr.level + 1);
+        if (!force && this.previewLevel === LevelMgr.level && this.previewCount === count && this.trans_anis.children.length === count) {
+            return;
+        }
+        this.previewLevel = LevelMgr.level;
+        this.previewCount = count;
         // 清空之前的关卡显示
         this.trans_anis.removeAllChildren();
-        this.lbl_level.string = "当前关卡：" + (LevelMgr.level + 1);
-        let count = LevelMgr.getCount(LevelMgr.level) ;
         for(let i = 0; i < count; i++) {
             var nx = instantiate(this.prefab_sprite);
             //nx.setPosition(i*20,0);
@@ -247,7 +275,7 @@ export class frm_guanka extends frmbase {
             return null;
         });
         Main.RegistEvent("event_inited",(x)=>{ 
-            this.brushGuanKa();
+            this.brushGuanKa(true);
             return null;
         });
         Main.RegistEvent("game_begin",(x)=>{
