@@ -700,6 +700,16 @@ export class TObject extends Component {
         }
         
 
+        // 检查creator是否存在
+        if (!this.creator) {
+            console.error("TObject creator is null");
+            return;
+        }
+
+        if (this.creator.IsBoardMoving) {
+            return;
+        }
+
         // 上报第一次碰撞事件（玩家开始玩了）
         if (!TObject.firstClickReported) {
             TObject.firstClickReported = true;
@@ -714,12 +724,6 @@ export class TObject extends Component {
                 console.log("困难模式下点击被忽略");
                 return;
             }
-        }
-        
-        // 检查creator是否存在
-        if (!this.creator) {
-            console.error("TObject creator is null");
-            return;
         }
         
         // 检查是否为记忆模式
@@ -767,6 +771,7 @@ export class TObject extends Component {
             if (TObject.lastobj !== null) {
                 const poslist: Vec2[] = [];
                 if (this.Check(TObject.lastobj, this, poslist)) {
+                    this.creator.LockBoardInput(0.45);
                     this.released = true;
                     const gb = TObject.lastobj;
                     gb.released = true;

@@ -20,7 +20,7 @@ export enum GameType {
 
 export class LevelMgr {
     //最大关卡数量
-    private static _maxlevel: number = 50;
+    private static _maxlevel: number = 70;
 
 
     //最大动物种类数
@@ -85,7 +85,7 @@ export class LevelMgr {
         const width = this.getWid(level);
         const height = this.getHei(level);
         const totalCells = width * height;
-        const totalPairs = totalCells / 2; // 卡牌对数
+        const totalPairs = Math.floor(totalCells / 2); // 卡牌对数
         const totalCards = totalPairs * 2; // 总卡牌数
         
         // 基础时间：每张卡牌给予一定的时间
@@ -138,7 +138,7 @@ export class LevelMgr {
             return 3; // 第一关只用3种不同的碎片（比之前更少）
         }
         
-        const t = level / LevelMgr._maxlevel;
+        const t = this.getDifficultyFactor(level);
         // 从第二关开始：从18种类型开始，最高达到30种类型（比之前更多）
         return Math.floor(this.lerp(18, 30, t));
     }
@@ -149,7 +149,7 @@ export class LevelMgr {
             return 2; // 第一关只有3列
         }
         
-        const t = level_playing / LevelMgr._maxlevel;
+        const t = this.getDifficultyFactor(level_playing);
         // 增加网格宽度难度
         if (t < 0.15) {
             return 3; // 早期关卡保持简单
@@ -168,21 +168,21 @@ export class LevelMgr {
             return 3; // 第一关只有3行
         }
         
-        const t = level_playing / LevelMgr._maxlevel;
+        const t = this.getDifficultyFactor(level_playing);
         // 增加网格高度难度
         if (t < 0.15) {
             return 6; // 早期关卡保持简单
         } else if (t < 0.4) {
             return 8; // 中期关卡适中
         } else if (t < 0.7) {
-            return 9; // 中后期关卡更难（从12增加到14）
+            return 10; // 中后期关卡更难，并保持偶数格子数量
         } else {
             return 10; // 后期关卡非常难（从14增加到16）
         }
     }
 
     public static getSource(level_playing: number): number {
-        const t = level_playing / LevelMgr._maxlevel;
+        const t = this.getDifficultyFactor(level_playing);
         // 改进的得分系统：
         // 1. 基础得分：每关有基础得分，从100分开始
         // 2. 难度加成：随着关卡推进，难度增加，得分也增加

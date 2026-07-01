@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, EditBox, Input, Label, Node, Color, RichText, Prefab, instantiate, SpriteFrame, Sprite } from 'cc';
+import { _decorator, Button, Component, EditBox, Input, Label, Node, Color, RichText, Prefab, instantiate, SpriteFrame, Sprite, UITransform } from 'cc';
 import { Main } from '../main';
 import { LevelMgr, GameMode } from '../levelmgr';
 import { frmbase } from './frmbase';
@@ -76,6 +76,10 @@ export class frm_result extends frmbase {
     @property(SpriteFrame)
     sprite_remind: SpriteFrame = null!;
     private resultButtonsReady: boolean = false;
+    private faildViewReady: boolean = false;
+    private faildHintLabel: Label | null = null;
+    private faildScoreTitleLabel: Label | null = null;
+    private faildProgressText: RichText | null = null;
 
     //转成千位进制表示法
     formatNumber(num: number): string {
@@ -156,8 +160,221 @@ export class frm_result extends frmbase {
         PlayerPrefb.setInt("GuideStep_GetReward", 2);
     }
 
+    private ensureTransform(node: Node, width: number, height: number): UITransform {
+        let transform = node.getComponent(UITransform);
+        if (!transform) {
+            transform = node.addComponent(UITransform);
+        }
+        transform.setContentSize(width, height);
+        return transform;
+    }
+
+    private createFaildLabel(name: string, parent: Node, y: number, fontSize: number, color: Color, width: number = 650): Label {
+        const node = new Node(name);
+        parent.addChild(node);
+        node.setPosition(0, y, 0);
+        this.ensureTransform(node, width, fontSize + 18);
+
+        const label = node.addComponent(Label);
+        label.horizontalAlign = 1;
+        label.verticalAlign = 1;
+        label.fontSize = fontSize;
+        label.lineHeight = fontSize + 6;
+        label.color = color;
+        (label as any).isBold = true;
+        return label;
+    }
+
+    private createFaildSprite(name: string, parent: Node, sourceFrame: SpriteFrame | null, width: number, height: number, color: Color, y: number): Node | null {
+        if (!sourceFrame) {
+            return null;
+        }
+
+        const node = new Node(name);
+        parent.addChild(node);
+        node.setPosition(0, y, 0);
+        this.ensureTransform(node, width, height);
+
+        const sprite = node.addComponent(Sprite);
+        sprite.spriteFrame = sourceFrame;
+        sprite.type = 1;
+        sprite.sizeMode = 0;
+        sprite.color = color;
+        return node;
+    }
+
+    private getButtonLabel(button: Button | null): Label | null {
+        if (!button || !button.node) {
+            return null;
+        }
+        for (const child of button.node.children) {
+            const label = child.getComponent(Label);
+            if (label) {
+                return label;
+            }
+        }
+        return null;
+    }
+
+    private setupFaildView() {
+        if (this.faildViewReady || !this.faild) {
+            return;
+        }
+
+        const panel = this.faild.getChildByName("bg_Items");
+        const panelSprite = panel?.getComponent(Sprite);
+        const panelFrame = panelSprite ? panelSprite.spriteFrame : null;
+
+        const overlay = this.createFaildSprite(
+            "faild_soft_overlay",
+            this.faild,
+            panelFrame,
+            1080,
+            2160,
+            new Color(34, 28, 24, 96),
+            0
+        );
+        if (overlay) {
+            overlay.setSiblingIndex(0);
+        }
+
+        if (panel) {
+            panel.setPosition(0, 30, 0);
+            const panelTransform = panel.getComponent(UITransform);
+            if (panelTransform) {
+                panelTransform.setContentSize(850, 965);
+            }
+            if (panelSprite) {
+                panelSprite.color = new Color(255, 246, 218, 255);
+            }
+            const decor = panel.getChildByName("Sprite");
+            if (decor) {
+                decor.setPosition(0, 487, 0);
+                decor.setScale(1.08, 1.08, 1);
+            }
+        }
+
+        this.faildHintLabel = this.createFaildLabel("faild_hint", this.faild, 452, 34, new Color(137, 80, 46, 255), 690);
+        this.faildScoreTitleLabel = this.createFaildLabel("faild_score_title", this.faild, 318, 38, new Color(130, 73, 34, 255), 620);
+        const titleLabel = this.createFaildLabel("faild_title", this.faild, 540, 56, new Color(255, 244, 210, 255), 560);
+        titleLabel.string = "挑战失败";
+
+        const titlePlate = this.createFaildSprite(
+            "faild_title_plate",
+            this.faild,
+            this.btn_again_faild?.node?.getComponent(Sprite)?.spriteFrame || panelFrame,
+            430,
+            112,
+            new Color(211, 84, 45, 255),
+            540
+        );
+        if (titlePlate) {
+            titlePlate.setSiblingIndex(titleLabel.node.getSiblingIndex());
+            titleLabel.node.setSiblingIndex(titlePlate.getSiblingIndex() + 1);
+        }
+
+        if (this.level_faild) {
+            this.level_faild.fontSize = 38;
+            this.level_faild.lineHeight = 42;
+            this.level_faild.color = new Color(92, 0, 0, 255);
+            (this.level_faild as any).isBold = true;
+        }
+
+        if (this.lbl_soruce_faild) {
+            this.lbl_soruce_faild.fontSize = 76;
+            this.lbl_soruce_faild.lineHeight = 82;
+            this.lbl_soruce_faild.color = new Color(255, 255, 255, 255);
+            (this.lbl_soruce_faild as any).isBold = true;
+            this.lbl_soruce_faild.node.setPosition(0, 238, 0);
+            this.ensureTransform(this.lbl_soruce_faild.node, 540, 90);
+        }
+
+        const rewardNode = this.faild.getChildByName("tools");
+        if (rewardNode) {
+            rewardNode.setPosition(0, 82, 0);
+            this.ensureTransform(rewardNode, 630, 138);
+            const rewardSprite = rewardNode.getComponent(Sprite);
+            if (rewardSprite) {
+                rewardSprite.color = new Color(255, 225, 174, 255);
+            }
+            const rewardView = rewardNode.getChildByName("view");
+            if (rewardView) {
+                rewardView.active = false;
+            }
+            const rewardButton = rewardNode.getChildByName("lingqu");
+            if (rewardButton) {
+                rewardButton.active = false;
+            }
+            const richNode = rewardNode.getChildByName("RichText");
+            if (richNode) {
+                richNode.setPosition(0, 0, 0);
+                this.ensureTransform(richNode, 570, 92);
+                this.faildProgressText = richNode.getComponent(RichText);
+                if (this.faildProgressText) {
+                    this.faildProgressText.fontSize = 30;
+                    this.faildProgressText.lineHeight = 40;
+                    this.faildProgressText.horizontalAlign = 1;
+                    this.faildProgressText.fontColor = new Color(118, 70, 35, 255);
+                }
+            }
+        }
+
+        this.btn_again_faild.node.setPosition(0, -580, 0);
+        this.btn_again_faild.node.setScale(1.08, 1.08, 1);
+        this.btn_menu_faild.node.setPosition(0, -730, 0);
+        this.btn_menu_faild.node.setScale(0.96, 0.96, 1);
+
+        const againLabel = this.getButtonLabel(this.btn_again_faild);
+        if (againLabel) {
+            againLabel.string = "再试一次";
+            againLabel.fontSize = 42;
+            againLabel.color = new Color(255, 246, 208, 255);
+        }
+        const menuLabel = this.getButtonLabel(this.btn_menu_faild);
+        if (menuLabel) {
+            menuLabel.fontSize = 38;
+            menuLabel.color = new Color(255, 236, 185, 255);
+        }
+
+        this.faildViewReady = true;
+    }
+
+    private getFaildRewardProgressText(score: number): string {
+        const currentJifen = PlayerPrefb.getInt("jifen", 0);
+        const rewardInfo = this.getNextJifenRewardInfo(currentJifen);
+        if (!rewardInfo) {
+            return `<color=#7a4c24>当前积分 ${currentJifen}，继续挑战刷新最好成绩</color>`;
+        }
+
+        if (rewardInfo.canClaim) {
+            return `<color=#7a4c24>当前积分 </color><color=#19a85d>${currentJifen}</color><color=#7a4c24>，已有奖励可领取</color>`;
+        }
+
+        const need = Math.max(0, rewardInfo.threshold - currentJifen);
+        if (score <= 0) {
+            return `<color=#7a4c24>当前积分 </color><color=#d9542d>${currentJifen}</color><color=#7a4c24>，距离下个奖励还差 </color><color=#19a85d>${need}</color><color=#7a4c24> 积分</color>`;
+        }
+        return `<color=#7a4c24>本局得分 </color><color=#d9542d>${score}</color><color=#7a4c24>，距离下个奖励还差 </color><color=#19a85d>${need}</color><color=#7a4c24> 积分</color>`;
+    }
+
+    private showFaildResult(score: number, hint: string, scoreTitle: string = "本局得分") {
+        this.setupFaildView();
+
+        if (this.faildHintLabel) {
+            this.faildHintLabel.string = hint;
+        }
+        if (this.faildScoreTitleLabel) {
+            this.faildScoreTitleLabel.string = scoreTitle;
+        }
+        if (this.faildProgressText) {
+            this.faildProgressText.string = this.getFaildRewardProgressText(score);
+        }
+    }
+
     protected onLoad(): void {
 
+
+        this.setupFaildView();
 
         this.btn_again_faild.node.on(Button.EventType.CLICK, () =>
         {
@@ -365,6 +582,7 @@ export class frm_result extends frmbase {
             // 使用新的得分计算方法
             let source = LevelMgr.calculateScore(this.level_played, time);
             this.lbl_soruce_faild.string =this.formatNumber( source);
+            this.showFaildResult(source, "还差一点就能过关，调整路线再试一次");
             this.show();
             // 上报游戏失败事件
             ToutiaoEventMgr.reportGameLose(x);
@@ -383,7 +601,8 @@ export class frm_result extends frmbase {
             this.faild.active=true;
             this.sucess.active=false;
             // 无限模式没有时间概念，显示特殊信息
-            this.lbl_soruce_faild.string = "网格已填满";
+            this.lbl_soruce_faild.string = "网格已满";
+            this.showFaildResult(0, "网格已经填满，优先清出中间区域", "失败原因");
             // 隐藏下一关按钮
             this.btn_nextlevel.node.active = false;
             this.show();
@@ -401,7 +620,8 @@ export class frm_result extends frmbase {
             this.faild.active=true;
             this.sucess.active=false;
             // 分层叠加模式没有时间概念，显示特殊信息
-            this.lbl_soruce_faild.string = "卡槽已填满";
+            this.lbl_soruce_faild.string = "卡槽已满";
+            this.showFaildResult(0, "卡槽已经填满，先消除外层再推进", "失败原因");
             // 隐藏下一关按钮
             this.btn_nextlevel.node.active = false;
             this.show();

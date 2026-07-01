@@ -3,16 +3,16 @@ import { PlayerPrefb } from "./PlayerPrefb";
 export class JifenRewardManager {
     // 积分奖励阈值和奖励内容
     private static readonly REWARD_THRESHOLDS = [
-        { threshold: 10, rewards: [{ type: 'remind', count: 1 }], description: "10积分: 获得1个提示道具" },
-        { threshold: 50, rewards: [{ type: 'remind', count: 1 }, { type: 'time', count: 1 }], description: "50积分: 获得1个提示道具和1个时间道具" },
-        { threshold: 100, rewards: [{ type: 'remind', count: 1 }, { type: 'time', count: 1 }, { type: 'layer', count: 1 }], description: "100积分: 获得1个提示道具、1个时间道具和1个找齐道具" },
-        { threshold: 200, rewards: [{ type: 'remind', count: 2 }, { type: 'time', count: 1 }, { type: 'brush', count: 1 }], description: "200积分: 获得2个提示道具、1个时间道具和1个刷新道具" },
-        { threshold: 400, rewards: [{ type: 'remind', count: 2 }, { type: 'time', count: 2 }, { type: 'brush', count: 1 }, { type: 'layer', count: 1 }], description: "400积分: 获得2个提示道具、2个时间道具、1个刷新道具和1个找齐道具" },
-        { threshold: 800, rewards: [{ type: 'remind', count: 3 }, { type: 'time', count: 2 }, { type: 'brush', count: 2 }], description: "800积分: 获得3个提示道具、2个时间道具和2个刷新道具" },
-        { threshold: 1600, rewards: [{ type: 'remind', count: 3 }, { type: 'time', count: 3 }, { type: 'brush', count: 2 }, { type: 'layer', count: 1 }], description: "1600积分: 获得3个提示道具、3个时间道具、2个刷新道具和1个找齐道具" },
-        { threshold: 3200, rewards: [{ type: 'remind', count: 4 }, { type: 'time', count: 3 }, { type: 'brush', count: 3 }], description: "3200积分: 获得4个提示道具、3个时间道具和3个刷新道具" },
-        { threshold: 6400, rewards: [{ type: 'remind', count: 4 }, { type: 'time', count: 4 }, { type: 'brush', count: 3 }, { type: 'layer', count: 2 }], description: "6400积分: 获得4个提示道具、4个时间道具、3个刷新道具和2个找齐道具" },
-        { threshold: 10000, rewards: [{ type: 'remind', count: 5 }, { type: 'time', count: 5 }, { type: 'brush', count: 4 }, { type: 'layer', count: 2 }], description: "10000积分: 获得5个提示道具、5个时间道具、4个刷新道具和2个找齐道具" }
+        { threshold: 80, rewards: [{ type: 'remind', count: 1 }], description: "80积分: 获得1个提示道具" },
+        { threshold: 200, rewards: [{ type: 'time', count: 1 }], description: "200积分: 获得1个时间道具" },
+        { threshold: 450, rewards: [{ type: 'brush', count: 1 }], description: "450积分: 获得1个刷新道具" },
+        { threshold: 800, rewards: [{ type: 'layer', count: 1 }], description: "800积分: 获得1个找齐道具" },
+        { threshold: 1300, rewards: [{ type: 'remind', count: 1 }, { type: 'time', count: 1 }], description: "1300积分: 获得1个提示道具和1个时间道具" },
+        { threshold: 2000, rewards: [{ type: 'remind', count: 1 }, { type: 'brush', count: 1 }], description: "2000积分: 获得1个提示道具和1个刷新道具" },
+        { threshold: 3000, rewards: [{ type: 'time', count: 1 }, { type: 'layer', count: 1 }], description: "3000积分: 获得1个时间道具和1个找齐道具" },
+        { threshold: 4500, rewards: [{ type: 'time', count: 1 }, { type: 'brush', count: 1 }], description: "4500积分: 获得1个时间道具和1个刷新道具" },
+        { threshold: 6500, rewards: [{ type: 'remind', count: 2 }, { type: 'brush', count: 1 }], description: "6500积分: 获得2个提示道具和1个刷新道具" },
+        { threshold: 9000, rewards: [{ type: 'time', count: 2 }, { type: 'layer', count: 1 }], description: "9000积分: 获得2个时间道具和1个找齐道具" }
     ];
 
     /**
@@ -90,16 +90,16 @@ export class JifenRewardManager {
         
         // 使用位运算检查哪些阈值已被领取
         // 扩展位运算以支持更多阈值
-        if (claimed & 1) thresholds.push(10);
-        if (claimed & 2) thresholds.push(50);
-        if (claimed & 4) thresholds.push(100);
-        if (claimed & 8) thresholds.push(200);
-        if (claimed & 16) thresholds.push(400);
-        if (claimed & 32) thresholds.push(800);
-        if (claimed & 64) thresholds.push(1600);
-        if (claimed & 128) thresholds.push(3200);
-        if (claimed & 256) thresholds.push(6400);
-        if (claimed & 512) thresholds.push(10000);
+        if (claimed & 1) thresholds.push(80);
+        if (claimed & 2) thresholds.push(200);
+        if (claimed & 4) thresholds.push(450);
+        if (claimed & 8) thresholds.push(800);
+        if (claimed & 16) thresholds.push(1300);
+        if (claimed & 32) thresholds.push(2000);
+        if (claimed & 64) thresholds.push(3000);
+        if (claimed & 128) thresholds.push(4500);
+        if (claimed & 256) thresholds.push(6500);
+        if (claimed & 512) thresholds.push(9000);
         
         return thresholds;
     }
@@ -114,16 +114,16 @@ export class JifenRewardManager {
         
         // 使用位运算标记已领取的阈值
         switch (threshold) {
-            case 10: newClaimed |= 1; break;
-            case 50: newClaimed |= 2; break;
-            case 100: newClaimed |= 4; break;
-            case 200: newClaimed |= 8; break;
-            case 400: newClaimed |= 16; break;
-            case 800: newClaimed |= 32; break;
-            case 1600: newClaimed |= 64; break;
-            case 3200: newClaimed |= 128; break;
-            case 6400: newClaimed |= 256; break;
-            case 10000: newClaimed |= 512; break;
+            case 80: newClaimed |= 1; break;
+            case 200: newClaimed |= 2; break;
+            case 450: newClaimed |= 4; break;
+            case 800: newClaimed |= 8; break;
+            case 1300: newClaimed |= 16; break;
+            case 2000: newClaimed |= 32; break;
+            case 3000: newClaimed |= 64; break;
+            case 4500: newClaimed |= 128; break;
+            case 6500: newClaimed |= 256; break;
+            case 9000: newClaimed |= 512; break;
         }
         
         PlayerPrefb.setInt("jifen_rewards_claimed", newClaimed);

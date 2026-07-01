@@ -31,6 +31,8 @@ export class gridcreator extends Component {
     @property(Node)
     bg: Node = null!;
     private gameOver: boolean = false; // 婵炴挸鎲￠崹娆戠磼閹惧瓨灏嗛柡宥呮搐缁?
+    private isBoardMoving: boolean = false;
+    private boardMoveUnlockTimer: any = null;
 
     // 婵烇綀顕ф慨鐐层€掗崨濠傜亞缂侇偉顕ч悗鐑藉矗濮椻偓閸?
     public gameType: GameType = GameType.NORMAL;
@@ -55,6 +57,36 @@ export class gridcreator extends Component {
     public get NeedJiShi(): boolean {
         return this.gameType === GameType.NORMAL;
     }
+
+    public get IsBoardMoving(): boolean {
+        return this.isBoardMoving;
+    }
+
+    public LockBoardInput(duration: number) {
+        this.lockBoardInput(duration);
+    }
+
+    private lockBoardInput(duration: number) {
+        if (this.boardMoveUnlockTimer) {
+            clearTimeout(this.boardMoveUnlockTimer);
+            this.boardMoveUnlockTimer = null;
+        }
+
+        this.isBoardMoving = true;
+        this.boardMoveUnlockTimer = setTimeout(() => {
+            this.isBoardMoving = false;
+            this.boardMoveUnlockTimer = null;
+        }, Math.ceil(duration * 1000) + 80);
+    }
+
+    private unlockBoardInput() {
+        if (this.boardMoveUnlockTimer) {
+            clearTimeout(this.boardMoveUnlockTimer);
+            this.boardMoveUnlockTimer = null;
+        }
+        this.isBoardMoving = false;
+    }
+
     onLoad() {
         // 婵炲鍔岄崬鑺ョ鐎ｂ晜顐?
         this.registEvents();
@@ -298,6 +330,7 @@ export class gridcreator extends Component {
     }
 
     clear(){
+        this.unlockBoardInput();
         this.card_container.removeAllChildren();
     }
     /**
@@ -457,8 +490,9 @@ export class gridcreator extends Component {
 
 
 
-        const cellWidth = this.availableWidth * 0.92 / this.wid;
-        const cellHeight = this.availableHeight * 0.92 / this.hei;
+        const fillRatio = this.wid <= 5 ? 0.98 : 0.92;
+        const cellWidth = this.availableWidth * fillRatio / this.wid;
+        const cellHeight = this.availableHeight * fillRatio / this.hei;
 
         this.gridsize = Math.min(cellWidth, cellHeight);
         this.gridsize = Math.min(180, this.gridsize);
@@ -470,7 +504,7 @@ export class gridcreator extends Component {
 
         // 閻犱緤绱曢悾濠氬箑缂佹澹愰悗娑欏姈閺嗙喖宕仦绛嬪殸闁?
         const totalCells = this.wid * this.hei;
-        const totalPairs = totalCells / 2;
+        const totalPairs = Math.floor(totalCells / 2);
 
         // 闁兼儳鍢茶ぐ鍥矗椤栨粍鏆忕紒顐ヮ嚙閻庣兘寮导鏉戞
         this.pl = this.plSprites;
@@ -586,6 +620,7 @@ export class gridcreator extends Component {
 
 
         // 鐎点倖鍎肩换?.5缂佸甯掗幃妤呭箻椤撶喐鏉箃UpdateCardPositions闁告柣鍔庨弫?
+        this.lockBoardInput(0.85);
         setTimeout(() => {
             this.tUpdateCardPositions(0.55, () => {
                 Main.DispEvent('CARD_ANIMATIONS_COMPLETE');
@@ -594,6 +629,7 @@ export class gridcreator extends Component {
     }
 
     private tUpdateCardPositions(time=0.3, onComplete?: () => void) {
+        this.lockBoardInput(time);
 
         // 閻犱緤绱曢悾缁樼▔椤撶偟濡囬柣鎰扳偓娑氱Т缂?
         const centerX = 0;
@@ -659,6 +695,7 @@ export class gridcreator extends Component {
             child.angle = randomRotation;
 
             // 濞达綀娉曢弫顦歸een闁告柣鍔庨弫鍓р偓鍦仧楠炲洭鎮ラ崱娆忎划鐎殿喖绻愰惈宥咁嚕閳ь剟寮崼鐔轰函
+            tween(child).stop();
             tween(child)
                 .to(time, {
                     position: targetPos,
@@ -883,6 +920,8 @@ export class gridcreator extends Component {
 
     private UpdateCardPositions(time=0.3) {
         const children = this.card_container.children;
+        let hasMovingCard = false;
+
         for (const child of children) {
             const tobj = child.getComponent('TObject') as any;
             // 婵烇綀顕ф慨鐐电矚閸濆嫧鍋撻崗纰辨⒕闁哄被鍎荤槐婵嬫⒓閸欏鍓総obj濞戞挾鐨爑ll闁哄啳娉涢崵顓㈡偝娴煎瓨鏅╅悹?
@@ -895,7 +934,9 @@ export class gridcreator extends Component {
 
             // 闁告瑯浜濆﹢浣姐亹閹惧啿顤呭ù锝呯Ф閻ゅ棙绋夋惔锝嗙獥闁哄秴娲ｇ紞鍛磾椤旇崵鐟濋柛姘湰濡炲倿骞嶅鍡椻挃閻炴稑鑻慨鈺呮偨?
             if (child.position.x != targetPos.x || child.position.y != targetPos.y) {
+                hasMovingCard = true;
                 // 濞达綀娉曢弫顦歸een闁告柣鍔庨弫鍓р偓鍦仧楠炲洭鐛搹顐ゆ嫧濞达絽绉朵簺闁轰礁鐗婇悘?
+                tween(child).stop();
                 tween(child)
                     .to(time, { position: targetPos }, {
                         easing: 'sineOut',
@@ -906,6 +947,10 @@ export class gridcreator extends Component {
                     })
                     .start();
             }
+        }
+
+        if (hasMovingCard) {
+            this.lockBoardInput(time);
         }
     }
 
@@ -2677,9 +2722,9 @@ export class gridcreator extends Component {
 
             // 濞戞挸绉撮崯鈧柛娆愬灦閺備線宕楅崘鎻掑耿濠靛倹鐗曟慨鎶芥晬瀹€鍐ｅ亾鐏炵偓笑濠⒀呭仜婵偟绮旈姘€?
             // 婵絽绻嬮柌婊堝礂閸愭彃骞㈤柤铏矊閸╁嫭鏅堕悙鎻掝潱10闁告帒妫楅悢鈧痪顓涘亾缂佸鍨伴崹?
-            const baseScore = 10;
+            const baseScore = 3;
             // 闂傚懎绻掑鍐礂閸愭彃骞㈠褏鍋涙慨鐐烘晬鐏炵瓔娈柛鏃囦含琚ч柛鎺戞缁″啯鏅堕悙鎻掝潱
-            const levelBonus = Math.floor(currentLevel / 10); // 婵?0闁稿繑濞婇·鍌涘緞閺嵮屾澔闁?闁?
+            const levelBonus = Math.floor(currentLevel / 15); // 婵?0闁稿繑濞婇·鍌涘緞閺嵮屾澔闁?闁?
             const totalScore = baseScore + levelBonus;
 
             // 濠⒀呭仜婵偟绮旈姘€?
