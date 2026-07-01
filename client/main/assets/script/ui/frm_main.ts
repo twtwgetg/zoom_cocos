@@ -10,7 +10,7 @@ import { ToutiaoEventMgr } from '../ToutiaoEventMgr';
 import { PlayerPrefb } from '../PlayerPrefb';
 import { TObject } from '../Card/TObject';
 import { titem } from '../item/titem';
-import { JifenRewardManager } from '../JifenRewardManager'; 
+import { JifenRewardManager } from '../JifenRewardManager';
 import { frm_guide } from './frm_guide';
 const { ccclass, property } = _decorator;
 
@@ -58,7 +58,7 @@ export class frm_main extends frmbase {
     // ice_node: Node = null!;
     @property(Sprite)
     spr_bar: Sprite = null!;
-     
+
     // 添加天气管理器引用
     @property(WeatherShaderManager)
     weatherManager: WeatherShaderManager = null!;
@@ -76,7 +76,7 @@ export class frm_main extends frmbase {
     private stopInfiniteModeGenerator: boolean = false; // 是否停止无限模式生成器
     static isInfinityMode: any;
     static stopInfiniteModeGenerator: boolean;
-    
+
     /**
      * 添加无限模式生成器
      */
@@ -85,20 +85,20 @@ export class frm_main extends frmbase {
         if (this.infiniteModeGeneratorId) {
             clearInterval(this.infiniteModeGeneratorId);
         }
-        
+
         // 重置停止标志
         this.stopInfiniteModeGenerator = false;
-        
+
         // 设置无限模式标志
         this.isInfinityMode = true;
-        
+
         // 每5秒生成一对新卡牌（降低频率以降低难度）
         this.infiniteModeGeneratorId = setInterval(() => {
             // 检查游戏是否暂停、已结束或需要停止生成
             if (frm_main.isPause || !this.isInfinityMode || this.stopInfiniteModeGenerator) {
                 return;
             }
-            
+
             // 调用gridcreator生成新卡牌对
             if (this.gridcreator) {
                 const isFull = this.gridcreator.generateNewPair();
@@ -109,10 +109,10 @@ export class frm_main extends frmbase {
             }
         }, 5000); // 从1000ms改为5000ms，降低生成频率以降低难度
     }
-    
+
     fruzonBar(f:boolean){
         if(!f){
-            this.spr_bar.color=new Color(255,255, 255, 255); 
+            this.spr_bar.color=new Color(255,255, 255, 255);
             if (!this.isInfinityMode) {
                 this.jishi=true;
             } else {
@@ -123,7 +123,7 @@ export class frm_main extends frmbase {
             this.animateGridColor(new Color(255,255,255, 255), 0.5);
             // 取消天气效果
             this.deactivateWeatherEffect();
-            
+
             // 冰封结束时恢复心跳逻辑
             this.heartbeatPaused = false;
             // 重置心跳播放状态，让游戏循环重新评估是否需要播放心跳音效
@@ -137,7 +137,7 @@ export class frm_main extends frmbase {
             this.animateGridColor(new Color(0, 104, 156, 255), 0.5);
             // 激活天气效果
             this.activateWeatherEffect();
-            
+
             // 冰封开始时暂停心跳逻辑
             this.heartbeatPaused = true;
             // 停止心跳音效
@@ -155,14 +155,14 @@ export class frm_main extends frmbase {
             let brushCount = tools.num_brush;
             let remindCount = tools.num_Remind;
             let timeCount = tools.num_time;
-            
+
             // 在困难模式下减少道具数量
             if (LevelMgr.gameMode === GameMode.HARD) {
                 brushCount = Math.max(1, Math.floor(brushCount * 0.7)); // 减少30%的刷新道具
                 remindCount = Math.max(1, Math.floor(remindCount * 0.7)); // 减少30%的提醒道具
                 timeCount = Math.max(1, Math.floor(timeCount * 0.7)); // 减少30%的时间道具
             }
-            
+
             this.fillItem(ItemType.brush, brushCount);
             this.fillItem(ItemType.remind, remindCount);
             this.fillItem(ItemType.time, timeCount);
@@ -171,9 +171,9 @@ export class frm_main extends frmbase {
             this.fillItem(ItemType.ShowFront,tools.num_ShowFront);
         }
         else if(type==enum_paly_type.SANXIAO){
-            
+
         }
-        else if(type==enum_paly_type.LAYERSPLIT){ 
+        else if(type==enum_paly_type.LAYERSPLIT){
             this.fillItem(ItemType.layer,tools.num_layer);
         }
         else{
@@ -181,19 +181,19 @@ export class frm_main extends frmbase {
         }
     }
     fillItem(tp:ItemType, num:number){
-        
+
         let item= instantiate(this.item_prefab);
         item.setParent(this.node_list);
         item.getComponent(titem).init({tp:tp},num);
-        
+
         // 确保道具节点以正确的尺寸显示
         item.scale = new Vec3(1, 1, 1);
-    
+
     }
- 
+
     /**
      * 刷新有限类型
-     * @param 
+     * @param
      */
     brushType(gametyp:GameType){
         this.gridcreator.gameType = gametyp;
@@ -212,7 +212,7 @@ export class frm_main extends frmbase {
         }
         else if(gametyp=== GameType.MEM){
             this.fillItems(enum_paly_type.Mem);
-            this.progress_time.node.active = false;     
+            this.progress_time.node.active = false;
         }
         else if(gametyp=== GameType.SANXIAO){
             this.fillItems(enum_paly_type.SANXIAO);
@@ -222,6 +222,22 @@ export class frm_main extends frmbase {
             console.error("未知的游戏模式"+gametyp);
         }
     }
+
+    protected OnShow(): void {
+        // 刷新当前关卡显示
+        if (this.level_playing >= 0) {
+            this.lbl_guanka.string = "第 "+(this.level_playing+1)+" 关";
+        } else if (this.level_playing === -1) {
+            this.lbl_guanka.string = "无限模式";
+        } else if (this.level_playing === -2) {
+            this.lbl_guanka.string = "三消模式";
+        } else if (this.level_playing === -3) {
+            this.lbl_guanka.string = "分层叠加模式";
+        } else if (this.level_playing === -4) {
+            this.lbl_guanka.string = "记忆模式";
+        }
+    }
+
     protected onLoad(): void {
         super.onLoad();
         let that =this;
@@ -236,7 +252,7 @@ export class frm_main extends frmbase {
                 }
             }
         });
- 
+
         Main.RegistEvent("GET_REMIND_CTRL",(x)=>{
             for(let i=0;i<this.node_list.children.length;i++)
             {
@@ -248,19 +264,19 @@ export class frm_main extends frmbase {
             }
             return null;
         });
-        Main.RegistEvent("event_play",(x)=>{ 
+        Main.RegistEvent("event_play",(x)=>{
 
             this.show();
-          
+
             // 上报进入关卡事件
             ToutiaoEventMgr.reportLevel(x);
             // 上报挑战事件（主动进入游戏）
-            ToutiaoEventMgr.reportCharge(); 
+            ToutiaoEventMgr.reportCharge();
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
-            
+
             this.brushType(GameType.NORMAL);
-            
+
             this.scheduleOnce(() => {
                 this.gridcreator.Create(x);
                 this.time_all = LevelMgr.getTimeAll(x);
@@ -272,106 +288,51 @@ export class frm_main extends frmbase {
 
             this.level_playing = x;
             this.lbl_guanka.string = "第 "+(x+1)+" 关";
-            
+
             // 显示当前游戏模式
             this.updateModeLabel();
-            
+
             // 初始化积分并从本地存储加载
             this.loadJifen();
             this.updateJifenLabel();
-            
+
             // 记录初始时间道具数量
             this.initialTimeCount = tools.num_time;
-            
+
             // 重置时间警告状态
             this.timeWarningShown = false;
-            
+
             // 重置卡牌消失检测
             this.lastCardRemovedTime = 0;
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
- 
- 
+
+
             // 重置本局积分
             this.resetCurrentJifen();
 
             return null;
         });
-        Main.RegistEvent("event_play_mem",(x)=>{ 
-            this.show();
-            this.fillItems(enum_paly_type.Mem);
-            TObject.resetStaticVariables();
-            this.brushType(GameType.MEM);
-            this.scheduleOnce(() => {
-                this.gridcreator.CreateMem(6,8);
-            }, 0);
-
-            this.level_playing = -4; // 无限模式使用特殊关卡编号
-            this.lbl_guanka.string = "记忆模式";
+        Main.RegistEvent("event_play_mem",(x)=>{
+            Main.DispEvent('event_play',LevelMgr.level);
+            return null;
         });
         // 添加无限模式事件处理
-        Main.RegistEvent("event_play_infinite",(x)=>{ 
-            this.show();
-            this.fillItems(enum_paly_type.LIANLIANKAN);
-            // 上报挑战事件（主动进入游戏）
-            ToutiaoEventMgr.reportCharge();
-            
-            // 重置TObject中的静态变量
-            TObject.resetStaticVariables();
-            
-            this.brushType(GameType.INFINITE);
-            
-            this.scheduleOnce(() => {
-                // 创建无限模式关卡（8x10网格）
-                this.gridcreator.CreateInfiniteMode(6, 8);
-                // 无限模式不计时
-                this.time_all = 0;
-                this.time_now = 0;
-                this.jishi=false; // 无限模式不使用计时器
-                frm_main.isPause = false;
-                // 启动无限模式生成器
-                this.startInfiniteModeGenerator();
-            }, 0);
-
-            this.level_playing = -1; // 无限模式使用特殊关卡编号
-            this.lbl_guanka.string = "无限模式";
-            
-            // 显示当前游戏模式
-            this.updateModeLabel();
-            
-            // 初始化积分并从本地存储加载
-            this.loadJifen();
-            this.updateJifenLabel();
-            
-            // 记录初始时间道具数量
-            this.initialTimeCount = tools.num_time;
-            
-            // 重置时间警告状态
-            this.timeWarningShown = false;
-            
-            // 重置卡牌消失检测
-            this.lastCardRemovedTime = 0;
-            this._lastCardCount = undefined;
-            this.stopRemindButtonFlashing();
- 
-            // 隐藏时间进度条（无限模式不计时）
-            if (this.progress_time && this.progress_time.node) {
-                this.progress_time.node.active = false;
-            }
-
-            // 重置本局积分
-            this.resetCurrentJifen(); 
+        Main.RegistEvent("event_play_infinite",(x)=>{
+            Main.DispEvent('event_play',LevelMgr.level);
             return null;
         });
         //添加分层叠加模式
         Main.RegistEvent("event_play_layersplit",()=>{
+            Main.DispEvent('event_play',LevelMgr.level);
+            return null;
             this.show();
             this.fillItems(enum_paly_type.LAYERSPLIT);
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
-            
+
             this.brushType(GameType.LAYER_SPLIT);
-            
+
             this.scheduleOnce(() => {
                 // 添加保护性检查，确保gridcreator对象已正确初始化
                 if (this.gridcreator) {
@@ -387,27 +348,27 @@ export class frm_main extends frmbase {
                 }
             }, 0);
 
-            this.level_playing = -3; // -3表示分层叠加模式 
+            this.level_playing = -3; // -3表示分层叠加模式
             this.lbl_guanka.string = "分层叠加模式";
-            
+
             // 显示当前游戏模式
             this.updateModeLabel();
-            
+
             // 初始化积分并从本地存储加载
             this.loadJifen();
             this.updateJifenLabel();
-            
+
             // 记录初始时间道具数量
             this.initialTimeCount = tools.num_time;
-            
+
             // 重置时间警告状态
             this.timeWarningShown = false;
-            
+
             // 重置卡牌消失检测
             this.lastCardRemovedTime = 0;
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
- 
+
             // 重置本局积分
             this.resetCurrentJifen();
 
@@ -418,12 +379,14 @@ export class frm_main extends frmbase {
 
         })
         // 添加三消模式事件处理
-        Main.RegistEvent("event_play_sanxiao",()=>{ 
+        Main.RegistEvent("event_play_sanxiao",()=>{
+            Main.DispEvent('event_play',LevelMgr.level);
+            return null;
             this.show();
             this.fillItems(enum_paly_type.SANXIAO);
             // 上报挑战事件（主动进入游戏）
             ToutiaoEventMgr.reportCharge();
-            
+
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
             this.brushType(GameType.SANXIAO);
@@ -439,103 +402,119 @@ export class frm_main extends frmbase {
 
             this.level_playing = -2; // 三消模式使用特殊关卡编号
             this.lbl_guanka.string = "三消模式";
-            
+
             // 显示当前游戏模式
             this.updateModeLabel();
-            
+
             // 初始化积分并从本地存储加载
             this.loadJifen();
             this.updateJifenLabel();
-            
+
             // 记录初始时间道具数量
             this.initialTimeCount = tools.num_time;
-            
+
             // 重置时间警告状态
             this.timeWarningShown = false;
-            
+
             // 重置卡牌消失检测
             this.lastCardRemovedTime = 0;
             this._lastCardCount = undefined;
             this.stopRemindButtonFlashing();
-             
+
             // 隐藏时间进度条（三消模式不计时）
             if (this.progress_time && this.progress_time.node) {
                 this.progress_time.node.active = false;
             }
 
             // 重置本局积分
-            this.resetCurrentJifen(); 
+            this.resetCurrentJifen();
             return null;
         });
         Main.RegistEvent("game_begin",()=>{
             this.hide();
         })
-        Main.RegistEvent("event_restart",()=>{ 
+        Main.RegistEvent("event_restart",()=>{
+            Main.DispEvent("event_play", this.level_playing >= 0 ? this.level_playing : LevelMgr.level);
+            return null;
             if(this.gridcreator.gameType == GameType.NORMAL)
             {
-                Main.DispEvent("event_play",this.level_playing); 
+                Main.DispEvent("event_play",this.level_playing);
             }
             else if(this.gridcreator.gameType == GameType.SANXIAO)
             {
-                Main.DispEvent("event_play_sanxiao"); 
+                Main.DispEvent("event_play", this.level_playing >= 0 ? this.level_playing : LevelMgr.level);
             }
             else{
                 console.error("未处理游戏模式"+this.gridcreator.gameType);
             }
             return null;
         });
-        Main.RegistEvent("event_fruszon",(f)=>{ 
+        Main.RegistEvent("event_fruszon",(f)=>{
             this.fruzonBar(f);
             return null;
         });
-   
-        Main.RegistEvent("event_begin",()=>{ 
+
+        Main.RegistEvent("event_begin",()=>{
             // 停止心跳音效
             Main.DispEvent("event_heartbeat_stop");
             // 重置心跳播放状态
             this.heartbeatPlaying = false;
             // 停止提醒道具按钮闪烁
             this.stopRemindButtonFlashing();
- 
+
             this.hide();
             return null;
         });
         // 添加恢复游戏事件处理
-        Main.RegistEvent("event_resume_game",()=>{ 
+        Main.RegistEvent("event_resume_game",()=>{
             // 重置心跳播放状态，让游戏循环重新评估是否需要播放心跳音效
             this.heartbeatPlaying = false;
             // 重置卡牌消失检测时间，避免暂停后立即触发闪烁
             this.lastCardRemovedTime = this.time_now;
+
+            // 刷新当前关卡显示
+            if (this.level_playing >= 0) {
+                this.lbl_guanka.string = "第 "+(this.level_playing+1)+" 关";
+            } else if (this.level_playing === -1) {
+                this.lbl_guanka.string = "无限模式";
+            } else if (this.level_playing === -2) {
+                this.lbl_guanka.string = "三消模式";
+            } else if (this.level_playing === -3) {
+                this.lbl_guanka.string = "分层叠加模式";
+            } else if (this.level_playing === -4) {
+                this.lbl_guanka.string = "记忆模式";
+            }
+
             return null;
         });
         // 添加测试连连看模式修复的事件
-        Main.RegistEvent("event_test_lianliankan",()=>{ 
+        Main.RegistEvent("event_test_lianliankan",()=>{
             console.log("测试连连看模式连接功能");
             // 重置所有状态
             TObject.resetStaticVariables();
-            
+
             // 确保游戏类型被正确设置为普通模式
             if (this.gridcreator) {
                 (this.gridcreator as any).gameType = 'normal';
             }
-            
+
             // 重新创建当前关卡
             this.gridcreator.Create(this.level_playing);
-            
+
             return null;
         });
         // 注册积分增加事件处理
-        Main.RegistEvent("event_add_jifen",(val)=>{ 
+        Main.RegistEvent("event_add_jifen",(val)=>{
             this.addJifen(val);
             return null;
         });
         // 添加获取本局积分的事件
-        Main.RegistEvent("event_get_current_jifen",()=>{ 
+        Main.RegistEvent("event_get_current_jifen",()=>{
             return this.currentJifen;
         });
-        
+
         // 添加获取剩余时间的事件
-        Main.RegistEvent("event_get_remaining_time",()=>{ 
+        Main.RegistEvent("event_get_remaining_time",()=>{
             // 只有在计时模式下才返回剩余时间，其他模式返回0
             if (this.jishi && this.time_all > 0) {
                 const remainingTime = this.time_all - this.time_now;
@@ -543,24 +522,24 @@ export class frm_main extends frmbase {
             }
             return 0; // 非计时模式返回0
         });
-        
+
         // 修复：不应该在event_play事件监听器中再次触发event_play事件
         // 这里应该是处理其他需要在游戏开始时重置的状态
-        Main.RegistEvent("event_play_reset",()=>{ 
+        Main.RegistEvent("event_play_reset",()=>{
             // 重置无限模式生成器停止标志
             this.stopInfiniteModeGenerator = false;
-            
+
             return null;
         });
-        
+
         // 添加获取当前游戏类型的事件
-        Main.RegistEvent("event_get_game_type",()=>{ 
+        Main.RegistEvent("event_get_game_type",()=>{
             if (this.gridcreator) {
                 return (this.gridcreator as any).gameType;
             }
             return 'normal';
         });
-        
+
         // 添加获取下一个积分奖励信息的事件处理程序
         Main.RegistEvent("event_get_next_jifen_reward_info", (data) => {
             const { currentJifen } = data;
@@ -577,16 +556,16 @@ export class frm_main extends frmbase {
             return this.time_now;
         });
         this.fruzonBar(false);
- 
+
     }
-    
+
     /**
      * 更新模式标签显示
      */
     updateModeLabel() {
- 
+
     }
-    
+
     start() {
 
     }
@@ -594,17 +573,17 @@ export class frm_main extends frmbase {
     // 添加时间道具提醒相关变量
     private timeWarningShown: boolean = false; // 是否已显示时间警告
     private lastTimeWarningTime: number = 0; // 上次显示时间警告的时间
-    
+
     // 添加卡牌消失检测相关变量
     private lastCardRemovedTime: number = 0; // 上次卡牌消失的时间
     private isRemindButtonFlashing: boolean = false; // 提醒道具按钮是否正在闪烁
     private remindButtonFlashTween: any = null; // 提醒道具按钮闪烁动画的引用
     private _lastCardCount: number | undefined = undefined; // 上一次的卡牌数量
-    
+
     update(deltaTime: number) {
 
 
-        if(frm_main.isPause) 
+        if(frm_main.isPause)
             return;
 
         if(frm_guide.isShow){
@@ -612,25 +591,25 @@ export class frm_main extends frmbase {
             return;
         }
 
-        if(!this.jishi) 
+        if(!this.jishi)
             return;
 
-        if(!this.gridcreator.NeedJiShi) 
+        if(!this.gridcreator.NeedJiShi)
             return;
 
-        this.time_now += deltaTime; 
-        this.progress_time.progress =1.0- this.time_now / this.time_all; 
+        this.time_now += deltaTime;
+        this.progress_time.progress =1.0- this.time_now / this.time_all;
         // 更新时间标签
         if (this.lbl_time) {
             this.lbl_time.string = tools.formatTime(this.time_all - this.time_now);
         }
-        
+
         // 检测卡牌消失时间
         this.checkCardRemovalTime();
-    
+
         // 检查是否需要开始倒计时心跳音效（剩余时间小于10秒）
         const remainingTime = this.time_all - this.time_now;
-    
+
         // 检查是否需要提醒玩家（剩余时间小于15秒）
         if (remainingTime <= 15 && !this.timeWarningShown) {
             if (!frm_guide.isShow && PlayerPrefb.getInt("GuideStep_Timer", 1) === 1) {
@@ -651,7 +630,7 @@ export class frm_main extends frmbase {
             this.timeWarningShown = true;
             this.lastTimeWarningTime = this.time_now;
         }
-    
+
         // 每隔5秒重复提醒一次
         if (this.timeWarningShown && (this.time_now - this.lastTimeWarningTime) >= 5) {
             const currentRemainingTime = this.time_all - this.time_now;
@@ -667,12 +646,12 @@ export class frm_main extends frmbase {
                 this.lastTimeWarningTime = this.time_now;
             }
         }
-    
+
         // 如果时间已经充足，重置提醒状态
         if (remainingTime > 20) {
             this.timeWarningShown = false;
         }
-    
+
         // 只有在心跳未暂停时才处理心跳逻辑
         if (!this.heartbeatPaused && remainingTime <= 10 && !this.heartbeatPlaying) {
             // 开始播放心跳音效
@@ -680,12 +659,12 @@ export class frm_main extends frmbase {
             this.heartbeatPlaying = true;
             this.lastHeartbeatTime = 0; // 重置心跳计时器
         }
-    
+
         // 如果心跳音效正在播放且未暂停，控制心跳节奏
         if (!this.heartbeatPaused && this.heartbeatPlaying) {
             // 更新心跳计时器
             this.lastHeartbeatTime += deltaTime;
-            
+
             // 根据剩余时间调整心跳间隔
             if (remainingTime > 3) {
                 // 剩余时间大于3秒时，心跳间隔为1秒
@@ -694,14 +673,14 @@ export class frm_main extends frmbase {
                 // 剩余时间小于等于3秒时，心跳间隔为0.7秒
                 this.heartbeatInterval = 0.7;
             }
-            
+
             // 如果到了心跳时间，触发心跳音效
             if (this.lastHeartbeatTime >= this.heartbeatInterval) {
                 Main.DispEvent("event_heartbeat_beat");
                 this.lastHeartbeatTime = 0; // 重置心跳计时器
             }
         }
-    
+
         if(this.time_now >= this.time_all) {
             // 只有在计时模式下才触发游戏失败，无限模式不计时
             // 无限模式通过isInfinityMode标志判断，普通模式通过jishi标志和time_all>0判断
@@ -714,7 +693,7 @@ export class frm_main extends frmbase {
             }
         }
     }
-    
+
     /**
      * 检测卡牌消失时间，如果超过5秒没有卡牌消失，就让提醒道具闪烁
      */
@@ -723,28 +702,28 @@ export class frm_main extends frmbase {
         if (frm_main.isPause || !this.jishi) {
             return;
         }
-        
+
         // 获取当前卡牌数量
         const currentCardCount = this.gridcreator.node.children.length;
-        
+
         // 如果卡牌数量发生变化（减少），更新上次卡牌消失时间
         if (!this.hasOwnProperty('_lastCardCount') || this._lastCardCount !== currentCardCount) {
             this.lastCardRemovedTime = this.time_now;
             this._lastCardCount = currentCardCount;
-            
+
             // 停止提醒道具按钮的闪烁动画（如果正在播放）
             if (this.isRemindButtonFlashing) {
                 this.stopRemindButtonFlashing();
             }
         }
-        
+
         // 检查是否超过5秒没有卡牌消失
         const timeSinceLastRemoval = this.time_now - this.lastCardRemovedTime;
         if (timeSinceLastRemoval >= 5 && currentCardCount > 0) {
             // 检查玩家是否还有提醒道具
-        
+
             // 开始播放提醒道具按钮的闪烁动画
-            this.playRemindButtonFlashingAnimation(); 
+            this.playRemindButtonFlashingAnimation();
         }
     }
 
@@ -762,18 +741,18 @@ export class frm_main extends frmbase {
             console.warn('提醒道具按钮未找到');
             return;
         }
-        
+
         // 设置闪烁状态
         this.isRemindButtonFlashing = true;
-        
+
         // 保存原始缩放
         const originalScale = remind.node.scale.clone();
-        
+
         // 停止之前的动画
         if (this.remindButtonFlashTween) {
             this.remindButtonFlashTween.stop();
         }
-        
+
         // 创建闪烁动画（通过改变缩放实现）
         this.remindButtonFlashTween = tween(remind.node)
             .repeatForever(
@@ -792,7 +771,7 @@ export class frm_main extends frmbase {
     private stopRemindButtonFlashing() {
         // 重置闪烁状态
         this.isRemindButtonFlashing = false;
-        
+
         // 停止动画
         if (this.remindButtonFlashTween) {
             this.remindButtonFlashTween.stop();
@@ -806,7 +785,7 @@ export class frm_main extends frmbase {
         }
         // 停止所有动画
         tween(remind.node).stop();
-        
+
         // 恢复原始缩放
         remind.node.scale = new Vec3(1, 1, 1);
     }
@@ -818,7 +797,7 @@ export class frm_main extends frmbase {
         return this.initialTimeCount;
     }
     getItemByType(type:ItemType): titem {
-     
+
         let ret :titem = null   ;
         let items = this.node_list.getComponentsInChildren(titem);
         for (let i = 0; i < items.length; i++) {
@@ -831,21 +810,21 @@ export class frm_main extends frmbase {
     /**
      * 播放时间道具按钮动画以吸引玩家注意
      */
-    private playTimeButtonAnimation() 
+    private playTimeButtonAnimation()
     {
         let item = this.getItemByType(ItemType.time);
         if (!item) {
             return ;
         }
-        
-        
+
+
         // // 停止之前的动画
         tween(item.node).stop();
-        
+
         // 保存原始状态
         const originalScale = item.node.scale.clone();
         const originalPosition = item.node.position.clone();
-        
+
         // 创建吸引注意的动画序列
         tween(item.node)
             .repeat(3, // 重复3次
@@ -858,7 +837,7 @@ export class frm_main extends frmbase {
             )
             .start();
     }
-    
+
     /**
      * 为grid容器添加颜色渐变效果
      * @param targetColor 目标颜色
@@ -872,14 +851,14 @@ export class frm_main extends frmbase {
 
         const gridNode = this.gridcreator.node;
         const spriteComp = gridNode.getComponent(Sprite);
-        
+
         if (!spriteComp) {
             console.warn('无法找到grid的Sprite组件');
             return;
         }
 
         const currentColor = spriteComp.color.clone();
-        
+
         console.log('开始颜色渐变:', {
             from: `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`,
             to: `rgb(${targetColor.r}, ${targetColor.g}, ${targetColor.b})`,
@@ -891,8 +870,8 @@ export class frm_main extends frmbase {
 
         // 创建渐变动画，直接操作Sprite组件的color属性
         tween(spriteComp)
-            .to(duration, { 
-                color: targetColor 
+            .to(duration, {
+                color: targetColor
             }, {
                 easing: 'smooth' // 使用平滑缓动
             })
@@ -910,10 +889,10 @@ export class frm_main extends frmbase {
         // 使用新的天气管理器激活天气效果
         if (this.weatherManager) {
             this.weatherManager.activateWeatherEffect();
-        } else { 
+        } else {
         }
     }
-    
+
     /**
      * 取消天气效果
      */
@@ -923,12 +902,12 @@ export class frm_main extends frmbase {
         if (this.weatherManager) {
             this.weatherManager.deactivateWeatherEffect();
         } else {
-            // 如果没有天气管理器，使用旧的方法 
+            // 如果没有天气管理器，使用旧的方法
         }
     }
-    
-  
-    
+
+
+
     /**
      * 结束无限模式
      */
@@ -938,14 +917,14 @@ export class frm_main extends frmbase {
             clearInterval(this.infiniteModeGeneratorId);
             this.infiniteModeGeneratorId = null;
         }
-        
+
         // 设置标志
         this.isInfinityMode = false;
-        
+
         // 游戏结束处理
         Main.DispEvent("game_lose_infinite");
     }
-    
+
     /**
      * 结束分层叠加模式
      */
@@ -953,11 +932,11 @@ export class frm_main extends frmbase {
         // 游戏结束处理
         Main.DispEvent("game_lose_layersplit");
     }
-    
+
     // 重写hide方法，确保清理无限模式
     hide() {
         super.hide();
-        
+
         // 清理无限模式
         if (this.infiniteModeGeneratorId) {
             clearInterval(this.infiniteModeGeneratorId);
@@ -965,7 +944,7 @@ export class frm_main extends frmbase {
         }
         this.isInfinityMode = false;
     }
-    
+
     // 添加积分相关方法
     /**
      * 增加积分
@@ -974,16 +953,16 @@ export class frm_main extends frmbase {
         const oldCurrentJifen = this.currentJifen;
         this.currentJifen+=val; // 本局积分+1
         this.jifen+=val; // 总积分+1
-        
+
         // 使用动画效果更新本局得分显示
         this.animateJifenChange(oldCurrentJifen, this.currentJifen);
-        
+
         // 更新总积分标签
         this.updateJifenLabel();
         // 保存总积分到本地存储
         this.saveJifen();
     }
-    
+
     /**
      * 重置本局积分（每次游戏开始时调用）
      */
@@ -995,7 +974,7 @@ export class frm_main extends frmbase {
         // 总积分保持不变
         this.updateJifenLabel();
     }
-    
+
     /**
      * 使用动画效果显示积分变化
      * @param startValue 起始值
@@ -1003,21 +982,21 @@ export class frm_main extends frmbase {
      */
     private animateJifenChange(startValue: number, endValue: number) {
         // if (!this.lbl_curr) return;
-        
+
         // // 根据数值变化大小调整动画持续时间，让每个数值都能看到
         // const valueDiff = endValue - startValue;
         // const duration = Math.min(0.5 + valueDiff * 0.3, 2.0); // 最大不超过2秒
-        
+
         // // 停止之前的动画
         // tween(this.lbl_curr.node).stop();
-        
+
         // // 使用tween实现数值累加动画效果
         // tween({ value: startValue })
         //     .to(duration, { value: endValue }, {
         //         onUpdate: (target) => {
         //             // 使用Math.floor确保每个整数都能显示，避免跳过中间数值
         //             const currentValue = Math.floor(target.value);
-        //             this.lbl_curr.string = currentValue.toString(); 
+        //             this.lbl_curr.string = currentValue.toString();
         //         },
         //         easing: 'linear' // 使用线性缓动，让数值变化更均匀可见
         //     })
@@ -1027,7 +1006,7 @@ export class frm_main extends frmbase {
         //     })
         //     .start();
     }
-    
+
     /**
      * 更新积分标签显示
      */
@@ -1036,7 +1015,7 @@ export class frm_main extends frmbase {
             this.lbl_jifen.string = "积分: " + this.jifen;
         }
     }
-    
+
     /**
      * 从本地存储加载总积分
      */
@@ -1044,14 +1023,14 @@ export class frm_main extends frmbase {
         this.jifen = PlayerPrefb.getInt("jifen", 0); // 只加载总积分
         this.currentJifen = 0; // 本局积分始终从0开始
     }
-    
+
     /**
      * 保存总积分到本地存储
      */
     private saveJifen() {
         PlayerPrefb.setInt("jifen", this.jifen); // 只保存总积分
     }
-    
+
     /**
      * 重置总积分
      */
@@ -1061,6 +1040,6 @@ export class frm_main extends frmbase {
         this.updateJifenLabel();
         this.saveJifen();
     }
-     
+
 
 }

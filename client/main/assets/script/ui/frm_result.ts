@@ -15,13 +15,13 @@ export class frm_result extends frmbase {
     btn_again_faild: Button = null!;
     @property(Button)
     btn_menu_faild: Button = null!;
-   
+
     @property(Button)
     btn_again_win: Button = null!;
     @property(Button)
     btn_menu_win: Button = null!;
-    
-  
+
+
     @property(Button)
     btn_nextlevel: Button = null!;
     level_played: number = 0;
@@ -81,18 +81,18 @@ export class frm_result extends frmbase {
     formatNumber(num: number): string {
         // 保存符号
         const isNegative = num < 0;
-        
+
         // 取绝对值并取整
         num = Math.abs(Math.floor(num));
-        
+
         // 转为字符串并添加千位分隔符
         let result = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        
+
         // 如果原数是负数，添加负号
         if (isNegative) {
             result = "-" + result;
         }
-        
+
         return result;
     }
     /**
@@ -112,7 +112,7 @@ export class frm_result extends frmbase {
      */
     protected OnShow(): void {
         //先隐藏按钮，待广告播放完毕或关闭广告后显示
-        
+
         let ret = Main.DispEvent("event_play_interstitialAd", this);
         if (ret) {
             this.scheduleOnce(() => {
@@ -155,22 +155,22 @@ export class frm_result extends frmbase {
         Main.DispEvent("GUIDE_SHOW", "getreward");
         PlayerPrefb.setInt("GuideStep_GetReward", 2);
     }
-    
+
     protected onLoad(): void {
 
-        
+
         this.btn_again_faild.node.on(Button.EventType.CLICK, () =>
         {
             // 检查是否为无限模式
             if (this.level_played === -1) {
                 // 无限模式失败后重新开始无限模式
-                Main.DispEvent("event_play_infinite");
+                Main.DispEvent("event_play", LevelMgr.level);
                 this.hide();
-            } 
+            }
             // 检查是否为分层叠加模式
             else if (this.level_played === -3) {
                 // 分层叠加模式失败后重新开始分层叠加模式
-                Main.DispEvent("event_play_layersplit");
+                Main.DispEvent("event_play", LevelMgr.level);
                 this.hide();
             }
             else {
@@ -178,12 +178,12 @@ export class frm_result extends frmbase {
                 Main.DispEvent("event_play", this.level_played);
             }
         }, this);
- 
+
         this.btn_menu_faild.node.on(Button.EventType.CLICK, () =>
         {
 
             Main.DispEvent("event_begin");
-            
+
         }, this);
 
         this.btn_again_win.node.on(Button.EventType.CLICK, () =>
@@ -191,13 +191,13 @@ export class frm_result extends frmbase {
             // 检查是否为无限模式
             if (this.level_played === -1) {
                 // 无限模式胜利后重新开始无限模式
-                Main.DispEvent("event_play_infinite");
+                Main.DispEvent("event_play", LevelMgr.level);
                 this.hide();
-            } 
+            }
             // 检查是否为分层叠加模式
             else if (this.level_played === -3) {
                 // 分层叠加模式胜利后重新开始分层叠加模式
-                Main.DispEvent("event_play_layersplit");
+                Main.DispEvent("event_play", LevelMgr.level);
                 this.hide();
             }
             else {
@@ -205,7 +205,7 @@ export class frm_result extends frmbase {
                 Main.DispEvent("event_play", this.level_played);
             }
         }, this);
-        
+
          this.btn_menu_win.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_begin");
@@ -220,7 +220,7 @@ export class frm_result extends frmbase {
         }
 
         this.btn_nextlevel.node.on(Button.EventType.CLICK, () =>
-        { 
+        {
             Main.DispEvent("event_result_next");
             if(this.level_played<LevelMgr.realmaxlevel)
             {
@@ -265,7 +265,7 @@ export class frm_result extends frmbase {
 
             //this.lbl_source_suc.string =this.formatNumber(source);
             this.brushStar(this.level_played);
-            
+
             // 检查是否为记忆模式，如果是则隐藏下一关按钮
             const currentGameType = Main.DispEvent("event_get_game_type");
             if (currentGameType === 'mem') {
@@ -274,8 +274,8 @@ export class frm_result extends frmbase {
             } else {
                 // 其他模式下显示下一关按钮
                 this.ShowNextlevel();
-            }   
-            
+            }
+
             // StartCoroutine(showsource(source_suc, source));
             this.show();
             // 上报游戏胜利事件
@@ -284,20 +284,20 @@ export class frm_result extends frmbase {
             // 显示当前游戏模式
             this.updateModeLabel(true);
             // 积分会在frm_main.ts中保存
-            
+
             // 添加剩余时间转换为积分的逻辑
             this.addRemainingTimeToScore();
-            
+
             // 显示积分信息
             this.showJifenInfo();
             // 显示积分奖励
             this.showJifenReward();
             // 显示积分奖励预览
             this.showJifenRewardPreview();
-            
+
             return null;
         });
-        
+
         // 添加无限模式胜利事件处理
         Main.RegistEvent("game_win_infinite", () =>
         {
@@ -315,17 +315,17 @@ export class frm_result extends frmbase {
             ToutiaoEventMgr.reportGameWin(-1); // 使用-1表示无限模式
             Main.DispEvent("event_playwin", -1);
             // 积分会在frm_main.ts中保存
-            
+
             // 显示积分信息
             this.showJifenInfo();
             // 显示积分奖励
             this.showJifenReward();
             // 显示积分奖励预览
             this.showJifenRewardPreview();
-            
+
             return null;
         });
-        
+
         // 添加分层叠加模式胜利事件处理
         Main.RegistEvent("game_win_layersplit", () =>
         {
@@ -344,17 +344,17 @@ export class frm_result extends frmbase {
             // 上报游戏胜利事件
             ToutiaoEventMgr.reportGameWin(-3); // 使用-3表示分层叠加模式
             // 积分会在frm_main.ts中保存
-            
+
             // 显示积分信息
             this.showJifenInfo();
             // 显示积分奖励
             this.showJifenReward();
             // 显示积分奖励预览
             this.showJifenRewardPreview();
-            
+
             return null;
         });
-        
+
         Main.RegistEvent("game_lose", (x) =>
         {
             this.level_played =x;
@@ -365,16 +365,16 @@ export class frm_result extends frmbase {
             // 使用新的得分计算方法
             let source = LevelMgr.calculateScore(this.level_played, time);
             this.lbl_soruce_faild.string =this.formatNumber( source);
-            this.show(); 
+            this.show();
             // 上报游戏失败事件
             ToutiaoEventMgr.reportGameLose(x);
-            
+
             // 显示当前游戏模式
             this.updateModeLabel(false);
             // 积分会在frm_main.ts中保存
             return null;
         });
-        
+
         // 添加无限模式失败事件处理
         Main.RegistEvent("game_lose_infinite", () =>
         {
@@ -386,13 +386,13 @@ export class frm_result extends frmbase {
             this.lbl_soruce_faild.string = "网格已填满";
             // 隐藏下一关按钮
             this.btn_nextlevel.node.active = false;
-            this.show(); 
+            this.show();
             // 上报游戏失败事件
             ToutiaoEventMgr.reportGameLose(-1); // 使用-1表示无限模式
             // 积分会在frm_main.ts中保存
             return null;
         });
-        
+
         // 添加分层叠加模式失败事件处理
         Main.RegistEvent("game_lose_layersplit", () =>
         {
@@ -404,10 +404,10 @@ export class frm_result extends frmbase {
             this.lbl_soruce_faild.string = "卡槽已填满";
             // 隐藏下一关按钮
             this.btn_nextlevel.node.active = false;
-            this.show(); 
+            this.show();
             // 上报游戏失败事件
             ToutiaoEventMgr.reportGameLose(-3); // 使用-3表示分层叠加模式
-            
+
             // 停止背景音乐并播放失败音效
             try {
                 Main.DispEvent("event_heartbeat_stop"); // 停止心跳音效
@@ -418,11 +418,11 @@ export class frm_result extends frmbase {
             } catch (error) {
                 console.error('播放失败音效时出错:', error);
             }
-            
+
             // 积分会在frm_main.ts中保存
             return null;
         });
-        
+
         Main.RegistEvent("gamebegin", (x) =>
         {
             this.hide();
@@ -443,7 +443,7 @@ export class frm_result extends frmbase {
             return null;
         });
     }
-    
+
     /**
      * 更新模式标签显示
      */
@@ -466,7 +466,7 @@ export class frm_result extends frmbase {
             }
         }
     }
-    
+
     brushStar(level_played: number) {
             let time = Main.DispEvent("time_used");
             let timer_all = LevelMgr.getTimeAll(this.level_played);
@@ -480,7 +480,7 @@ export class frm_result extends frmbase {
     }
 
     update(deltaTime: number) {
-        
+
     }
 
     /**
@@ -530,18 +530,18 @@ export class frm_result extends frmbase {
     private addItemToPlayer(rewardType: string, count: number): void {
         // 通过事件系统通知主界面添加道具
         Main.DispEvent('event_add_item', { type: rewardType, count: count });
-        
+
         // 直接更新玩家数据
         console.log(`添加道具: ${rewardType} × ${count}`);
         if(rewardType === 'remind')
             tools.num_Remind += count;
-        
+
         if(rewardType === 'brush')
             tools.num_brush += count;
-        
+
         if(rewardType === 'time')
             tools.num_time += count;
-            
+
         if(rewardType === 'layer')
             tools.num_layer += count;
     }
@@ -557,7 +557,7 @@ export class frm_result extends frmbase {
         if (text.length <= maxLen) {
             return -1;
         }
-        
+
         // 查找最佳换行点（在空格、逗号或分号后换行）
         for (let i = maxLen; i > 0; i--) {
             const char = text.charAt(i);
@@ -565,7 +565,7 @@ export class frm_result extends frmbase {
                 return i + 1; // 在分隔符后换行
             }
         }
-        
+
         // 如果找不到合适的换行点，则在最大长度处换行
         return maxLen;
     }
@@ -581,44 +581,44 @@ export class frm_result extends frmbase {
         if (text.length <= maxLen) {
             return text;
         }
-        
+
         // 移除HTML标签后的纯文本
         const plainText = text.replace(/<[^>]*>/g, '');
-        
+
         // 如果纯文本长度小于等于最大长度，不需要换行
         if (plainText.length <= maxLen) {
             return text;
         }
-        
+
         let result = "";
         let plainIndex = 0;  // 纯文本的索引
         let originalIndex = 0;  // 原始文本的索引
-        
+
         // 循环处理文本，每次处理一段
         while (plainIndex < plainText.length) {
             // 计算剩余纯文本长度
             const remainingPlainLength = plainText.length - plainIndex;
-            
+
             // 如果剩余纯文本长度小于等于最大长度，直接添加剩余部分并结束
             if (remainingPlainLength <= maxLen) {
                 result += text.substring(originalIndex);
                 break;
             }
-            
+
             // 获取一段纯文本（maxLen长度）
             const plainSegment = plainText.substring(plainIndex, plainIndex + maxLen);
-            
+
             // 查找最佳换行点
             const breakPoint = this.findBreakPoint(plainSegment, maxLen);
-            
+
             if (breakPoint > 0) {
                 // 找到合适的换行点
                 const plainBreakPos = plainIndex + breakPoint;
-                
+
                 // 在原始文本中找到对应的断点位置
                 let originalBreakPos = originalIndex;
                 let plainCharCount = 0;
-                
+
                 while (plainCharCount < breakPoint && originalBreakPos < text.length) {
                     const char = text.charAt(originalBreakPos);
                     if (char === '<') {
@@ -634,7 +634,7 @@ export class frm_result extends frmbase {
                         plainCharCount++;
                     }
                 }
-                
+
                 // 添加文本段并换行
                 result += text.substring(originalIndex, originalBreakPos) + "\n";
                 originalIndex = originalBreakPos;
@@ -643,7 +643,7 @@ export class frm_result extends frmbase {
                 // 没有找到合适的换行点，在maxLen处强制换行
                 let originalBreakPos = originalIndex;
                 let plainCharCount = 0;
-                
+
                 while (plainCharCount < maxLen && originalBreakPos < text.length) {
                     const char = text.charAt(originalBreakPos);
                     if (char === '<') {
@@ -659,14 +659,14 @@ export class frm_result extends frmbase {
                         plainCharCount++;
                     }
                 }
-                
+
                 // 添加文本段并换行
                 result += text.substring(originalIndex, originalBreakPos) + "\n";
                 originalIndex = originalBreakPos;
                 plainIndex += maxLen;
             }
         }
-        
+
         return result;
     }
 
@@ -676,10 +676,10 @@ export class frm_result extends frmbase {
     private showJifenReward() {
         // 获取当前积分
         const currentJifen = PlayerPrefb.getInt("jifen", 0);
-        
+
         // 获取下一个奖励信息
         const rewardInfo = this.getNextJifenRewardInfo(currentJifen);
-        
+
         if (this.node_jifen_reward) {
             if (rewardInfo) {
                 // 显示奖励信息
@@ -688,10 +688,10 @@ export class frm_result extends frmbase {
                     // 在描述文本中添加当前积分信息，只对积分数字部分应用颜色
                     const colorTag = rewardInfo.canClaim ? "#00FF00" : "#FF0000"; // 绿色或红色
                     let text = `${rewardInfo.description} (当前积分: <color=${colorTag}>${currentJifen}</color>)`;
-                    
+
                     // 循环检测，每20个字符换行
                     text = this.wrapText(text, 22);
-                    
+
                     this.lbl_jifen_reward_desc.string = text;
                 }
                 // 更新领取按钮状态
@@ -712,22 +712,22 @@ export class frm_result extends frmbase {
         Main.DispEvent('event_claim_jifen_reward');
         // 获取当前积分
         const currentJifen = PlayerPrefb.getInt("jifen", 0);
-        
+
         // 获取下一个可领取的奖励
         const rewardInfo = this.getNextJifenRewardInfo(currentJifen);
-        
+
         if (rewardInfo && rewardInfo.canClaim) {
             // 发放奖励
             rewardInfo.rewards.forEach(reward => {
                 this.addItemToPlayer(reward.type, reward.count);
             });
-            
+
             // 记录已领取的奖励
             this.markJifenRewardAsClaimed(rewardInfo.threshold);
-            
+
             // 显示提示信息
             console.log(`领取积分奖励成功: ${rewardInfo.description}`);
-            
+
             // 更新积分奖励显示
             this.showJifenReward();
             // 刷新积分奖励预览
@@ -750,10 +750,10 @@ export class frm_result extends frmbase {
 
         // 获取当前积分
         const currentJifen = PlayerPrefb.getInt("jifen", 0);
-        
+
         // 获取下一个可领取的奖励信息
         const rewardInfo = this.getNextJifenRewardInfo(currentJifen);
-        
+
         if (rewardInfo) {
             // 生成奖励道具预览
             // 统计每种奖励的数量
@@ -771,7 +771,7 @@ export class frm_result extends frmbase {
                 const count = rewardCounts[rewardType];
                 const itemNode = instantiate(this.prefab_item);
                 const itemTools = itemNode.getComponent('item_tools') as any;
-                
+
                 if (itemTools) {
                     // 根据奖励类型设置道具类型
                     let itemType = 0;
@@ -789,7 +789,7 @@ export class frm_result extends frmbase {
                             itemType = 3; // ItemType.layer
                             break;
                     }
-                    
+
                     // 设置道具类型和数量
                     itemTools.setItemType({ tp: itemType });
                     if (itemTools.lbl_num) {
@@ -815,27 +815,27 @@ export class frm_result extends frmbase {
         try {
             // 获取剩余时间
             const remainingTime = Main.DispEvent("event_get_remaining_time");
-            
+
             // 只有在计时模式下且有剩余时间时才转换积分
             if (remainingTime > 0) {
                 // 获取当前关卡
                 const currentLevel = this.level_played;
-                
+
                 // 根据关卡和游戏模式计算积分转换率
                 let timeToScoreRatio = 1; // 基础转换率
-                
+
                 // 根据游戏模式调整转换率
                 if (LevelMgr.gameMode === GameMode.HARD) {
                     timeToScoreRatio = 1.5; // 困难模式转换率更高
                 }
-                
+
                 // 根据关卡数调整转换率（关卡越高，转换率越高）
                 const levelBonus = Math.floor(currentLevel / 10) * 0.2; // 每10关增加0.2倍转换率
                 timeToScoreRatio += levelBonus;
-                
+
                 // 计算转换后的积分（每秒转换为1分基础分，再乘以转换率）
                 const timeScore = Math.floor(remainingTime * timeToScoreRatio);
-                
+
                 // 添加积分
                 if (timeScore > 0) {
                     Main.DispEvent("event_add_jifen", timeScore);

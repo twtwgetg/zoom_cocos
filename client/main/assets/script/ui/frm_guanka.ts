@@ -15,7 +15,7 @@ export class frm_guanka extends frmbase {
     private static readonly MEMORY_UNLOCK_LEVEL = 5;
     private previewLevel = -1;
     private previewCount = -1;
-    
+
     //添加一个预制体变量，用于存放关卡预制体
     @property(Node)
     public trans_guanka: Node = null!;
@@ -36,14 +36,14 @@ export class frm_guanka extends frmbase {
     @property(Button)
     public btn_easy: Button = null!;
     @property(Button)
-    public btn_wuxian: Button = null!; 
+    public btn_wuxian: Button = null!;
     @property(Button)
-    public btn_mem: Button = null!; 
-    
+    public btn_mem: Button = null!;
+
 
     @property(Button)
-    public btn_lianliankan: Button = null!; 
- 
+    public btn_lianliankan: Button = null!;
+
 
 
     @property(Button)
@@ -75,7 +75,7 @@ export class frm_guanka extends frmbase {
     // 添加奖励道具显示节点
     @property(Node)
     trans_items: Node = null!;
-    
+
     start() {
         if(Main.plat == platform.WECHAT){
             this.btn_libao.node.active = false;
@@ -83,7 +83,7 @@ export class frm_guanka extends frmbase {
         }
         this.btn_layersplit.node.on(Button.EventType.CLICK, () =>
         {
-            Main.DispEvent("event_play_layersplit");
+            Main.DispEvent('event_play',LevelMgr.level);
         }, this);
         this.btn_addtodesktop.node.on(Button.EventType.CLICK, () =>
         {
@@ -112,16 +112,16 @@ export class frm_guanka extends frmbase {
         // 添加无限模式按钮点击事件
         this.btn_wuxian.node.on(Button.EventType.CLICK, ()=>{
             // 进入无限模式
-            Main.DispEvent('event_play_infinite');
+            Main.DispEvent('event_play',LevelMgr.level);
         }, this);
         this.btn_mem.node.on(Button.EventType.CLICK, ()=>{
             // 进入会员模式
-            Main.DispEvent('event_play_mem');
+            Main.DispEvent('event_play',LevelMgr.level);
         }, this);
         // 添加三消模式按钮点击事件
         this.btn_sanxiao.node.on(Button.EventType.CLICK, ()=>{
             // 进入三消模式
-            Main.DispEvent('event_play_sanxiao');
+            Main.DispEvent('event_play',LevelMgr.level);
         }, this);
         // 添加积分奖励按钮点击事件
         this.btn_get_jifen_reward.node.on(Button.EventType.CLICK, ()=>{
@@ -162,10 +162,25 @@ export class frm_guanka extends frmbase {
         this.setButtonActive(this.btn_lianliankan, true);
         this.setButtonActive(this.btn_easy, false);
         this.setButtonActive(this.btn_hard, false);
-        this.setButtonActive(this.btn_wuxian, unlockedLevel >= frm_guanka.INFINITE_UNLOCK_LEVEL);
-        this.setButtonActive(this.btn_mem, unlockedLevel >= frm_guanka.MEMORY_UNLOCK_LEVEL);
+        this.setButtonActive(this.btn_wuxian, false);
+        this.setButtonActive(this.btn_mem, false);
         this.setButtonActive(this.btn_sanxiao, false);
         this.setButtonActive(this.btn_layersplit, false);
+    }
+
+    private findPreviewSprite(node: Node | null): Sprite | null {
+        if (!node) {
+            return null;
+        }
+
+        for (const child of node.children) {
+            const childSprite = this.findPreviewSprite(child);
+            if (childSprite) {
+                return childSprite;
+            }
+        }
+
+        return node.getComponent(Sprite);
     }
 
     /**
@@ -179,13 +194,17 @@ export class frm_guanka extends frmbase {
         }
         this.previewLevel = LevelMgr.level;
         this.previewCount = count;
-        // 清空之前的关卡显示
         this.trans_anis.removeAllChildren();
         for(let i = 0; i < count; i++) {
             var nx = instantiate(this.prefab_sprite);
             //nx.setPosition(i*20,0);
             this.trans_anis.addChild(nx);
-            nx.getComponent(Sprite).spriteFrame = Main.DispEvent('event_getsprite',LevelMgr.level+1+i);
+            const previewSprite = this.findPreviewSprite(nx);
+            if (!previewSprite) {
+                console.warn('frm_guanka.brushGuanKa: prefab_sprite has no Sprite component', nx.name);
+                continue;
+            }
+            previewSprite.spriteFrame = Main.DispEvent('event_getsprite',LevelMgr.level+1+i);
         }
     }
 
@@ -206,9 +225,9 @@ export class frm_guanka extends frmbase {
         if (uiTransform) {
             uiTransform.setContentSize(0, all.length * this.prefab_guanka1.data.getComponent(UITransform)?.height || 0);
         }
-        this.trans_guanka.setPosition(0, 0); 
+        this.trans_guanka.setPosition(0, 0);
     }
-    
+
     /**
      * 更新积分标签显示
      */
@@ -219,7 +238,7 @@ export class frm_guanka extends frmbase {
             this.lbl_jifen.string = "积分: " + jifen;
         }
     }
-    
+
     protected OnShow(): void {
         super.OnShow();
         this.brushlibao();
@@ -233,48 +252,48 @@ export class frm_guanka extends frmbase {
         this.refreshLevelUI();
         // 显示积分奖励
         this.showJifenReward();
-        let anim = this.gb.getComponent(cc.Animation); 
+        let anim = this.gb.getComponent(cc.Animation);
         if(anim) {
             // 监听动画结束，自动隐藏节点
             anim.on(cc.Animation.EventType.FINISHED, () => {
-            
+
             }, this);
             anim.play();
-        }   
+        }
     }
-    
+
     /**
      * 刷新关卡UI
      */
     private refreshLevelUI() {
         // 重新设置当前关卡显示
         this.brushGuanKa();
-        
+
         // 更新关卡标签
         this.lbl_level.string = "当前关卡：" + (LevelMgr.level + 1);
-        
+
         // 重新填充关卡列表（如果需要）
         // this.fillGuanKa();
     }
 
-    brushlibao(): void { 
+    brushlibao(): void {
         if(Main.plat == platform.BYTE) {
             this.btn_libao.node.active = !EntrySceneChecker.isFromSidebar;
             this.btn_lingqu.node.active = EntrySceneChecker.isFromSidebar;
-        } 
+        }
     }
 
     protected onLoad(): void {
         super.onLoad();
         this.btn_libao.node.active = false;
-        this.btn_lingqu.node.active = false; 
+        this.btn_lingqu.node.active = false;
         Main.RegistEvent("event_begin",(x)=>{
             this.show();
             // 更新积分显示
             this.updateJifenLabel();
             return null;
         });
-        Main.RegistEvent("event_inited",(x)=>{ 
+        Main.RegistEvent("event_inited",(x)=>{
             this.brushGuanKa(true);
             return null;
         });
@@ -297,33 +316,33 @@ export class frm_guanka extends frmbase {
         Main.RegistEvent("event_play_sanxiao",(x)=>{
             this.hide();
             return null;
-        }); 
+        });
         Main.RegistEvent("event_play",(x)=>{
             this.hide();
             return null;
         });
-        Main.RegistEvent("event_lingqu",(x)=>{ 
-            if(Main.plat==platform.BYTE){ 
+        Main.RegistEvent("event_lingqu",(x)=>{
+            if(Main.plat==platform.BYTE){
                 this.btn_lingqu.node.active = false;
                 this.btn_libao.node.active = false;
             }
             return null;
         });
-        Main.RegistEvent("event_enterbrush",(x)=>{ 
+        Main.RegistEvent("event_enterbrush",(x)=>{
             this.brushlibao();
         });
         this.btn_libao.node.on(Button.EventType.CLICK, ()=>{
-            
+
             Main.DispEvent('event_cebianlan',false);
         }, this);
         this.btn_lingqu.node.on(Button.EventType.CLICK, ()=>{
-            
+
             Main.DispEvent('event_cebianlan',true);
         }, this);
     }
 
     update(deltaTime: number) {
-        
+
     }
 
     /**
@@ -334,25 +353,25 @@ export class frm_guanka extends frmbase {
     private getLevelRewards(level: number): string[] {
         // 定义所有可能的奖励类型
         const allRewards = ['remind', 'brush', 'time'];
-        
+
         // 随机选择1到3种奖励类型
         const numRewardTypes = Math.floor(Math.random() * 3) + 1; // 1到3之间
         const selectedRewards: string[] = [];
-        
+
         // 创建一个副本用于随机选择
         const availableRewards = [...allRewards];
-        
+
         // 随机打乱数组
         for (let i = availableRewards.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [availableRewards[i], availableRewards[j]] = [availableRewards[j], availableRewards[i]];
         }
-        
+
         // 选择指定数量的奖励类型
         for (let i = 0; i < numRewardTypes; i++) {
             selectedRewards.push(availableRewards[i]);
         }
-        
+
         // 为每种选中的奖励类型添加1到2个奖励
         const rewards: string[] = [];
         selectedRewards.forEach(rewardType => {
@@ -361,7 +380,7 @@ export class frm_guanka extends frmbase {
                 rewards.push(rewardType);
             }
         });
-        
+
         return rewards;
     }
 
@@ -372,14 +391,14 @@ export class frm_guanka extends frmbase {
      */
     private countRewards(rewards: string[]): { [key: string]: number } {
         const counts: { [key: string]: number } = {};
-        
+
         rewards.forEach(rewardType => {
             counts[rewardType] = (counts[rewardType] || 0) + 1;
         });
-        
+
         return counts;
     }
-    
+
     /**
      * 显示当前关卡的奖励道具
      */
@@ -404,7 +423,7 @@ export class frm_guanka extends frmbase {
         //     const count = rewardCounts[rewardType];
         //     const itemNode = instantiate(this.prefab_item);
         //     const itemTools = itemNode.getComponent('item_tools') as any;
-            
+
         //     if (itemTools) {
         //         // 根据奖励类型设置道具类型
         //         let itemType = 0;
@@ -419,7 +438,7 @@ export class frm_guanka extends frmbase {
         //                 itemType = 1; // ItemType.time
         //                 break;
         //         }
-                
+
         //         // 设置道具类型和数量
         //         itemTools.setItemType({ tp: itemType });
         //         if (itemTools.lbl_num) {
@@ -446,10 +465,10 @@ export class frm_guanka extends frmbase {
 
         // 获取当前积分
         const currentJifen = PlayerPrefb.getInt("jifen", 0);
-        
+
         // 获取下一个可领取的奖励信息
         const rewardInfo = this.getNextJifenRewardInfo(currentJifen);
-        
+
         if (rewardInfo) {
             // 生成奖励道具预览
             // 统计每种奖励的数量
@@ -467,7 +486,7 @@ export class frm_guanka extends frmbase {
                 const count = rewardCounts[rewardType];
                 const itemNode = instantiate(this.prefab_item);
                 const itemTools = itemNode.getComponent('item_tools') as any;
-                
+
                 if (itemTools) {
                     // 根据奖励类型设置道具类型
                     let itemType = 0;
@@ -485,7 +504,7 @@ export class frm_guanka extends frmbase {
                             itemType = 3; // ItemType.layer
                             break;
                     }
-                    
+
                     // 设置道具类型和数量
                     itemTools.setItemType({ tp: itemType });
                     if (itemTools.lbl_num) {
@@ -520,10 +539,10 @@ export class frm_guanka extends frmbase {
     private showJifenReward() {
         // 获取当前积分
         const currentJifen = PlayerPrefb.getInt("jifen", 0);
-        
+
         // 获取下一个奖励信息
         const rewardInfo = this.getNextJifenRewardInfo(currentJifen);
-        
+
         // if (this.node_jifen_reward) {
         //     if (rewardInfo) {
         //         // 显示奖励信息
@@ -532,10 +551,10 @@ export class frm_guanka extends frmbase {
         //             // 在描述文本中添加当前积分信息，只对积分数字部分应用颜色
         //             const colorTag = rewardInfo.canClaim ? "#00FF00" : "#FF0000"; // 绿色或红色
         //             let text = `${rewardInfo.description} (当前积分: <color=${colorTag}>${currentJifen}</color>)`;
-                    
+
         //             // 循环检测，每20个字符换行
         //             text = this.wrapText(text, 22);
-                    
+
         //             this.lbl_jifen_reward_desc.string = text;
         //         }
         //         // 更新领取按钮状态
@@ -548,37 +567,37 @@ export class frm_guanka extends frmbase {
         //     }
         // }
     }
-    
+
     /**
      * 领取积分奖励
      */
     private claimJifenReward() {
         // 获取当前积分
         const currentJifen = PlayerPrefb.getInt("jifen", 0);
-        
+
         // 获取下一个可领取的奖励
         const rewardInfo = this.getNextJifenRewardInfo(currentJifen);
-        
+
         if (rewardInfo && rewardInfo.canClaim) {
             // 发放奖励
             rewardInfo.rewards.forEach(reward => {
                 this.addItemToPlayer(reward.type, reward.count);
             });
-            
+
             // 记录已领取的奖励
             this.markJifenRewardAsClaimed(rewardInfo.threshold);
-            
+
             // 显示提示信息
             console.log(`领取积分奖励成功: ${rewardInfo.description}`);
-            
+
             // 更新积分奖励显示
             this.showJifenReward();
-            
+
             // 更新积分显示
             this.updateJifenLabel();
         }
     }
-    
+
     /**
      * 查找合适的换行点
      * @param text 文本
@@ -590,7 +609,7 @@ export class frm_guanka extends frmbase {
         if (text.length <= maxLen) {
             return -1;
         }
-        
+
         // 查找最佳换行点（在空格、逗号或分号后换行）
         for (let i = maxLen; i > 0; i--) {
             const char = text.charAt(i);
@@ -598,7 +617,7 @@ export class frm_guanka extends frmbase {
                 return i + 1; // 在分隔符后换行
             }
         }
-        
+
         // 如果找不到合适的换行点，则在最大长度处换行
         return maxLen;
     }
@@ -614,44 +633,44 @@ export class frm_guanka extends frmbase {
         if (text.length <= maxLen) {
             return text;
         }
-        
+
         // 移除HTML标签后的纯文本
         const plainText = text.replace(/<[^>]*>/g, '');
-        
+
         // 如果纯文本长度小于等于最大长度，不需要换行
         if (plainText.length <= maxLen) {
             return text;
         }
-        
+
         let result = "";
         let plainIndex = 0;  // 纯文本的索引
         let originalIndex = 0;  // 原始文本的索引
-        
+
         // 循环处理文本，每次处理一段
         while (plainIndex < plainText.length) {
             // 计算剩余纯文本长度
             const remainingPlainLength = plainText.length - plainIndex;
-            
+
             // 如果剩余纯文本长度小于等于最大长度，直接添加剩余部分并结束
             if (remainingPlainLength <= maxLen) {
                 result += text.substring(originalIndex);
                 break;
             }
-            
+
             // 获取一段纯文本（maxLen长度）
             const plainSegment = plainText.substring(plainIndex, plainIndex + maxLen);
-            
+
             // 查找最佳换行点
             const breakPoint = this.findBreakPoint(plainSegment, maxLen);
-            
+
             if (breakPoint > 0) {
                 // 找到合适的换行点
                 const plainBreakPos = plainIndex + breakPoint;
-                
+
                 // 在原始文本中找到对应的断点位置
                 let originalBreakPos = originalIndex;
                 let plainCharCount = 0;
-                
+
                 while (plainCharCount < breakPoint && originalBreakPos < text.length) {
                     const char = text.charAt(originalBreakPos);
                     if (char === '<') {
@@ -667,7 +686,7 @@ export class frm_guanka extends frmbase {
                         plainCharCount++;
                     }
                 }
-                
+
                 // 添加文本段并换行
                 result += text.substring(originalIndex, originalBreakPos) + "\n";
                 originalIndex = originalBreakPos;
@@ -676,7 +695,7 @@ export class frm_guanka extends frmbase {
                 // 没有找到合适的换行点，在maxLen处强制换行
                 let originalBreakPos = originalIndex;
                 let plainCharCount = 0;
-                
+
                 while (plainCharCount < maxLen && originalBreakPos < text.length) {
                     const char = text.charAt(originalBreakPos);
                     if (char === '<') {
@@ -692,17 +711,17 @@ export class frm_guanka extends frmbase {
                         plainCharCount++;
                     }
                 }
-                
+
                 // 添加文本段并换行
                 result += text.substring(originalIndex, originalBreakPos) + "\n";
                 originalIndex = originalBreakPos;
                 plainIndex += maxLen;
             }
         }
-        
+
         return result;
     }
-    
+
     /**
      * 获取已领取的积分奖励阈值
      * @returns 已领取的阈值数组
@@ -720,7 +739,7 @@ export class frm_guanka extends frmbase {
         // 通过消息传递标记积分奖励为已领取
         JifenRewardManager.markJifenRewardAsClaimed(threshold);
     }
-    
+
     /**
      * 添加道具到玩家道具栏
      * @param rewardType 奖励类型
@@ -730,13 +749,13 @@ export class frm_guanka extends frmbase {
         console.log(`添加道具: ${rewardType} × ${count}`);
         if(rewardType === 'remind')
             tools.num_Remind += count;
-        
+
         if(rewardType === 'brush')
             tools.num_brush += count;
-        
+
         if(rewardType === 'time')
             tools.num_time += count;
-            
+
         if(rewardType === 'layer')
             tools.num_layer += count;
     }

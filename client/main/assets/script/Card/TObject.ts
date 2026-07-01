@@ -1,6 +1,6 @@
 
 // 首先修改导入部分，添加tween
-import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween, error } from 'cc';
+import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween, error, Graphics, UIOpacity } from 'cc';
 import { gridcreator } from '../gridcreator';
         // 监听遮罩的触摸事件
 import { EventTouch } from 'cc';
@@ -179,6 +179,10 @@ export class TObject extends Component {
     // 添加隐藏模式相关属性
     private hideModeTimer: any = null;
     private backNodeVisible: boolean = true;
+    private selectTween: any = null;
+    // 缓存初始卡片尺寸
+    private initialCardWidth: number = 0;
+    private initialCardHeight: number = 0;
     
     private static obj: TObject | null = null;
     private static firstClickReported: boolean = false;
@@ -213,6 +217,34 @@ export class TObject extends Component {
     UseMaJiangBg(){
         this.node.getChildByName("bg").getComponent(Sprite)!.spriteFrame = this.majiang;
     }
+
+    private startSelectEffect(): void {
+        if (!this.sel) {
+            return;
+        }
+        if (this.selectTween) {
+            this.selectTween.stop();
+            this.selectTween = null;
+        }
+        this.sel.node.setScale(new Vec3(1, 1, 1));
+        this.selectTween = tween(this.sel.node)
+            .repeatForever(
+                tween()
+                    .to(0.34, { scale: new Vec3(1.08, 1.08, 1) }, { easing: 'sineOut' })
+                    .to(0.34, { scale: new Vec3(1, 1, 1) }, { easing: 'sineIn' })
+            )
+            .start();
+    }
+
+    private stopSelectEffect(): void {
+        if (this.selectTween) {
+            this.selectTween.stop();
+            this.selectTween = null;
+        }
+        if (this.sel) {
+            this.sel.node.setScale(new Vec3(1, 1, 1));
+        }
+    }
     // 修改Select方法以支持隐藏模式
     private Select(showtime: number=1000): void {
 
@@ -244,8 +276,10 @@ export class TObject extends Component {
         }
         else{
             if (this.sel) {
+                this.refreshVisualLayout();
                 this.sel.color = Color.WHITE;
                 this.sel.node.active = true;
+                this.startSelectEffect();
                 this.node.setSiblingIndex(this.node.parent.children.length - 1);
             } 
         }
@@ -255,6 +289,7 @@ export class TObject extends Component {
         if (this.ondestroy || !this.sel) {
             return;
         }
+        this.stopSelectEffect();
         this.sel.node.active = false;
     } 
     ForceShow(): void {
@@ -364,46 +399,106 @@ export class TObject extends Component {
         }
         return ret;
     }
+
+    private getConnectionPoint(pos: Vec2): Vec2 {
+        return new Vec2(
+            this.creator.tref.x + (pos.x - 1) * this.creator.gridsize + this.creator.gridsize / 2,
+            this.creator.tref.y + (pos.y - 1) * this.creator.gridsize - this.creator.gridsize * 0.12
+        );
+    }
+
+    private createConnectionLine(poslist: Vec2[]): Node | null {
+        if (!this.creator || !this.creator.container || poslist.length < 2) {
+            return null;
+        }
+
+        const points = poslist.map((pos) => this.getConnectionPoint(pos));
+        const layer = new Node('connection_line_fx');
+        this.creator.container.addChild(layer);
+
+        const opacity = layer.addComponent(UIOpacity);
+        opacity.opacity = 0;
+
+        this.drawConnectionPath(layer, points, 30, new Color(98, 255, 64, 78));
+        this.drawConnectionPath(layer, points, 20, new Color(130, 255, 72, 152));
+        this.drawConnectionPath(layer, points, 12, new Color(86, 255, 42, 255));
+        this.drawConnectionPath(layer, points, 5, new Color(245, 255, 220, 245));
+        this.drawConnectionDots(layer, points);
+
+        tween(opacity)
+            .to(0.06, { opacity: 255 })
+            .delay(0.22)
+            .to(0.07, { opacity: 0 })
+            .start();
+
+        return layer;
+    }
+
+    private drawConnectionPath(parent: Node, points: Vec2[], lineWidth: number, color: Color) {
+        const node = new Node('connection_path');
+        parent.addChild(node);
+        const graphics = node.addComponent(Graphics);
+        graphics.lineWidth = lineWidth;
+        graphics.strokeColor = color;
+        graphics.lineCap = 1;
+        graphics.lineJoin = 1;
+        graphics.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            graphics.lineTo(points[i].x, points[i].y);
+        }
+        graphics.stroke();
+    }
+
+    private drawConnectionDots(parent: Node, points: Vec2[]) {
+        const glowNode = new Node('connection_dot_glow');
+        parent.addChild(glowNode);
+        const glow = glowNode.addComponent(Graphics);
+        glow.fillColor = new Color(110, 255, 58, 72);
+        for (const point of points) {
+            glow.circle(point.x, point.y, 24);
+        }
+        glow.fill();
+
+        const coreNode = new Node('connection_dot_core');
+        parent.addChild(coreNode);
+        const core = coreNode.addComponent(Graphics);
+        core.fillColor = new Color(245, 255, 220, 235);
+        for (const point of points) {
+            core.circle(point.x, point.y, 7);
+        }
+        core.fill();
+
+        const starNode = new Node('connection_star');
+        parent.addChild(starNode);
+        const star = starNode.addComponent(Graphics);
+        this.drawConnectionStar(star, points[points.length - 1], 22);
+        if (points.length > 2) {
+            this.drawConnectionStar(star, points[1], 16);
+        }
+    }
+
+    private drawConnectionStar(graphics: Graphics, center: Vec2, radius: number) {
+        const inner = radius * 0.46;
+        graphics.fillColor = new Color(255, 255, 245, 245);
+        for (let i = 0; i < 10; i++) {
+            const angle = -Math.PI / 2 + i * Math.PI / 5;
+            const r = i % 2 === 0 ? radius : inner;
+            const x = center.x + Math.cos(angle) * r;
+            const y = center.y + Math.sin(angle) * r;
+            if (i === 0) {
+                graphics.moveTo(x, y);
+            } else {
+                graphics.lineTo(x, y);
+            }
+        }
+        graphics.close();
+        graphics.fill();
+    }
+
     private async showline(gb: TObject, self: TObject, poslist: Vec2[]) {
-        const lines: Node[] = [];
         self.Select();
         gb.Select();
-
-        for (let i = 0; i < poslist.length - 1; i++) {
-            const p = poslist[i];
-            const p2 = poslist[i + 1];
-
-            const l = instantiate(this.creator.item_line);
-            this.creator.container.addChild(l); 
-
-            // 计算起始点和结束点的世界坐标
-            // 由于网格坐标是从1开始的，需要减1得到0基坐标
-            // 然后根据tref计算实际位置，注意要加上gridsize/2来对齐到网格中心
-            let startPos = this.creator.tref.add(new Vec2((p.x - 1) * this.creator.gridsize + this.creator.gridsize/2, 
-                                                         (p.y - 1) * this.creator.gridsize-this.creator.gridsize/2));
-            let endPos = this.creator.tref.add(new Vec2((p2.x - 1) * this.creator.gridsize + this.creator.gridsize/2, 
-                                                       (p2.y - 1) * this.creator.gridsize-this.creator.gridsize/2));
-
-            // 计算线段的中点作为节点位置
-            let midPos = new Vec2((startPos.x + endPos.x) / 2, (startPos.y + endPos.y) / 2);
-            l.setPosition(midPos.x, midPos.y);
-
-            // 计算线段的长度
-            const deltaX = endPos.x - startPos.x;
-            const deltaY = endPos.y - startPos.y;
-            const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
-            // 设置缩放，x轴为长度，y轴保持不变
-            // 由于预制体的原始宽度是150，我们需要根据实际长度进行缩放
-            const scaleX = length / 150;
-            l.setScale(new Vec3(scaleX, 1, 1));
-            
-            // 计算旋转角度
-            const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
-            l.angle = -angle;
-
-            lines.push(l);
-        }
+        const connectionLine = this.createConnectionLine(poslist);
 
         // 等待0.35秒
         await new Promise(resolve => setTimeout(resolve, 350));
@@ -428,8 +523,8 @@ export class TObject extends Component {
 
         // 销毁对象
 
-        for (const line of lines) {
-            line.destroy();
+        if (connectionLine && connectionLine.isValid) {
+            connectionLine.destroy();
         }
     
         // 等待到下一帧确保节点被销毁
@@ -582,8 +677,15 @@ export class TObject extends Component {
     {
         this.sel.color = Color.GREEN;
         this.sel.node.active = true; 
+        this.startSelectEffect();
     }
     start() {
+        // 缓存初始卡片尺寸
+        const cardRect = this.node.getComponent(UITransform);
+        if (cardRect) {
+            this.initialCardWidth = cardRect.width;
+            this.initialCardHeight = cardRect.height;
+        }
         //响应鼠标点击事件
         this.getComponent(Button)!.node.on('click',this.onMaskTouch, this);
 
@@ -725,12 +827,51 @@ export class TObject extends Component {
         }
     }
     
+    public refreshVisualLayout(): void {
+        const cardRect = this.node.getComponent(UITransform);
+        const iconRect = this.src?.node.getComponent(UITransform);
+        if (!cardRect || !iconRect) {
+            return;
+        }
+
+        const centerX = (0.5 - cardRect.anchorPoint.x) * cardRect.width;
+        const centerY = (0.5 - cardRect.anchorPoint.y) * cardRect.height;
+        const bgNode = this.node.getChildByName("bg");
+        const bgRect = bgNode?.getComponent(UITransform);
+        if (bgNode && bgRect) {
+            bgRect.setContentSize(cardRect.width, cardRect.height);
+            bgNode.setPosition(centerX, centerY, 0);
+        }
+
+        if (this.sel) {
+            const selectRect = this.sel.node.getComponent(UITransform);
+            if (selectRect) {
+                // 使用缓存的初始尺寸计算 sel 大小
+                const selectSize = Math.max(cardRect.width, cardRect.height) * 1.16;
+                selectRect.setContentSize(selectSize, selectSize);
+            }
+            this.sel.node.setScale(new Vec3(1, 1, 1));
+            this.sel.node.setPosition(centerX, centerY, 0);
+        }
+
+        const iconSize = Math.max(1, Math.min(cardRect.width, cardRect.height) * 0.78);
+        iconRect.setContentSize(iconSize, iconSize);
+        this.src.node.setPosition(centerX, centerY, 0);
+    }
+
     SetSprite(i: number, j: number, _tp: number, xx: SpriteFrame, _creator: gridcreator): void {
         this.type = _tp;
         this.creator = _creator;
         this.x = i;
         this.y = j;
         this.src.spriteFrame = xx;
+        // 缓存初始卡片尺寸（如果还未缓存）
+        const cardRect = this.node.getComponent(UITransform);
+        if (cardRect && this.initialCardWidth === 0) {
+            this.initialCardWidth = cardRect.width;
+            this.initialCardHeight = cardRect.height;
+        }
+        this.refreshVisualLayout();
         
         
         // 如果启用了隐藏模式，初始化back节点为开启状态

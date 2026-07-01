@@ -24,7 +24,7 @@ export class frm_pause extends frmbase {
     btn_musicenable: Button = null!;
     @property(Button)
     btn_init: Button = null!;
-    
+
     @property(Button)
     btn_tucao: Button = null!;
     @property(Node)
@@ -33,17 +33,17 @@ export class frm_pause extends frmbase {
     btn_submit: Button = null!;
     @property(EditBox)
     input_tucao: EditBox = null!;
- 
+
     // 添加音乐状态变量，用于记录暂停前的音乐状态
     private wasMusicPlaying: boolean = false;
-    
+
     start() {
          this.btn_init.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_msg", {msg:"确定要初始化吗？,之前的游戏等级将被清空",cb:(x)=>{
                 if(x)
                 {
-                    LevelMgr.init(); 
+                    LevelMgr.init();
                     Main.DispEvent("event_inited");
                     Main.DispEvent("event_msg_top",{msg:"初始化成功"});
                 }
@@ -51,23 +51,24 @@ export class frm_pause extends frmbase {
                     Main.DispEvent("event_msg_top",{msg:"取消初始化"});
                 }
             }});
-            
-        }, this); 
+
+        }, this);
         this.btn_tucao.node.on(Button.EventType.CLICK, () =>
         {
             this.panel_tucao.active=true;
         }, this);
         this.btn_quit.node.on(Button.EventType.CLICK, () =>
         {
-            Main.DispEvent("game_begin");
             this.hide();
+            frm_main.isPause = false;
+            Main.DispEvent("event_resume_game");
         }, this);
         this.btn_submit.node.on(Button.EventType.CLICK, () =>
         {
             let content = this.input_tucao.string;
             if (content.length > 0)
             {
-                // 发送反馈 
+                // 发送反馈
                 this.sendFeedback(content);
                 this.panel_tucao.active=false;
             }
@@ -80,7 +81,7 @@ export class frm_pause extends frmbase {
         this.btn_restart.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_restart");
-        }, this); 
+        }, this);
         this.btn_menu.node.on(Button.EventType.CLICK, () =>
         {
             Main.DispEvent("event_begin");
@@ -91,11 +92,11 @@ export class frm_pause extends frmbase {
             this.brushflag();
         },this);
         this.btn_musicenable.node.on(Button.EventType.CLICK, ()=>{
-            musicmgr.bMusicEnable = !musicmgr.bMusicEnable; 
+            musicmgr.bMusicEnable = !musicmgr.bMusicEnable;
             this.brushflag();
         },this);
     }
-    
+
     /**
      * 发送用户反馈到服务器
      * @param content 反馈内容
@@ -112,7 +113,7 @@ export class frm_pause extends frmbase {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "https://www.haoyouqu.net/api/feedback", true);
         xhr.setRequestHeader("Content-Type", "application/json");
-        
+
         xhr.onreadystatechange = () => {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
@@ -124,7 +125,7 @@ export class frm_pause extends frmbase {
                 }
             }
         };
-        
+
         try {
             xhr.send(JSON.stringify(feedbackData));
             // 清空输入框
@@ -134,7 +135,7 @@ export class frm_pause extends frmbase {
             Main.DispEvent("event_msg_top", {msg: "反馈发送出错，请稍后再试"});
         }
     }
-    
+
     brushflag()
     {
         console.log('musicenable='+musicmgr.bMusicEnable)
@@ -143,7 +144,7 @@ export class frm_pause extends frmbase {
         this.btn_musicenable.node.getChildByName('off').active = !musicmgr.bMusicEnable;
         this.btn_soundenable.node.getChildByName('off').active = !soundmgr.bSoundEnable;
     }
-    
+
     level_playing: number = 0;
     protected onLoad(): void {
         super.onLoad();
@@ -151,11 +152,11 @@ export class frm_pause extends frmbase {
             frm_main.isPause = true;
             this.show();
             this.level_playing = x;
-            this.brushflag();  
+            this.brushflag();
             return null;
         });
-        
-        Main.RegistEvent("event_begin",(x)=>{ 
+
+        Main.RegistEvent("event_begin",(x)=>{
             this.hide();
             // 重置连连看模式动画类型，确保新游戏使用同一种动画效果
             const mainNode = this.node.parent?.getChildByName('frm_main');
@@ -167,7 +168,7 @@ export class frm_pause extends frmbase {
                 }
             }
         });
-        Main.RegistEvent("event_restart",(x)=>{ 
+        Main.RegistEvent("event_restart",(x)=>{
             this.hide();
             // 重置连连看模式动画类型，确保重新开始游戏使用同一种动画效果
             const mainNode = this.node.parent?.getChildByName('frm_main');
@@ -186,24 +187,24 @@ export class frm_pause extends frmbase {
             Main.DispEvent("event_resume_game");
             return null;
         });
-        Main.RegistEvent("event_restart_sanxiao",(x)=>{ 
+        Main.RegistEvent("event_restart_sanxiao",(x)=>{
             this.hide();
             frm_main.isPause = false;
             // 重新开始三消模式
-            Main.DispEvent("event_play_sanxiao");
+            Main.DispEvent("event_play", this.level_playing);
             return null;
         });
     }
-    
+
     /**
      * 显示暂停界面时暂停背景音乐
      */
     show() {
         super.show();
-        
+
         // 停止心跳音效
         Main.DispEvent("event_heartbeat_stop");
-        
+
         // 记录当前音乐是否正在播放
         const musicManager = musicmgr.instance;
         if (musicManager && musicManager.source) {
@@ -214,13 +215,13 @@ export class frm_pause extends frmbase {
             }
         }
     }
-    
+
     /**
      * 隐藏暂停界面时恢复背景音乐
      */
     hide() {
         super.hide();
-        
+
         // 恢复背景音乐
         const musicManager = musicmgr.instance;
         if (musicManager && musicManager.source) {
@@ -232,7 +233,7 @@ export class frm_pause extends frmbase {
     }
 
     update(deltaTime: number) {
-        
+
     }
-     
+
 }
