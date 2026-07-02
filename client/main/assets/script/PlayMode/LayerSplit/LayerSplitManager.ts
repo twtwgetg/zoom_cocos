@@ -1,7 +1,9 @@
 import { _decorator, Component, Node, Vec3, tween, SpriteFrame, Sprite, UITransform, Button } from 'cc';
 import { Main } from '../../main';
+import { TLayerObject } from '../../Card/TLayerObject';
 import { TObject } from '../../Card/TObject';
 import { gridcreator } from '../../gridcreator';
+import { LevelMgr } from '../../levelmgr';
 
 const { ccclass, property } = _decorator;
 
@@ -43,6 +45,10 @@ export class LayerSplitManager extends Component {
     /**
      * 初始化卡槽节点
      */
+    private getLayerObject(card: Node): TLayerObject | null {
+        return card.getComponent(TLayerObject) || card.getComponent(TObject);
+    }
+
     private initSlotNodes() {
         // 添加保护性检查
         if (!this.ylgyContainer) {
@@ -73,6 +79,7 @@ export class LayerSplitManager extends Component {
     private registerEvents() {
         // 开始叠加拆分模式游戏
         Main.RegistEvent('event_play_layersplit', (level) => {
+            this.startLayerSplitGame(typeof level === 'number' ? level : LevelMgr.level);
             return null;
         });
         Main.RegistEvent('event_show_ylgy_container', (acitve) => {
@@ -200,7 +207,7 @@ export class LayerSplitManager extends Component {
         }
 
         // 计算目标卡槽位置（1-7号卡槽）
-        const slotIndex = this.containerCards.length <= 7 ? this.containerCards.length - 1 : Math.floor(Math.random() * 7);
+        const slotIndex = this.containerCards.length <= this.MAX_CONTAINER_SIZE ? this.containerCards.length - 1 : Math.floor(Math.random() * this.MAX_CONTAINER_SIZE);
         // 添加保护性检查
         if (slotIndex < 0 || slotIndex >= this.slotNodes.length) {
             console.warn('无效的卡槽索引:', slotIndex);
@@ -323,7 +330,7 @@ export class LayerSplitManager extends Component {
 
             // 使用动画移动到目标位置和缩放
             tween(card)
-                .to(0.3, { position: targetPosition, scale: scale }, { easing: 'sineOut' })
+                .to(0.3, { position: targetPosition, scale: scale, angle: 0 }, { easing: 'sineOut' })
                 .call(() => {
                     // 动画完成后检查消除条件
                     console.log('卡牌移动到容器完成');
@@ -402,7 +409,7 @@ export class LayerSplitManager extends Component {
 
             // 使用动画移动到目标位置和缩放
             tween(card)
-                .to(0.3, { position: targetPosition, scale: scale }, { easing: 'sineOut' })
+                .to(0.3, { position: targetPosition, scale: scale, angle: 0 }, { easing: 'sineOut' })
                 .call(() => {
                     // 动画完成后检查消除条件
                     console.log('卡牌移动到卡槽完成');
@@ -470,7 +477,7 @@ export class LayerSplitManager extends Component {
                 continue;
             }
 
-            const tobj = card.getComponent(TObject);
+            const tobj = this.getLayerObject(card);
             if (tobj) {
                 const type = tobj.type;
                 if (!cardGroups[type]) {
@@ -529,7 +536,7 @@ export class LayerSplitManager extends Component {
                 continue;
             }
 
-            const tobj = card.getComponent(TObject);
+            const tobj = this.getLayerObject(card);
             if (tobj) {
                 const type = tobj.type;
                 if (!cardGroups[type]) {
@@ -599,7 +606,7 @@ export class LayerSplitManager extends Component {
             // 添加保护性检查，确保卡牌节点仍然有效
             if (card && card.isValid) {
                 try {
-                    card.getComponent(TObject).PlayEffect(()=>{
+                    this.getLayerObject(card)?.PlayEffect(()=>{
                         that.checkGameWin();
                     });
                 } catch (error) {
@@ -785,7 +792,7 @@ export class LayerSplitManager extends Component {
                 for(const layer of children){
 
                         for (const child of layer.children) {
-                        const card = child.getComponent('TObject') as any;
+                        const card = this.getLayerObject(child);
                         if (card && !card.released) {
                             const type = card.type;
                             if (!allGridCards.has(type)) {
@@ -805,7 +812,7 @@ export class LayerSplitManager extends Component {
         for(let i=0;i<this.containerCards.length;i++){
             const card = this.containerCards[i];
             if (card && card.isValid) {
-                const tobj = card.getComponent('TObject') as TObject;
+                const tobj = this.getLayerObject(card);
                 if (tobj) {
                     const type = tobj.type;
                     if (needRemoveCards[type.toString()] ==null) {
@@ -833,18 +840,23 @@ export class LayerSplitManager extends Component {
             }
         }
         const that = this;
+        const removedCards = new Set<Node>();
 
         for(let key in needRemoveCards){
             let  dt = needRemoveCards[key] as Array<any>;
 
 
             for(let i=0;i<dt.length;i++){
-                let tobj = dt[i].getComponent('TObject') as TObject;
-                tobj.PlayEffect(()=>{
-                      that.checkGameWin();
+                removedCards.add(dt[i]);
+                let tobj = this.getLayerObject(dt[i]);
+                tobj?.PlayEffect(()=>{
+                       that.checkGameWin();
                 });
             }
         }
+        this.containerCards = this.containerCards.filter(card => !removedCards.has(card));
+        this.rearrangeCards();
+        Main.DispEvent('CARD_ANIMATIONS_COMPLETE');
 
         // //遍历needRemoveCards，不够3个的就从网格中填上
         // for (const [type, countInContainer] of needRemoveCards) {

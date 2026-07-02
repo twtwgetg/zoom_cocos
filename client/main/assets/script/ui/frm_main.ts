@@ -323,10 +323,11 @@ export class frm_main extends frmbase {
             return null;
         });
         //添加分层叠加模式
-        Main.RegistEvent("event_play_layersplit",()=>{
-            Main.DispEvent('event_play',LevelMgr.level);
-            return null;
+        Main.RegistEvent("event_play_layersplit",(x)=>{
+            const playLevel = typeof x === 'number' ? x : LevelMgr.level;
             this.show();
+            ToutiaoEventMgr.reportLevel(playLevel);
+            ToutiaoEventMgr.reportCharge();
             this.fillItems(enum_paly_type.LAYERSPLIT);
             // 重置TObject中的静态变量
             TObject.resetStaticVariables();
@@ -377,6 +378,7 @@ export class frm_main extends frmbase {
                 this.progress_time.node.active = false;
             }
 
+            return null;
         })
         // 添加三消模式事件处理
         Main.RegistEvent("event_play_sanxiao",()=>{
@@ -434,6 +436,10 @@ export class frm_main extends frmbase {
             this.hide();
         })
         Main.RegistEvent("event_restart",()=>{
+            if (this.gridcreator && this.gridcreator.gameType === GameType.LAYER_SPLIT) {
+                Main.DispEvent("event_play_layersplit", LevelMgr.level);
+                return null;
+            }
             Main.DispEvent("event_play", this.level_playing >= 0 ? this.level_playing : LevelMgr.level);
             return null;
             if(this.gridcreator.gameType == GameType.NORMAL)

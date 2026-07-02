@@ -13,6 +13,7 @@ const { ccclass, property } = _decorator;
 export class frm_guanka extends frmbase {
     private static readonly INFINITE_UNLOCK_LEVEL = 3;
     private static readonly MEMORY_UNLOCK_LEVEL = 5;
+    private static readonly LAYER_SPLIT_UNLOCK_LEVEL = 9;
     private previewLevel = -1;
     private previewCount = -1;
 
@@ -83,7 +84,7 @@ export class frm_guanka extends frmbase {
         }
         this.btn_layersplit.node.on(Button.EventType.CLICK, () =>
         {
-            Main.DispEvent('event_play',LevelMgr.level);
+            Main.DispEvent('event_play_layersplit',LevelMgr.level);
         }, this);
         this.btn_addtodesktop.node.on(Button.EventType.CLICK, () =>
         {
@@ -165,7 +166,7 @@ export class frm_guanka extends frmbase {
         this.setButtonActive(this.btn_wuxian, false);
         this.setButtonActive(this.btn_mem, false);
         this.setButtonActive(this.btn_sanxiao, false);
-        this.setButtonActive(this.btn_layersplit, false);
+        this.setButtonActive(this.btn_layersplit, unlockedLevel >= frm_guanka.LAYER_SPLIT_UNLOCK_LEVEL);
     }
 
     private findPreviewSprite(node: Node | null): Sprite | null {

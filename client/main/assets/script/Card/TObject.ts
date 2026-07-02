@@ -1,16 +1,17 @@
 
 // 首先修改导入部分，添加tween
-import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween, error, Graphics, UIOpacity } from 'cc';
+import { _decorator, Component, Node, Sprite,Animation,  UITransform, Vec2, instantiate, director, Prefab, math, Color, Vec3, SpriteFrame, Button, Director, tween, error, Graphics, UIOpacity, resources } from 'cc';
 import { gridcreator } from '../gridcreator';
         // 监听遮罩的触摸事件
 import { EventTouch } from 'cc';
 import { Main } from '../main';
 import { LevelMgr, GameMode } from '../levelmgr';
 import { frm_guide } from '../ui/frm_guide';
+import { TLayerObject } from './TLayerObject';
 const { ccclass, property } = _decorator;
 
 @ccclass('TObject')
-export class TObject extends Component {
+export class TObject extends TLayerObject {
     GetTixing():TObject[] {
          if (!this.creator || !this.creator.card_container) {
             console.error("Tixing: creator or creator.node is null");
@@ -60,10 +61,6 @@ export class TObject extends Component {
         }
         return ret;
     }
-    public layer: number = 0;
-    @property(Sprite)
-    public mask: Sprite = null!;
-    
     /**
      * 检查当前卡牌是否被盖住，并更新mask显示状态
      * 改进：检测上层卡牌四个角的位置，如果在当前卡牌矩形框内，则认为被遮挡
@@ -71,6 +68,41 @@ export class TObject extends Component {
     public updateMaskStatus(): void {
         // 检查是否为分层叠加模式
         if (!this.creator || !(this.creator as any).isLayerSplitMode) {
+            return;
+        }
+        {
+            const currentWorldRect = this.getLayerSplitBgWorldRect();
+            if (!currentWorldRect) {
+                return;
+            }
+
+            let isCovered = false;
+            const node = this.creator.card_container;
+            for (let i = 0; i < node.children.length; i++) {
+                const child = node.children[i];
+                for (let j = 0; j < child.children.length; j++) {
+                    const tobj = child.children[j].getComponent(TObject);
+                    if (!tobj || tobj.released || tobj === this || tobj.layer <= this.layer) {
+                        continue;
+                    }
+
+                    const otherWorldRect = tobj.getLayerSplitBgWorldRect();
+                    isCovered = !!otherWorldRect
+                        && otherWorldRect.xMax > currentWorldRect.xMin
+                        && otherWorldRect.xMin < currentWorldRect.xMax
+                        && otherWorldRect.yMax > currentWorldRect.yMin
+                        && otherWorldRect.yMin < currentWorldRect.yMax;
+
+                    if (isCovered) {
+                        break;
+                    }
+                }
+                if (isCovered) {
+                    break;
+                }
+            }
+
+            this.setLayerSplitCoveredVisual(isCovered);
             return;
         }
         
@@ -123,10 +155,37 @@ export class TObject extends Component {
             }
         }
         
-        // 更新mask显示状态
+        this.setLayerSplitCoveredVisual(isCovered);
+    }
+
+    private getLayerSplitBgWorldRect() {
+        const bgRect = this.node.getChildByName("bg")?.getComponent(UITransform);
+        return (bgRect || this.node.getComponent(UITransform))?.getBoundingBoxToWorld();
+    }
+
+    public setLayerSplitCoveredVisual(isCovered: boolean): void {
+        const cardRect = this.node.getComponent(UITransform);
+        const centerX = cardRect ? (0.5 - cardRect.anchorPoint.x) * cardRect.width : 0;
+        const centerY = cardRect ? (0.5 - cardRect.anchorPoint.y) * cardRect.height : 0;
+
         if (this.mask) {
             this.mask.node.active = isCovered;
+            this.mask.color = new Color(0,0,0, isCovered ? 60 : 0);
+            //const maskRect = this.mask.node.getComponent(UITransform);
+            // if (cardRect && maskRect) {
+            //     maskRect.setContentSize(cardRect.width, cardRect.height);
+            //     this.mask.node.setPosition(centerX, centerY, 1);
+            // }
         }
+
+        // const bgSprite = this.node.getChildByName("bg")?.getComponent(Sprite);
+        // if (bgSprite) {
+        //     bgSprite.color = isCovered ? new Color(238, 214, 174, 178) : Color.WHITE;
+        // }
+
+        // if (this.src) {
+        //     this.src.color = isCovered ? new Color(255, 255, 255, 128) : Color.WHITE;
+        // }
     }
     
     /**
@@ -164,17 +223,10 @@ export class TObject extends Component {
 
     @property(Sprite)
     public sel: Sprite = null!; 
-    @property(Sprite)
-    src: Sprite = null!; 
     @property(Node)
     back: Node = null!; // 添加back节点属性
-    x: number = 0;
-    y: number = 0;
-    type: number = 0;
     @property(SpriteFrame)
     public plane: SpriteFrame = null!;
-    @property(SpriteFrame)
-    public majiang: SpriteFrame = null!;
     public oldpos: Vec3 = new Vec3(); // 添加oldpos属性
     // 添加隐藏模式相关属性
     private hideModeTimer: any = null;
@@ -199,9 +251,7 @@ export class TObject extends Component {
         TObject.obj = null;
     }
 
-    private creator: gridcreator | null = null;
     private ondestroy: boolean = false;
-    private released: boolean = false;
 
     static get lastobj(): TObject | null {
         return this.obj;
@@ -216,6 +266,52 @@ export class TObject extends Component {
     }
     UseMaJiangBg(){
         this.node.getChildByName("bg").getComponent(Sprite)!.spriteFrame = this.majiang;
+    }
+
+    private static layerSplitBg: SpriteFrame | null = null;
+    private static layerSplitBgLoading = false;
+    private static layerSplitBgWaiters: TObject[] = [];
+
+    UseLayerSplitBg(){
+        const bgSprite = this.node.getChildByName("bg")?.getComponent(Sprite);
+        if (!bgSprite) {
+            return;
+        }
+
+        if (TObject.layerSplitBg) {
+            bgSprite.spriteFrame = TObject.layerSplitBg;
+            return;
+        }
+
+        bgSprite.spriteFrame = this.majiang;
+        TObject.layerSplitBgWaiters.push(this);
+
+        if (TObject.layerSplitBgLoading) {
+            return;
+        }
+
+        TObject.layerSplitBgLoading = true;
+        resources.load("layersplit/card_3d_base/spriteFrame", SpriteFrame, (err, spriteFrame) => {
+            TObject.layerSplitBgLoading = false;
+            if (err || !spriteFrame) {
+                console.warn("LayerSplit card bg load failed", err);
+                TObject.layerSplitBgWaiters = [];
+                return;
+            }
+
+            TObject.layerSplitBg = spriteFrame;
+            const waiters = TObject.layerSplitBgWaiters;
+            TObject.layerSplitBgWaiters = [];
+            for (const waiter of waiters) {
+                if (!waiter || !waiter.node || !waiter.node.isValid) {
+                    continue;
+                }
+                const waiterBg = waiter.node.getChildByName("bg")?.getComponent(Sprite);
+                if (waiterBg) {
+                    waiterBg.spriteFrame = spriteFrame;
+                }
+            }
+        });
     }
 
     private startSelectEffect(): void {
@@ -758,6 +854,7 @@ export class TObject extends Component {
                
                 // 标记卡牌为已释放（已移动到容器中）
                 this.released = true;
+                this.setLayerSplitCoveredVisual(false);
                 
                 // 直接将卡牌移动到容器中
                 Main.DispEvent("event_move_to_container", this.node);
@@ -859,6 +956,14 @@ export class TObject extends Component {
             this.sel.node.setPosition(centerX, centerY, 0);
         }
 
+        if (this.mask) {
+            const maskRect = this.mask.node.getComponent(UITransform);
+            if (maskRect) {
+                maskRect.setContentSize(cardRect.width, cardRect.height);
+            }
+            this.mask.node.setPosition(centerX, centerY, 1);
+        }
+
         const iconSize = Math.max(1, Math.min(cardRect.width, cardRect.height) * 0.78);
         iconRect.setContentSize(iconSize, iconSize);
         this.src.node.setPosition(centerX, centerY, 0);
@@ -877,6 +982,7 @@ export class TObject extends Component {
             this.initialCardHeight = cardRect.height;
         }
         this.refreshVisualLayout();
+        this.setLayerSplitCoveredVisual(false);
         
         
         // 如果启用了隐藏模式，初始化back节点为开启状态

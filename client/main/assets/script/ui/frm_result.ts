@@ -386,8 +386,8 @@ export class frm_result extends frmbase {
             }
             // 检查是否为分层叠加模式
             else if (this.level_played === -3) {
+                Main.DispEvent("event_play_layersplit", LevelMgr.level);
                 // 分层叠加模式失败后重新开始分层叠加模式
-                Main.DispEvent("event_play", LevelMgr.level);
                 this.hide();
             }
             else {
@@ -413,8 +413,8 @@ export class frm_result extends frmbase {
             }
             // 检查是否为分层叠加模式
             else if (this.level_played === -3) {
+                Main.DispEvent("event_play_layersplit", LevelMgr.level);
                 // 分层叠加模式胜利后重新开始分层叠加模式
-                Main.DispEvent("event_play", LevelMgr.level);
                 this.hide();
             }
             else {

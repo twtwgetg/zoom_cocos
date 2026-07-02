@@ -5,6 +5,7 @@ import { frm_main } from './ui/frm_main';
 import { item_tools } from './item/item_tools';
 import { tools } from './tools';
 import { TObject } from './Card/TObject';
+import { TLayerObject } from './Card/TLayerObject';
 import { TBlock } from './Card/TBlock';
 const { ccclass, property } = _decorator;
 
@@ -18,6 +19,8 @@ export class gridcreator extends Component {
     hei: number = 10;
     @property(Prefab)
     item: Prefab = null!;
+    @property(Prefab)
+    item_split: Prefab = null!;
     @property(Node)
     container: Node = null!;
     @property(Node)
@@ -120,7 +123,7 @@ export class gridcreator extends Component {
             const children = this.card_container.children;
             for (const child of children) {
                 for(let i=0;i<child.children.length;i++){
-                    const p = child.children[i].getComponent('TObject') as TObject;
+                    const p = child.children[i].getComponent(TLayerObject) || child.children[i].getComponent(TObject);
                     if (!p) continue;
                     p.updateMaskStatus();
                 }
@@ -178,13 +181,14 @@ export class gridcreator extends Component {
         // 婵烇綀顕ф慨鐐寸鐎ｂ晜顐介柨娑欎亢楠炲繘宕ｉ弽顐ょЧ闁哄秹妫块懙鎴︽儍閸曨偆鎽嶉柤鍝勫€婚崑?
         Main.RegistEvent('event_get_grid_children', () => {
             if(this.isLayerSplitMode){
+                const allChildren: Node[] = [];
                 for(let i=0;i<this.card_container.children.length;i++){
                     const layerx = this.card_container.children[i];
                     if(layerx.children.length>0){
-                        return layerx.children;
+                        allChildren.push(...layerx.children);
                     }
                 }
-                return [];
+                return allChildren;
             }
             return this.card_container.children;
         });
@@ -443,22 +447,26 @@ export class gridcreator extends Component {
         return parentRect.height;
     }
 
-    private tweenBoardSize(width: number, height: number) {
+    private tweenBoardSize(width: number, height: number, position: Vec3 = Vec3.ZERO) {
         const bgTransform = this.bg.getComponent(UITransform)!;
         const from = {
             width: bgTransform.width,
             height: bgTransform.height,
+            x: this.bg.position.x,
+            y: this.bg.position.y,
         };
 
         tween(from)
-            .to(0.28, { width, height }, {
+            .to(0.28, { width, height, x: position.x, y: position.y }, {
                 easing: 'sineOut',
                 onUpdate: () => {
                     bgTransform.setContentSize(from.width, from.height);
+                    this.bg.setPosition(from.x, from.y, position.z);
                 },
             })
             .call(() => {
                 bgTransform.setContentSize(width, height);
+                this.bg.setPosition(position);
             })
             .start();
     }
@@ -960,7 +968,7 @@ export class gridcreator extends Component {
         const width = (this.isInfiniteMode || this.isSanxiaoMode || this.isLayerSplitMode) ? this.infiniteWid : this.wid;
         const height = (this.isInfiniteMode || this.isSanxiaoMode || this.isLayerSplitMode) ? this.infiniteHei : this.hei;
         const refx = (rect.width - width * this.gridsize) / 2;
-        const refy = (rect.height - height * this.gridsize) / 2;
+        const refy = (rect.height - height * this.gridsize) / 2 + (this.isLayerSplitMode ? 150 : 0);
         return new Vec2(refx-rect.width/2, refy-rect.height/2);
     }
 
@@ -1899,84 +1907,91 @@ export class gridcreator extends Component {
 
         console.log(`Sanxiao mode created: ${this.infiniteWid}x${this.infiniteHei}, types ${availableTypes}`);
     }
-    totallayer = 4;
+    totallayer = 8;
+    private layerSplitRows: number[][][] = [];
 
     /**
      * 闁告帗绋戠紓鎾诲礆閸℃婀撮柛娆戝Т婵偛螣閳ュ磭纭€闁稿繐鍟垮畷?
      */
     CreateLayerSplitMode(width: number, height: number) {
         this.gameOver = false;
-        // 缁绢収鍠曠换姘辨媼閸撗呮瀭婵炴挸鎲￠崹娆戠尵鐠囪尙鈧攱绋夐崫鍕€婚悘鐐插€歌ぐ鏃堝礉閻樿‖浣割嚕?
         this.gameType = GameType.LAYER_SPLIT;
-        // 濞达綀娉曢弫銈嗗閻樻彃寮抽柣銊ュ瀵剟寮幏宀婂晭缂傚喚鍠氱紞澶愬冀閻撳孩妲€閻?
-        this.infiniteWid = 5;
-        this.infiniteHei = 7;
-
+        this.infiniteWid = Math.max(3, width || 5);
+        this.infiniteHei = Math.max(5, height || 8);
 
         this.clear();
 
-        // 閻犱緤绱曢悾鑽ょ磾閹寸偟澹愬鍫嗗啰姣?
+        gridcreator.map = [];
+        for (let i = 0; i < this.infiniteWid + 2; i++) {
+            gridcreator.map[i] = [];
+            for (let j = 0; j < this.infiniteHei + 2; j++) {
+                gridcreator.map[i][j] = [];
+            }
+        }
+
         const parentRect = this.node.getComponent(UITransform)!;
         const availableWidth = parentRect.width;
         const availableHeight = parentRect.height;
-
         const cellWidth = availableWidth / this.infiniteWid;
         const cellHeight = availableHeight / this.infiniteHei;
 
-        this.gridsize = Math.min(cellWidth, cellHeight);
-        this.gridsize = Math.min(150, this.gridsize);
-
-
-
-        //闁稿繐鐗愰鍝ョ不濡炲墽顏遍柛蹇撳船椤﹁法浜搁幋婵堟澖濞达絾鎸稿畷閬嶆偋瀹€瀣闁绘帟娉涢幃妤呮⒕韫囨梹绨氱€垫壋鍋撻柡宥囧帶閻℃瑩鏌屽畝鍕〃濠?
-
-        // 闁兼儳鍢茶ぐ鍥矗椤栨粍鏆忕紒顐ヮ嚙閻庣兘寮导鏉戞
+        this.gridsize = Math.min(150, cellWidth, cellHeight);
         this.pl = this.plSprites;
-        // 闁哄秷顫夊畵渚€寮介悡搴ｆ憤闁轰椒鍗抽崳铏规媼閸撗呮瀭闁告绱曟晶婵堢矓瀹ュ洩顫﹂柡浣峰嵆閸ｇ儤绋夐悜妯煎閻庢稒鍔栭弳鐔兼煂?4
-        const totalLayerCells = this.infiniteWid * this.infiniteHei *   this.totallayer; // 閻犱緤绱曢悾濠氬箑缂佹澹愰悗娑欏姈閺?
 
+        const selectedBlocks: TBlock[] = [];
+        this.layerSplitRows = this.createRandomLayerSplitRows();
 
-        let number =  Math.floor(totalLayerCells/3)*3;
+        for (let layer = 1; layer <= this.totallayer; layer++) {
+            const rows = this.layerSplitRows[layer - 1] || [];
+            for (let y = 0; y < Math.min(this.infiniteHei, rows.length); y++) {
+                for (const x of rows[y]) {
+                    if (x >= this.infiniteWid) {
+                        continue;
+                    }
+                    const block = new TBlock();
+                    block.x = x;
+                    block.y = y;
+                    block.layer = layer;
+                    selectedBlocks.push(block);
+                }
+            }
+        }
 
-        const availableTypes = Math.min(Math.max(4, Math.floor(totalLayerCells / 6)), this.pl.length - 1); // 闁煎嘲鍟块惃?缂佸绉村畷閬嶆偋瀹€瀣闁哄牃鍋撳鑸电煯缁楀鎼鹃崨鎵畺闁告瑯鍨抽弫銈囩尵鐠囪尙鈧?
+        const trimCount = selectedBlocks.length % 3;
+        if (trimCount > 0) {
+            selectedBlocks.splice(selectedBlocks.length - trimCount, trimCount);
+        }
+
+        const availableTypes = Math.min(Math.floor(selectedBlocks.length / 18), this.pl.length - 1);
         if (availableTypes < 2) {
             console.error('Not enough image types');
             return;
         }
 
-        //闁告垵妫楅ˇ顒備沪閸屾繂螡闁?
-        for(let layer = 1; layer <= this.totallayer; layer++){
-            let layerx = new Node("layer" + layer);
-            this.card_container.addChild(layerx);
-            layerx.setPosition(Math.random() * this.gridsize- this.gridsize/2, Math.random() * this.gridsize- this.gridsize/2, layer);
+        for (let layer = 1; layer <= this.totallayer; layer++) {
+            const layerNode = new Node("layer" + layer);
+            this.card_container.addChild(layerNode);
+            const layerOffset = this.getLayerSplitLayerOffset(layer);
+            layerNode.setPosition(layerOffset.x, layerOffset.y, layer);
+            layerNode.setSiblingIndex(layer - 1);
         }
 
-        let arr=new Array<TBlock>();
-        for(let layer = 1; layer <= this.totallayer; layer++){
-            for(let x = 0; x < this.infiniteWid; x++){
-                for(let y = 0; y < this.infiniteHei; y++){
-                    let block = new TBlock();
-                    block.x = x;
-                    block.y = y;
-                    block.layer = layer;
-                    arr.push(block);
-                }
+        this.fitLayerSplitBoard(selectedBlocks);
+
+        const assignments = this.createLayerSplitAssignments(selectedBlocks, availableTypes);
+        assignments.sort((a, b) => a.block.layer - b.block.layer);
+
+        for (const assignment of assignments) {
+            const block = assignment.block;
+            const mapPos = new Vec2(block.x + 1, block.y + 1);
+            const cell = gridcreator.map[mapPos.x][mapPos.y];
+            if (Array.isArray(cell)) {
+                cell.push(assignment.type);
             }
-        }
-        this.Shuffle(arr);
 
-        let pares=Math.floor(number/3*0.5);
-
-        for(let i = 0; i < pares; i++){
-            const type = Math.floor(Math.random() * availableTypes) + 1;
-            for(let count = 1; count <=3; count++){
-                let block = arr[i*3+count-1];
-                // 闁兼儳鍢茶ぐ鍥╀沪閸屾繂螡闁?
-                let layerx = this.card_container.getChildByName("layer" + block.layer);
-                // 闂傚懎绻戝┃鈧ù锝呯Ф閻?
-                const mapPos = new Vec2(block.x + 1, block.y + 1);
-                // 闁汇垻鍠愰崹姘跺础閿涘嫬顣?
-                this.SpawnLayeredCard(layerx, mapPos, type, block.layer);
+            const layerNode = this.card_container.getChildByName("layer" + block.layer);
+            if (layerNode) {
+                this.SpawnLayeredCard(layerNode, mapPos, assignment.type, block.layer);
             }
         }
 
@@ -1999,32 +2014,168 @@ export class gridcreator extends Component {
     private updateAllCardMaskStatus() {
         for (let layer = 1; layer <= this.totallayer; layer++) {
             let layerx = this.card_container.getChildByName("layer" + layer);
+            if (!layerx) {
+                continue;
+            }
             for(let c = 0; c < layerx.children.length; c++){
                 let cx = layerx.children[c];
-                let tobj = cx.getComponent('TObject') as any;
+                    let tobj = cx.getComponent(TLayerObject) || cx.getComponent(TObject);
                 if(tobj){
                     tobj.updateMaskStatus();
                 }
             }
         }
     }
+
+    private createRandomLayerSplitRows(): number[][][] {
+        const layerCounts = [25, 25, 25, 25, 25, 25, 25, 25];
+        const rows: number[][][] = [];
+
+        for (let layer = 0; layer < this.totallayer; layer++) {
+            rows[layer] = [];
+            const cells: Vec2[] = [];
+            for (let y = 0; y < this.infiniteHei; y++) {
+                rows[layer][y] = [];
+                for (let x = 0; x < this.infiniteWid; x++) {
+                    cells.push(new Vec2(x, y));
+                }
+            }
+
+            this.Shuffle(cells);
+            const targetCount = Math.min(layerCounts[layer] || cells.length, cells.length);
+            const selected = cells.slice(0, targetCount);
+
+            for (const cell of selected) {
+                rows[layer][cell.y].push(cell.x);
+            }
+            for (const row of rows[layer]) {
+                row.sort((a, b) => a - b);
+            }
+        }
+
+        return rows;
+    }
+
+    private createLayerSplitAssignments(blocks: TBlock[], availableTypes: number): { block: TBlock, type: number }[] {
+        const topBlocks = blocks.filter(block => block.layer === this.totallayer);
+        const lowerBlocks = blocks.filter(block => block.layer !== this.totallayer);
+        this.Shuffle(topBlocks);
+        this.Shuffle(lowerBlocks);
+
+        const topTripletCount = Math.min(1, Math.floor(topBlocks.length / 3), availableTypes);
+        const topTypeCount = Math.min(availableTypes, Math.max(1, Math.ceil((topBlocks.length - topTripletCount) / 2)));
+        const topTypes: number[] = [];
+        const topCounts: { [key: number]: number } = {};
+        for (let type = 1; type <= topTypeCount; type++) {
+            const count = type <= topTripletCount ? 3 : 2;
+            for (let i = 0; i < count && topTypes.length < topBlocks.length; i++) {
+                topTypes.push(type);
+            }
+        }
+        this.Shuffle(topTypes);
+
+        const assignments: { block: TBlock, type: number }[] = [];
+        for (let i = 0; i < topBlocks.length; i++) {
+            const type = topTypes[i % topTypes.length];
+            topCounts[type] = (topCounts[type] || 0) + 1;
+            assignments.push({ block: topBlocks[i], type });
+        }
+
+        const lowerTypes: number[] = [];
+        for (let type = 1; type <= topTypeCount; type++) {
+            const need = 3 - (topCounts[type] || 0);
+            for (let i = 0; i < need; i++) {
+                lowerTypes.push(type);
+            }
+        }
+
+        let nextType = topTypeCount + 1;
+        while (lowerTypes.length < lowerBlocks.length) {
+            const extraTypeCount = Math.max(1, availableTypes - topTypeCount);
+            const type = topTypeCount < availableTypes
+                ? (nextType <= availableTypes ? nextType : topTypeCount + 1 + ((nextType - topTypeCount - 1) % extraTypeCount))
+                : ((nextType - 1) % availableTypes) + 1;
+            lowerTypes.push(type, type, type);
+            nextType++;
+        }
+        lowerTypes.length = lowerBlocks.length;
+        this.Shuffle(lowerTypes);
+
+        for (let i = 0; i < lowerBlocks.length; i++) {
+            assignments.push({ block: lowerBlocks[i], type: lowerTypes[i] });
+        }
+
+        return assignments;
+    }
+
+    private getLayerSplitCardOffset(x: number, y: number, layer: number): Vec2 {
+        const hashA = Math.sin((x + 1) * 12.9898 + (y + 1) * 78.233 + layer * 37.719) * 43758.5453;
+        const hashB = Math.sin((x + 1) * 93.989 + (y + 1) * 21.123 + layer * 11.371) * 24634.6345;
+        const depth = this.totallayer - layer;
+        const row = this.layerSplitRows[layer - 1]?.[y] || [];
+        const rowCenter = row.length > 0 ? (row[0] + row[row.length - 1]) / 2 : (this.infiniteWid - 1) / 2;
+        const centerShift = ((this.infiniteWid - 1) / 2 - rowCenter) * this.gridsize;
+        const jitterScale = depth * this.gridsize * 0.04;
+        const jitterX = (hashA - Math.floor(hashA) - 0.5) * jitterScale;
+        const jitterY = (hashB - Math.floor(hashB) - 0.5) * jitterScale;
+        const edgeFan = (x - (this.infiniteWid - 1) / 2) * depth * this.gridsize * 0.035;
+        const layerDriftY = -depth * this.gridsize * 0.03;
+
+        return new Vec2(centerShift + edgeFan + jitterX, layerDriftY + jitterY);
+    }
+
+    private getLayerSplitCardAngle(x: number, y: number, layer: number): number {
+        return 0;
+    }
+
+    private getLayerSplitLayerOffset(layer: number): Vec2 {
+        const depth = this.totallayer - layer;
+        return new Vec2(-depth * this.gridsize * 0.03, -depth * this.gridsize * 0.06);
+    }
+
+    private fitLayerSplitBoard(blocks: TBlock[]) {
+        if (blocks.length === 0 || !this.bg) {
+            return;
+        }
+
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        const ref = this.tref;
+
+        for (const block of blocks) {
+            const layerOffset = this.getLayerSplitLayerOffset(block.layer);
+            const cardOffset = this.getLayerSplitCardOffset(block.x, block.y, block.layer);
+            const x = ref.x + block.x * this.gridsize + layerOffset.x + cardOffset.x;
+            const y = ref.y + block.y * this.gridsize + layerOffset.y + cardOffset.y;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x + this.gridsize);
+            maxY = Math.max(maxY, y + this.gridsize);
+        }
+
+        const padding = Math.max(42, this.gridsize * 0.34);
+        this.tweenBoardSize(maxX - minX + padding * 2, maxY - minY + padding * 2, new Vec3((minX + maxX) / 2, (minY + maxY) / 2, 0));
+    }
+
     /**
      * 闁汇垻鍠愰崹姘跺礆閸℃婀撮柛妤嬬磿婢?
      */
     private SpawnLayeredCard(layerx: Node, mapPos: Vec2, type: number, layer: number) {
-        const cx = instantiate(this.item);
+        const cx = instantiate(this.item_split || this.item);
         layerx.addChild(cx);
         this.applyCardGridLayout(cx);
 
         // 閻犱礁澧介悿鍡欏垝閸撗傜触
         const xx = this.pl[type];
-        const tobj = cx.getComponent('TObject') as any;
+        const tobj = cx.getComponent(TLayerObject) || cx.getComponent(TObject);
         if(tobj){
             tobj.layer = layer;
         }
         // 婵炲鍔嶉崜浼存晬濮濈敘pPos闁哄嫷鍨伴悢鈧ù?闁汇劌瀚崒銊ヮ嚕閺囶亞绀夐柤鏉胯嫰瀹曢亶鎮у畝鈧▓鎲?y閻忕偟鍋為埀顑嫭笑闁糕晞妗ㄧ花?闁汇劌瀚崒銊ヮ嚕?
         tobj?.SetSprite(mapPos.x - 1, mapPos.y - 1, type, xx, this);
-        tobj?.UseMaJiangBg();
+        tobj?.UseLayerSplitBg();
         // 濞戞挸鎼崹搴ｄ沪閸屾艾骞㈤柣妤€鏈崸濠囧礉閻橀潧顥楁繛鍫濓攻閻栵絿鎷?
         cx.name = `${mapPos.x - 1},${mapPos.y - 1}_layer${layer}`;
 
@@ -2032,6 +2183,9 @@ export class gridcreator extends Component {
         // 閻犱緤绱曢悾濠氬春閾忚鏀ㄥù锝呯Ф閻?
         let baseX = (mapPos.x - 1) * this.gridsize;
         let baseY = (mapPos.y - 1) * this.gridsize;
+        const offset = this.getLayerSplitCardOffset(mapPos.x - 1, mapPos.y - 1, layer);
+        baseX += offset.x;
+        baseY += offset.y;
 
         // // 濠靛倸娲﹂弳鐔轰沪閸屾稒绡傜€归潻缂氱粭鍛村棘閻熼鐒婄紒澶庮嚙瀹曟劖绋夐鍛閻?
         // if (layer % 2 === 1) {
@@ -2042,6 +2196,7 @@ export class gridcreator extends Component {
         const targetPos2D = this.tref.add(new Vec2(baseX, baseY));
         const targetPos = new Vec3(targetPos2D.x, targetPos2D.y, layer); // 濞达綀娉曢弫顦犻弶鐐殿棎閵嗗啰绮堥崫鍕勾缂?
         cx.setPosition(targetPos);
+        cx.angle = this.getLayerSplitCardAngle(mapPos.x - 1, mapPos.y - 1, layer);
 
         // 閻犱礁澧介悿鍡涘础閿涘嫬顤傞悘蹇撴惈椤?
         this.applyCardGridLayout(cx);
