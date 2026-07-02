@@ -101,6 +101,10 @@ export class LayerSplitManager extends Component {
             return this.plSprites || [];
         });
 
+        Main.RegistEvent('event_get_layersplit_container_cards', () => {
+            return this.containerCards.filter(card => card && card.isValid);
+        });
+
         // 检查网格中是否还有卡牌
         Main.RegistEvent('event_has_cards_in_grid', () => {
             try {
@@ -856,6 +860,7 @@ export class LayerSplitManager extends Component {
         }
         this.containerCards = this.containerCards.filter(card => !removedCards.has(card));
         this.rearrangeCards();
+        Main.DispEvent('event_rebuild_layersplit_map');
         Main.DispEvent('CARD_ANIMATIONS_COMPLETE');
 
         // //遍历needRemoveCards，不够3个的就从网格中填上

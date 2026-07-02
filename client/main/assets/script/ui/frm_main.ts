@@ -333,8 +333,10 @@ export class frm_main extends frmbase {
             TObject.resetStaticVariables();
 
             this.brushType(GameType.LAYER_SPLIT);
+            Main.DispEvent("event_loading_tip", { show: true, msg: "创建中..." });
 
             this.scheduleOnce(() => {
+                try {
                 // 添加保护性检查，确保gridcreator对象已正确初始化
                 if (this.gridcreator) {
                     // 修改为8行5列网格
@@ -346,6 +348,9 @@ export class frm_main extends frmbase {
                     frm_main.isPause = false;
                 } else {
                     console.error("gridcreator对象未正确初始化");
+                }
+                } finally {
+                    Main.DispEvent("event_loading_tip", { show: false });
                 }
             }, 0);
 

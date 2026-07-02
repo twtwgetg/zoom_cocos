@@ -217,6 +217,13 @@ export class gridcreator extends Component {
             return null;
         });
 
+        Main.RegistEvent('event_rebuild_layersplit_map', () => {
+            if (this.isLayerSplitMode) {
+                this.rebuildLayerSplitMapFromCards(this.getLayerSplitGridCards());
+            }
+            return null;
+        });
+
         // 婵烇綀顕ф慨鐐寸鐎ｂ晜顐介柨娑欑濡绮堥崫鍕€婚柡浣规緲閼村﹪宕欓悜妯绘珡闁哄绮ｇ槐娆撴偨閵娿倗鑹鹃柛鎺戞閻即宕ｉ悩鎻掝潱婵☆垪鈧磭纭€闁?
         Main.RegistEvent('event_show_score_popup', (position) => {
             if (position) {
@@ -1330,6 +1337,11 @@ export class gridcreator extends Component {
     }
 
     public brushkind() {
+        if (this.isLayerSplitMode) {
+            this.brushLayerSplitKind();
+            return;
+        }
+
         // 闁衡偓閸洘鑲犻柟纰樺亾闁哄牆顦晶鎸庢媴濞嗘垶鐣盩Object閻庡湱鍋樼欢?
         const remainingCards: any[] = [];
         const children = this.card_container.children;
@@ -1452,6 +1464,138 @@ export class gridcreator extends Component {
     }
 
     // 婵☆偀鍋撻柡灞诲劙鐞氳鲸绋夐鍕耿闁绘娲﹀Σ鎼佸触閿曗偓瑜板弶绂掗妷銊х闁?
+    private brushLayerSplitKind() {
+        const remainingCards = this.getLayerSplitGridCards();
+        const fixedCards = this.getLayerSplitContainerCards();
+        const count = remainingCards.length;
+        const availableTypes = Math.min(15, this.pl.length - 1);
+        if (count <= 0 || availableTypes < 1) {
+            return;
+        }
+
+        const fixedCounts: { [key: number]: number } = {};
+        const assignedCounts: { [key: number]: number } = {};
+        const newTypes: number[] = [];
+        const pushType = (type: number, amount: number) => {
+            for (let i = 0; i < amount && newTypes.length < count; i++) {
+                newTypes.push(type);
+                assignedCounts[type] = (assignedCounts[type] || 0) + 1;
+            }
+        };
+
+        for (const card of fixedCards) {
+            if (card && card.type > 0) {
+                fixedCounts[card.type] = (fixedCounts[card.type] || 0) + 1;
+            }
+        }
+
+        for (const typeKey in fixedCounts) {
+            const type = Number(typeKey);
+            const need = (3 - (fixedCounts[type] % 3)) % 3;
+            pushType(type, need);
+        }
+
+        let slots = count - newTypes.length;
+        if (slots < 0) {
+            newTypes.length = count;
+            slots = 0;
+        }
+
+        while (slots >= 3) {
+            const type = Math.floor(Math.random() * availableTypes) + 1;
+            pushType(type, 3);
+            slots -= 3;
+        }
+
+        if (slots > 0) {
+            let patched = false;
+            for (let type = 1; type <= availableTypes; type++) {
+                const finalCount = (fixedCounts[type] || 0) + (assignedCounts[type] || 0) + slots;
+                if (finalCount % 3 === 0) {
+                    pushType(type, slots);
+                    patched = true;
+                    break;
+                }
+            }
+            if (!patched) {
+                console.warn('LayerSplit remaining card count is not multiple of 3');
+                pushType(Math.floor(Math.random() * availableTypes) + 1, slots);
+            }
+        }
+
+        this.Shuffle(newTypes);
+        for (let i = 0; i < remainingCards.length; i++) {
+            const card = remainingCards[i];
+            const newType = newTypes[i];
+            if (!card || newType === undefined || newType >= this.pl.length) {
+                continue;
+            }
+            this.applyCardGridLayout(card.node);
+            card.SetSprite(card.x, card.y, newType, this.pl[newType], this);
+            (card as any).unSel?.();
+        }
+
+        this.rebuildLayerSplitMapFromCards(remainingCards);
+        this.updateAllCardMaskStatus();
+        console.log(`Refreshed ${count} layer split cards`);
+    }
+
+    private getLayerSplitGridCards(): TLayerObject[] {
+        const cards: TLayerObject[] = [];
+        for (const layerNode of this.card_container.children) {
+            for (const child of layerNode.children) {
+                const card = child.getComponent(TLayerObject) || child.getComponent(TObject);
+                if (card && !card.released) {
+                    cards.push(card);
+                }
+            }
+        }
+        return cards;
+    }
+
+    private getLayerSplitContainerCards(): TLayerObject[] {
+        const cards: TLayerObject[] = [];
+        const nodes = Main.DispEvent('event_get_layersplit_container_cards') || [];
+        if (!Array.isArray(nodes)) {
+            return cards;
+        }
+
+        for (const node of nodes) {
+            if (!node || !node.isValid) {
+                continue;
+            }
+            const card = node.getComponent(TLayerObject) || node.getComponent(TObject);
+            if (card) {
+                cards.push(card);
+            }
+        }
+        return cards;
+    }
+
+    private rebuildLayerSplitMapFromCards(cards: TLayerObject[]) {
+        for (let x = 0; x < this.infiniteWid + 2; x++) {
+            if (!gridcreator.map[x]) {
+                gridcreator.map[x] = [];
+            }
+            for (let y = 0; y < this.infiniteHei + 2; y++) {
+                gridcreator.map[x][y] = [];
+            }
+        }
+
+        cards.sort((a, b) => a.layer - b.layer);
+        for (const card of cards) {
+            const mapX = card.x + 1;
+            const mapY = card.y + 1;
+            if (mapX < 0 || mapY < 0 || mapX >= gridcreator.map.length || mapY >= gridcreator.map[mapX].length) {
+                continue;
+            }
+            const cell = gridcreator.map[mapX][mapY];
+            if (Array.isArray(cell)) {
+                cell.push(card.type);
+            }
+        }
+    }
+
     public static CanConnect(x1: number, y1: number, x2: number, y2: number, poslist: Vec2[]): boolean {
         // 婵烇綀顕ф慨鐐电矚閸濆嫧鍋撻崗纰辨⒕闁?
         if (!gridcreator.map) {
@@ -2057,52 +2201,26 @@ export class gridcreator extends Component {
     }
 
     private createLayerSplitAssignments(blocks: TBlock[], availableTypes: number): { block: TBlock, type: number }[] {
-        const topBlocks = blocks.filter(block => block.layer === this.totallayer);
-        const lowerBlocks = blocks.filter(block => block.layer !== this.totallayer);
-        this.Shuffle(topBlocks);
-        this.Shuffle(lowerBlocks);
-
-        const topTripletCount = Math.min(1, Math.floor(topBlocks.length / 3), availableTypes);
-        const topTypeCount = Math.min(availableTypes, Math.max(1, Math.ceil((topBlocks.length - topTripletCount) / 2)));
-        const topTypes: number[] = [];
-        const topCounts: { [key: number]: number } = {};
-        for (let type = 1; type <= topTypeCount; type++) {
-            const count = type <= topTripletCount ? 3 : 2;
-            for (let i = 0; i < count && topTypes.length < topBlocks.length; i++) {
-                topTypes.push(type);
-            }
-        }
-        this.Shuffle(topTypes);
-
         const assignments: { block: TBlock, type: number }[] = [];
-        for (let i = 0; i < topBlocks.length; i++) {
-            const type = topTypes[i % topTypes.length];
-            topCounts[type] = (topCounts[type] || 0) + 1;
-            assignments.push({ block: topBlocks[i], type });
-        }
+        const shuffledBlocks = blocks.slice();
+        this.Shuffle(shuffledBlocks);
 
-        const lowerTypes: number[] = [];
-        for (let type = 1; type <= topTypeCount; type++) {
-            const need = 3 - (topCounts[type] || 0);
-            for (let i = 0; i < need; i++) {
-                lowerTypes.push(type);
+        const topBlocks = shuffledBlocks.filter(block => block.layer === this.totallayer);
+        const topTriplet = topBlocks.length >= 3 ? topBlocks.slice(0, 3) : [];
+        if (topTriplet.length === 3) {
+            for (const block of topTriplet) {
+                assignments.push({ block, type: 1 });
             }
         }
 
-        let nextType = topTypeCount + 1;
-        while (lowerTypes.length < lowerBlocks.length) {
-            const extraTypeCount = Math.max(1, availableTypes - topTypeCount);
-            const type = topTypeCount < availableTypes
-                ? (nextType <= availableTypes ? nextType : topTypeCount + 1 + ((nextType - topTypeCount - 1) % extraTypeCount))
-                : ((nextType - 1) % availableTypes) + 1;
-            lowerTypes.push(type, type, type);
-            nextType++;
-        }
-        lowerTypes.length = lowerBlocks.length;
-        this.Shuffle(lowerTypes);
-
-        for (let i = 0; i < lowerBlocks.length; i++) {
-            assignments.push({ block: lowerBlocks[i], type: lowerTypes[i] });
+        const remainingBlocks = shuffledBlocks.filter(block => topTriplet.indexOf(block) === -1);
+        let groupIndex = topTriplet.length === 3 ? 1 : 0;
+        for (let i = 0; i < remainingBlocks.length; i += 3) {
+            const type = (groupIndex % availableTypes) + 1;
+            for (let j = 0; j < 3 && i + j < remainingBlocks.length; j++) {
+                assignments.push({ block: remainingBlocks[i + j], type });
+            }
+            groupIndex++;
         }
 
         return assignments;
@@ -2156,7 +2274,16 @@ export class gridcreator extends Component {
         }
 
         const padding = Math.max(42, this.gridsize * 0.34);
-        this.tweenBoardSize(maxX - minX + padding * 2, maxY - minY + padding * 2, new Vec3((minX + maxX) / 2, (minY + maxY) / 2, 0));
+        const centerX = (minX + maxX) / 2;
+        for (let layer = 1; layer <= this.totallayer; layer++) {
+            const layerNode = this.card_container.getChildByName("layer" + layer);
+            if (!layerNode) {
+                continue;
+            }
+            const layerOffset = this.getLayerSplitLayerOffset(layer);
+            layerNode.setPosition(layerOffset.x - centerX, layerOffset.y, layer);
+        }
+        this.tweenBoardSize(maxX - minX + padding * 2, maxY - minY + padding * 2, new Vec3(0, (minY + maxY) / 2, 0));
     }
 
     /**

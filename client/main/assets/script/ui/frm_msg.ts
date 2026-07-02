@@ -19,6 +19,7 @@ export class frm_msg extends frmbase {
     @property(Prefab)
     prefab_msg: Prefab = null!;
     cb:any;
+    private loadingTip: Node | null = null;
     protected onLoad(): void {
         super.onLoad();
         this.btn_cancel.node.on(Button.EventType.CLICK,()=>{
@@ -39,6 +40,24 @@ export class frm_msg extends frmbase {
             this.lbl_msg.string = x.msg;
             this.cb = x.cb;
             this.show();
+        });
+
+        Main.RegistEvent("event_loading_tip", (x) => {
+            if (!x?.show) {
+                this.loadingTip?.destroy();
+                this.loadingTip = null;
+                return;
+            }
+
+            this.loadingTip?.destroy();
+            this.loadingTip = instantiate(this.prefab_msg);
+            this.loadingTip.setParent(this.trans_top);
+            this.loadingTip.setPosition(new Vec3(0, 0, 0));
+            const label = this.loadingTip.getComponent(Label);
+            if (label) {
+                label.string = x.msg || "创建中...";
+                label.color = new Color(label.color.r, label.color.g, label.color.b, 255);
+            }
         });
 
         // In your event handler
